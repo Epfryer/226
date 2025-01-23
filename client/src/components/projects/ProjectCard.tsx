@@ -73,8 +73,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
               <div className="flex gap-8" style={{ minWidth: "max-content" }}>
                 <motion.div 
                   className="w-96 flex-shrink-0"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
                   <h4 className="font-medium mb-4">About the Project</h4>
@@ -90,8 +90,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
                   <motion.div 
                     key={i} 
                     className="w-96 aspect-[3/2] flex-shrink-0"
-                    initial={{ x: 20 * (i + 1), opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 + (i * 0.1) }}
                     whileHover={{ scale: 1.02 }}
                   >
