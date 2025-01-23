@@ -59,67 +59,68 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
 
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-8 relative"
-          >
-            <div className="relative group">
-              <div 
-                id={`scroll-container-${project.id}`}
-                className="overflow-x-auto scrollbar-hide pb-8 scroll-smooth"
-                style={{ 
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
-                }}
-              >
-                <div className="flex gap-8" style={{ minWidth: "max-content" }}>
-                  <div className="w-96 flex-shrink-0">
-                    <h4 className="font-medium mb-4">About the Project</h4>
-                    <p className="text-gray-600">{project.description}</p>
-                    <div className="mt-4">
-                      <span className="inline-block px-3 py-1 bg-gray-100 text-sm rounded">
-                        {project.category}
-                      </span>
-                    </div>
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: isExpanded ? 1 : 0, height: isExpanded ? "auto" : 0 }}
+          transition={{ duration: 0.3 }}
+          className="mt-8 relative overflow-hidden"
+        >
+          <div className="relative group">
+            <div 
+              id={`scroll-container-${project.id}`}
+              className="overflow-x-auto scrollbar-hide pb-8 scroll-smooth"
+            >
+              <div className="flex gap-8" style={{ minWidth: "max-content" }}>
+                <motion.div 
+                  className="w-96 flex-shrink-0"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h4 className="font-medium mb-4">About the Project</h4>
+                  <p className="text-gray-600">{project.description}</p>
+                  <div className="mt-4">
+                    <span className="inline-block px-3 py-1 bg-gray-100 text-sm rounded">
+                      {project.category}
+                    </span>
                   </div>
+                </motion.div>
 
-                  {[project.image, project.image, project.image].map((img, i) => (
-                    <motion.div 
-                      key={i} 
-                      className="w-96 aspect-[3/2] flex-shrink-0"
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <img
-                        src={img}
-                        alt={`${project.title} view ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </motion.div>
-                  ))}
-                </div>
+                {[project.image, project.image, project.image].map((img, i) => (
+                  <motion.div 
+                    key={i} 
+                    className="w-96 aspect-[3/2] flex-shrink-0"
+                    initial={{ x: 20 * (i + 1), opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 + (i * 0.1) }}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <img
+                      src={img}
+                      alt={`${project.title} view ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </motion.div>
+                ))}
               </div>
-
-              {/* Scroll Buttons */}
-              <button
-                onClick={() => handleScroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-
-              <button
-                onClick={() => handleScroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
             </div>
-          </motion.div>
-        )}
+
+            <button
+              onClick={() => handleScroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <button
+              onClick={() => handleScroll('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );
