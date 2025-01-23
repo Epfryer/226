@@ -7,8 +7,8 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="fixed w-full z-50 bg-white">
-      <div className="max-w-5xl mx-auto px-6">
+    <header className="fixed w-full z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div className="max-w-3xl mx-auto px-6">
         <div className="py-4 flex items-center justify-center">
           <Link href="/">
             <a className="text-2xl font-bold">BIG</a>
@@ -45,7 +45,7 @@ export function Header() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-white py-4 px-6 md:hidden"
+            className="absolute top-full left-0 right-0 bg-white py-4 px-6 md:hidden border-b border-gray-100"
           >
             <nav className="flex flex-col space-y-4">
               <Link href="/">

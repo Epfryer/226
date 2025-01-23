@@ -27,13 +27,15 @@ export default function Home() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-5xl mx-auto px-6"
+        className="max-w-3xl mx-auto px-6"
       >
-        <ProjectFilter 
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
+        <div className="flex justify-center mb-12">
+          <ProjectFilter 
+            categories={categories}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        </div>
 
         <AnimatePresence mode="wait">
           <motion.div
