@@ -36,12 +36,12 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     >
       <motion.div 
         layout
-        className="py-6"
+        className="py-4 mx-auto max-w-4xl"
       >
         {!isExpanded ? (
           // Unexpanded view - grid layout with text on side
           <div 
-            className="grid grid-cols-[120px,1fr] gap-4 items-start cursor-pointer"
+            className="grid grid-cols-[120px,1fr] gap-3 items-start cursor-pointer"
             onClick={() => onExpand(project.id)}
           >
             <div>
@@ -64,8 +64,8 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           </div>
         ) : (
           // Expanded view - full width with text below
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-4">
+          <div>
+            <div className="mb-3">
               <h3 className="text-sm font-medium">{project.title}</h3>
               <p className="text-xs text-gray-600 mt-1">
                 {project.location}
@@ -124,7 +124,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-4"
+              className="mt-3"
             >
               <AnimatePresence mode="wait">
                 <motion.p
@@ -137,7 +137,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   {content[currentIndex].text}
                 </motion.p>
               </AnimatePresence>
-              <div className="mt-4 flex gap-4 text-sm text-gray-500">
+              <div className="mt-3 flex gap-4 text-sm text-gray-500">
                 <span>{project.year}</span>
                 <span>{project.category}</span>
               </div>
