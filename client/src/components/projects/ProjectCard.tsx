@@ -21,63 +21,51 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <motion.div 
       layout
-      className="border-b border-gray-100 overflow-hidden group"
+      className="border-b border-gray-100 group"
       initial={false}
     >
       <motion.div 
+        layout
+        className={`grid ${isExpanded ? 'grid-cols-1' : 'grid-cols-[120px,1fr]'} gap-4 items-start py-6`}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="py-6 cursor-pointer"
-        whileHover={{ opacity: 0.7 }}
       >
-        <div className="grid grid-cols-[120px,1fr] gap-4 items-center">
-          <div>
-            <h3 className="text-sm font-medium">{project.title}</h3>
-            <p className="text-xs text-gray-600 mt-1">
-              {project.location}
-            </p>
-          </div>
+        <motion.div layout>
+          <h3 className="text-sm font-medium">{project.title}</h3>
+          <p className="text-xs text-gray-600 mt-1">
+            {project.location}
+          </p>
+        </motion.div>
 
-          <motion.div
-            className="relative aspect-video w-full max-w-sm"
-            whileHover={{ scale: 0.98 }}
-          >
-            <img
-              src={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover"
-            />
-          </motion.div>
-        </div>
-      </motion.div>
+        <motion.div
+          layout
+          className={`relative ${isExpanded ? 'aspect-[16/9] max-w-4xl mx-auto' : 'aspect-video max-w-sm'}`}
+          whileHover={{ scale: isExpanded ? 1 : 0.98 }}
+          transition={{ duration: 0.2 }}
+        >
+          <img
+            src={project.image}
+            alt={project.title}
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
 
-      <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ 
-              height: "auto", 
-              opacity: 1,
-              transition: { duration: 0.3 }
-            }}
-            exit={{ 
-              height: 0, 
-              opacity: 0,
-              transition: { duration: 0.2 }
-            }}
-            className="relative pb-12 w-full max-w-4xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative overflow-hidden"
           >
             <div 
               ref={scrollContainerRef}
               className="overflow-x-auto scrollbar-hide scroll-smooth"
               style={{ scrollSnapType: "x mandatory" }}
             >
-              <div className="flex gap-8">
-                {/* Project Details */}
+              <div className="flex gap-8 px-4">
                 <div 
-                  className="flex-none w-[600px] scroll-snap-align-start p-4"
+                  className="flex-none w-[600px] scroll-snap-align-start"
                   style={{ scrollSnapAlign: "start" }}
                 >
-                  <h4 className="text-lg font-medium mb-4">{project.title}</h4>
                   <p className="text-gray-600 mb-6">{project.description}</p>
                   <div className="flex gap-4 text-sm text-gray-500">
                     <span>{project.location}</span>
@@ -86,8 +74,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                   </div>
                 </div>
 
-                {/* Project Images */}
-                {[project.image, project.image, project.image].map((img, i) => (
+                {[project.image, project.image].map((img, i) => (
                   <div 
                     key={i}
                     className="flex-none w-[600px] aspect-video scroll-snap-align-start"
@@ -104,7 +91,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
               </div>
             </div>
 
-            {/* Scroll Navigation */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -126,7 +112,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 }
