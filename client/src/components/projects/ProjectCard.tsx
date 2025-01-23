@@ -38,91 +38,112 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         layout
         className="py-6"
       >
-        <motion.div 
-          layout 
-          className="relative mb-4"
-          onClick={() => onExpand(isExpanded ? null : project.id)}
-        >
-          <div className={`${isExpanded ? 'max-w-4xl mx-auto' : ''}`}>
-            <h3 className="text-sm font-medium">{project.title}</h3>
-            <p className="text-xs text-gray-600 mt-1 mb-4">
-              {project.location}
-            </p>
+        {!isExpanded ? (
+          // Unexpanded view - grid layout with text on side
+          <div 
+            className="grid grid-cols-[120px,1fr] gap-4 items-start cursor-pointer"
+            onClick={() => onExpand(project.id)}
+          >
+            <div>
+              <h3 className="text-sm font-medium">{project.title}</h3>
+              <p className="text-xs text-gray-600 mt-1">
+                {project.location}
+              </p>
+            </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`relative ${isExpanded ? 'aspect-[16/9]' : 'aspect-video max-w-sm'}`}
-              >
-                <img
-                  src={content[currentIndex].image}
-                  alt={`${project.title} view ${currentIndex + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-            </AnimatePresence>
+            <motion.div
+              className="relative aspect-video w-full max-w-sm"
+              whileHover={{ scale: 0.98 }}
+            >
+              <img
+                src={project.image}
+                alt={project.title}
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          </div>
+        ) : (
+          // Expanded view - full width with text below
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-4">
+              <h3 className="text-sm font-medium">{project.title}</h3>
+              <p className="text-xs text-gray-600 mt-1">
+                {project.location}
+              </p>
+            </div>
 
-            {isExpanded && (
-              <>
+            <div className="relative">
+              <AnimatePresence mode="wait">
                 <motion.div
+                  key={currentIndex}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-4"
+                  exit={{ opacity: 0 }}
+                  className="aspect-[16/9]"
                 >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={currentIndex}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="text-gray-600 max-w-2xl"
-                    >
-                      {content[currentIndex].text}
-                    </motion.p>
-                  </AnimatePresence>
-                  <div className="mt-4 flex gap-4 text-sm text-gray-500">
-                    <span>{project.year}</span>
-                    <span>{project.category}</span>
-                  </div>
+                  <img
+                    src={content[currentIndex].image}
+                    alt={`${project.title} view ${currentIndex + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
+              </AnimatePresence>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNavigation('prev');
-                  }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigation('prev');
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNavigation('next');
-                  }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigation('next');
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onExpand(null);
-                    setCurrentIndex(0);
-                  }}
-                  className="absolute top-4 right-4 text-sm text-gray-500 hover:text-black"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExpand(null);
+                  setCurrentIndex(0);
+                }}
+                className="absolute top-4 right-4 text-sm text-gray-500 hover:text-black"
+              >
+                Close
+              </button>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4"
+            >
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={currentIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="text-gray-600 max-w-2xl"
                 >
-                  Close
-                </button>
-              </>
-            )}
+                  {content[currentIndex].text}
+                </motion.p>
+              </AnimatePresence>
+              <div className="mt-4 flex gap-4 text-sm text-gray-500">
+                <span>{project.year}</span>
+                <span>{project.category}</span>
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
+        )}
       </motion.div>
     </motion.div>
   );
