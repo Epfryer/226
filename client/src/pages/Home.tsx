@@ -16,7 +16,7 @@ export default function Home() {
   );
 
   return (
-    <div className="pt-24">
+    <div className="pt-32">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -28,7 +28,6 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="pt-28"
           >
             <ProjectGrid projects={filteredProjects} />
           </motion.div>
