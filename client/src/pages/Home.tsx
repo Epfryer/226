@@ -20,7 +20,7 @@ export default function Home() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto px-6"
+        className="max-w-5xl mx-auto px-6"
       >
         <AnimatePresence mode="wait">
           <motion.div

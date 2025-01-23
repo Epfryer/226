@@ -9,18 +9,18 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link href={`/project/${project.id}`}>
-      <a className="block relative group hover:opacity-90 transition-opacity mb-12">
-        <div className="grid grid-cols-[300px,1fr] gap-8">
-          <div className="pt-8">
-            <h3 className="text-xl font-medium">{project.title}</h3>
-            <p className="text-gray-600 mt-2">
+      <a className="block relative group hover:opacity-90 transition-opacity mb-24">
+        <div className="grid grid-cols-[200px,1fr] gap-12 items-start">
+          <div className="pt-4">
+            <h3 className="text-lg font-medium">{project.title}</h3>
+            <p className="text-gray-600 mt-2 text-sm">
               {project.location}, {project.year}
             </p>
           </div>
 
           <motion.div
             whileHover={{ scale: 0.98 }}
-            className="relative aspect-[4/3]"
+            className="relative aspect-[3/2] max-w-2xl"
           >
             <img
               src={project.image}
