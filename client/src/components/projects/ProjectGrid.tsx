@@ -8,18 +8,15 @@ interface ProjectGridProps {
 
 export function ProjectGrid({ projects }: ProjectGridProps) {
   return (
-    <div>
+    <div className="space-y-0">
       <AnimatePresence>
-        {projects.map((project, index) => (
+        {projects.map((project) => (
           <motion.div
             key={project.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ 
-              duration: 0.3,
-              delay: index * 0.1 
-            }}
+            transition={{ duration: 0.3 }}
           >
             <ProjectCard project={project} />
           </motion.div>
