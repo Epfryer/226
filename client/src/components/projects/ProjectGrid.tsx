@@ -8,7 +8,7 @@ interface ProjectGridProps {
 
 export function ProjectGrid({ projects }: ProjectGridProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+    <div>
       <AnimatePresence>
         {projects.map((project, index) => (
           <motion.div
