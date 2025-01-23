@@ -1,19 +1,10 @@
-import { useState, useCallback } from "react";
-import { Link, useLocation } from "wouter";
+import { useState } from "react";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { projects } from "@/lib/projects";
-
-const categories = Array.from(new Set(projects.map(p => p.category))).sort();
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const [, setLocation] = useLocation();
-
-  const handleCategoryClick = useCallback((category: string) => {
-    setLocation(`/?category=${category}`);
-    setIsOpen(false);
-  }, [setLocation]);
 
   return (
     <header className="fixed w-full z-50 bg-white">
@@ -27,15 +18,9 @@ export function Header() {
         <div className="hidden md:block">
           <nav className="flex justify-center py-4 text-sm">
             <div className="flex space-x-12">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
-                  className="hover:opacity-70 transition-opacity uppercase tracking-wide"
-                >
-                  {category}
-                </button>
-              ))}
+              <Link href="/">
+                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+              </Link>
               <Link href="/about">
                 <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
               </Link>
@@ -63,15 +48,9 @@ export function Header() {
             className="absolute top-full left-0 right-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
-                  className="hover:opacity-70 transition-opacity text-left uppercase tracking-wide"
-                >
-                  {category}
-                </button>
-              ))}
+              <Link href="/">
+                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+              </Link>
               <Link href="/about">
                 <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
               </Link>
