@@ -7,32 +7,30 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="fixed w-full z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <div className="max-w-3xl mx-auto px-6">
-        <div className="py-4 flex items-center justify-center">
+    <header className="fixed top-0 left-0 z-50 p-6">
+      <div>
+        <div className="flex items-start">
           <Link href="/">
             <a className="text-2xl font-bold">BIG</a>
           </Link>
         </div>
 
-        <div className="hidden md:block">
-          <nav className="flex justify-center py-4 text-sm">
-            <div className="flex space-x-12">
-              <Link href="/">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
-              </Link>
-              <Link href="/about">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
-              </Link>
-              <Link href="/contact">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
-              </Link>
-            </div>
+        <div className="hidden md:block mt-6">
+          <nav className="flex flex-col space-y-4 text-sm">
+            <Link href="/">
+              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+            </Link>
+            <Link href="/about">
+              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
+            </Link>
+            <Link href="/contact">
+              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
+            </Link>
           </nav>
         </div>
 
         <button 
-          className="md:hidden absolute top-4 right-6"
+          className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -42,10 +40,10 @@ export function Header() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-white py-4 px-6 md:hidden border-b border-gray-100"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
               <Link href="/">
