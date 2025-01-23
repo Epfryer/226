@@ -27,7 +27,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   };
 
   return (
-    <div className="mb-24">
+    <div className="mb-12">
       <motion.div
         layout
         className="overflow-hidden"
@@ -38,17 +38,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
           onClick={() => setIsExpanded(!isExpanded)}
           className="cursor-pointer"
         >
-          <div className="grid grid-cols-[200px,1fr] gap-12 items-start">
-            <div className="pt-4">
-              <h3 className="text-lg font-medium">{project.title}</h3>
-              <p className="text-gray-600 mt-2 text-sm">
+          <div className="grid grid-cols-[160px,1fr] gap-6 items-center">
+            <div>
+              <h3 className="text-base font-medium">{project.title}</h3>
+              <p className="text-gray-600 mt-1 text-sm">
                 {project.location}, {project.year}
               </p>
             </div>
 
             <motion.div
               whileHover={{ scale: 0.98 }}
-              className="relative aspect-[3/2] max-w-2xl"
+              className="relative aspect-[3/2] max-w-xl"
             >
               <img
                 src={project.image}
