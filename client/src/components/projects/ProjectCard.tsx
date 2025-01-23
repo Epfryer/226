@@ -31,7 +31,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   return (
     <motion.div 
       layout
-      className="border-b border-gray-100 group overflow-hidden"
+      className="group overflow-hidden mb-4"
       initial={false}
     >
       <motion.div 
@@ -41,7 +41,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         {!isExpanded ? (
           // Unexpanded view - grid layout with text on side
           <div 
-            className="grid grid-cols-[120px,1fr] gap-3 items-start cursor-pointer"
+            className="grid grid-cols-[120px,1fr] gap-3 items-center cursor-pointer"
             onClick={() => onExpand(project.id)}
           >
             <div>

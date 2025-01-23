@@ -14,7 +14,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <div className="flex flex-wrap gap-4 mb-8">
+    <div className="flex flex-wrap justify-center gap-4 mb-8">
       <Button
         variant={!activeCategory ? "default" : "outline"}
         onClick={() => handleClick(null)}
