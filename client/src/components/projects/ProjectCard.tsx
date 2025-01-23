@@ -36,15 +36,15 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     >
       <motion.div 
         layout
-        className="py-4 mx-auto max-w-4xl"
+        className="py-4 mx-auto max-w-4xl flex justify-center"
       >
         {!isExpanded ? (
           // Unexpanded view - grid layout with text on side
           <div 
-            className="grid grid-cols-[120px,1fr] gap-3 items-center cursor-pointer"
+            className="grid grid-cols-[120px,1fr] gap-3 items-center justify-items-center w-full px-4 cursor-pointer"
             onClick={() => onExpand(project.id)}
           >
-            <div>
+            <div className="text-center">
               <h3 className="text-sm font-medium">{project.title}</h3>
               <p className="text-xs text-gray-600 mt-1">
                 {project.location}
