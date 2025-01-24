@@ -22,7 +22,7 @@ export default function Project() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto max-w-5xl px-6 pt-24"
+      className="w-full px-6 pt-24"
     >
       <ProjectDetail project={project} />
     </motion.div>

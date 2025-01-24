@@ -11,7 +11,7 @@ export function ProjectDetail({ project }: ProjectDetailProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start"
+        className="grid grid-cols-1 lg:grid-cols-[1.5fr,1fr] gap-12 items-start"
       >
         <div className="aspect-[4/3] overflow-hidden">
           <img

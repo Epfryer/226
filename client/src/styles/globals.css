@@ -1,0 +1,7 @@
+:root {
+  --project-spacing: clamp(1rem, 2vw, 2rem);
+  --project-width: min(100%, calc(100vw - var(--project-spacing) * 2));
+  --project-expanded-width: min(160%, calc(160vw - var(--project-spacing) * 2));
+}
+
+// ...existing code...

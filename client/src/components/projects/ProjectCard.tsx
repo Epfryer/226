@@ -31,28 +31,35 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   return (
     <motion.div 
       layout
-      className="group overflow-hidden mb-4"
+      className="group relative w-full overflow-hidden mb-[calc(2vh)]"
       initial={false}
     >
       <motion.div 
         layout
-        className="py-4 mx-auto max-w-4xl flex justify-center"
+        className={`relative w-full max-w-[95vw] mx-auto transition-all ${isExpanded ? "px-[calc(2vw)]" : "px-[calc(1vw)]"} py-[calc(1vh)]`}
+        style={{
+          width: isExpanded ? '95vw' : '100%',
+          maxWidth: isExpanded ? '1400px' : 'none',
+          marginLeft: isExpanded ? '5' : '0',
+          transform: isExpanded ? 'translateX(-50%)' : 'none'
+        }}
       >
         {!isExpanded ? (
-          // Unexpanded view - grid layout with text on side
           <div 
-            className="grid grid-cols-[120px,1fr] gap-3 items-center justify-items-center w-full px-4 cursor-pointer"
+            className="grid grid-cols-[1fr,minmax(120px,15vw)] gap-[calc(1vw)] items-center w-full cursor-pointer" 
             onClick={() => onExpand(project.id)}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium">{project.title}</h3>
-              <p className="text-xs text-gray-600 mt-1">
+            <div className="text-right w-full">
+              <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate">
+                {project.title}
+              </h3>
+              <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-[calc(0.25vh)] truncate">
                 {project.location}
               </p>
             </div>
 
             <motion.div
-              className="relative aspect-video w-full max-w-sm"
+              className="relative aspect-video w-full"
               whileHover={{ scale: 0.98 }}
             >
               <img
@@ -63,11 +70,12 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </motion.div>
           </div>
         ) : (
-          // Expanded view - full width with text below
-          <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium">{project.title}</h3>
-              <p className="text-xs text-gray-600 mt-1">
+          <div className="w-full">
+            <div className="mb-[calc(1vh)]">
+              <h3 className="text-[calc(0.875rem+0.2vw)] font-medium">
+                {project.title}
+              </h3>
+              <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-[calc(0.5vh)]">
                 {project.location}
               </p>
             </div>
@@ -79,7 +87,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="aspect-[16/9]"
+                  className="aspect-[17/11]" // Changed from aspect-[16/9]
                 >
                   <img
                     src={content[currentIndex].image}
@@ -124,7 +132,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-3"
+              className="mt-[calc(1vh)]"
             >
               <AnimatePresence mode="wait">
                 <motion.p
@@ -132,12 +140,12 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="text-gray-600 max-w-2xl"
+                  className="text-gray-600 max-w-[90ch] text-[calc(0.875rem+0.1vw)]"
                 >
                   {content[currentIndex].text}
                 </motion.p>
               </AnimatePresence>
-              <div className="mt-3 flex gap-4 text-sm text-gray-500">
+              <div className="mt-[calc(1vh)] flex gap-[calc(1vw)] text-[calc(0.75rem+0.1vw)] text-gray-500">
                 <span>{project.year}</span>
                 <span>{project.category}</span>
               </div>

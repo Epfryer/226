@@ -6,6 +6,7 @@ export interface Project {
   description: string;
   image: string;
   category: string;
+  metadata: string[];
 }
 
 export const projects: Project[] = [
@@ -16,7 +17,8 @@ export const projects: Project[] = [
     year: 2019,
     description: "A waste-to-energy plant topped with a public ski slope, hiking trail and climbing wall.",
     image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
-    category: "Infrastructure"
+    category: "Infrastructure",
+    metadata: ["2019", "Infrastructure"]
   },
   {
     id: "8-house",
