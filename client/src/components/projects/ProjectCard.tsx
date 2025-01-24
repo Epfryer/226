@@ -12,7 +12,6 @@ interface ProjectCardProps {
 export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Mock additional content for demo - replace with actual project content
   const content = [
     { image: project.image, text: project.description },
     { image: project.image, text: "Additional details about the project process." },
@@ -29,132 +28,130 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   };
 
   return (
-    <motion.div 
+    <motion.div
       layout
-      className="group relative w-full overflow-hidden mb-[calc(2vh)]"
+      className={`
+        w-full transition-all duration-500 ease-out
+        ${isExpanded ? 'max-w-[1000px]' : 'max-w-[800px]'}
+      `}
       initial={false}
+      layoutTransition={{
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }}
     >
-      <motion.div 
-        layout
-        className={`relative mx-auto transition-all ${
-          isExpanded 
-            ? "w-[95vw] max-w-[1400px] px-[calc(2vw)]" 
-            : "w-[80vw] max-w-[1000px] px-[calc(1vw)]"
-        } py-[calc(1vh)]`}
-        style={{
-          left: isExpanded ? '50%' : 'auto',
-          transform: isExpanded ? 'translateX(-50%)' : 'none'
-        }}
-      >
-        {!isExpanded ? (
-          <div 
-            className="grid grid-cols-[1fr,minmax(120px,15vw)] gap-[calc(1vw)] items-center w-full cursor-pointer mx-auto" 
-            onClick={() => onExpand(project.id)}
+      {!isExpanded ? (
+        <div
+          className="grid grid-cols-[1fr,minmax(120px,15vw)] gap-8 items-center cursor-pointer mx-auto"
+          onClick={() => onExpand(project.id)}
+        >
+          <div className="text-right">
+            <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate">
+              {project.title}
+            </h3>
+            <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate">
+              {project.location}
+            </p>
+          </div>
+
+          <motion.div
+            className="relative aspect-video w-full"
+            whileHover={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="text-right w-full">
-              <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate">
-                {project.title}
-              </h3>
-              <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-[calc(0.25vh)] truncate">
-                {project.location}
-              </p>
-            </div>
-
-            <motion.div
-              className="relative aspect-video w-full"
-              whileHover={{ scale: 0.98 }}
-            >
-              <img
-                src={project.image}
-                alt={project.title}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        </div>
+      ) : (
+        <div className="w-full px-4">
+          <div className="mb-4">
+            <h3 className="text-[calc(0.875rem+0.2vw)] font-medium">
+              {project.title}
+            </h3>
+            <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-2">
+              {project.location}
+            </p>
           </div>
-        ) : (
-          <div className="w-full">
-            <div className="mb-[calc(1vh)]">
-              <h3 className="text-[calc(0.875rem+0.2vw)] font-medium">
-                {project.title}
-              </h3>
-              <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-[calc(0.5vh)]">
-                {project.location}
-              </p>
-            </div>
 
-            <div className="relative">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="aspect-[17/11]"
-                >
-                  <img
-                    src={content[currentIndex].image}
-                    alt={`${project.title} view ${currentIndex + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </motion.div>
-              </AnimatePresence>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigation('prev');
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          <div className="relative group">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={currentIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="aspect-[17/11]"
               >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
+                <img
+                  src={content[currentIndex].image}
+                  alt={`${project.title} view ${currentIndex + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            </AnimatePresence>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigation('next');
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExpand(null);
-                  setCurrentIndex(0);
-                }}
-                className="absolute top-4 right-4 text-sm text-gray-500 hover:text-black"
-              >
-                Close
-              </button>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-[calc(1vh)]"
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNavigation('prev');
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={currentIndex}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="text-gray-600 max-w-[90ch] text-[calc(0.875rem+0.1vw)]"
-                >
-                  {content[currentIndex].text}
-                </motion.p>
-              </AnimatePresence>
-              <div className="mt-[calc(1vh)] flex gap-[calc(1vw)] text-[calc(0.75rem+0.1vw)] text-gray-500">
-                <span>{project.year}</span>
-                <span>{project.category}</span>
-              </div>
-            </motion.div>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNavigation('next');
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand(null);
+                setCurrentIndex(0);
+              }}
+              className="absolute top-4 right-4 text-sm text-gray-500 hover:text-black transition-colors duration-200"
+            >
+              Close
+            </button>
           </div>
-        )}
-      </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="mt-4"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.p
+                key={currentIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="text-gray-600 max-w-[90ch] text-[calc(0.875rem+0.1vw)]"
+              >
+                {content[currentIndex].text}
+              </motion.p>
+            </AnimatePresence>
+            <div className="mt-4 flex gap-4 text-[calc(0.75rem+0.1vw)] text-gray-500">
+              <span>{project.year}</span>
+              <span>{project.category}</span>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
