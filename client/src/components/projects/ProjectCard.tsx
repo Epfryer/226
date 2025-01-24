@@ -36,19 +36,17 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     >
       <motion.div 
         layout
-        className={`relative mx-auto transition-all ${
-          isExpanded 
-            ? "w-[95vw] max-w-[1400px] px-[calc(2vw)]" 
-            : "w-[80vw] max-w-[1000px] px-[calc(1vw)]"
-        } py-[calc(1vh)]`}
+        className={`relative w-full max-w-[95vw] mx-auto transition-all ${isExpanded ? "px-[calc(2vw)]" : "px-[calc(1vw)]"} py-[calc(1vh)]`}
         style={{
-          left: isExpanded ? '50%' : 'auto',
+          width: isExpanded ? '95vw' : '100%',
+          maxWidth: isExpanded ? '1400px' : 'none',
+          marginLeft: isExpanded ? '5' : '0',
           transform: isExpanded ? 'translateX(-50%)' : 'none'
         }}
       >
         {!isExpanded ? (
           <div 
-            className="grid grid-cols-[1fr,minmax(120px,15vw)] gap-[calc(1vw)] items-center w-full cursor-pointer mx-auto" 
+            className="grid grid-cols-[1fr,minmax(120px,15vw)] gap-[calc(1vw)] items-center w-full cursor-pointer" 
             onClick={() => onExpand(project.id)}
           >
             <div className="text-right w-full">
@@ -89,7 +87,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="aspect-[17/11]"
+                  className="aspect-[17/11]" // Changed from aspect-[16/9]
                 >
                   <img
                     src={content[currentIndex].image}
