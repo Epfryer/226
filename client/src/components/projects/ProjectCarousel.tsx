@@ -112,7 +112,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         </SwiperSlide>
 
         {/* Rest of the slides without text */}
-        {(project.images || [images]).slice(1).map((image, index) => (
+        {images.slice(1).map((image, index) => (
           <SwiperSlide 
             key={index + 1}
             style={{
