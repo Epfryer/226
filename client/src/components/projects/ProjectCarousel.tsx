@@ -35,21 +35,21 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         navigation={false}
         className="w-full h-full project-carousel"
         onSlideChange={handleSlideChange}
-        initialSlide={1}
+        initialSlide={0}
       >
         {/* First slide with text */}
         <SwiperSlide 
           style={{
             width: 'auto',
-            maxWidth: '75%',
+            maxWidth: '85%',
             height: '100%',
-            marginLeft: '12.5%'  // Add left margin to adjust starting position
+            marginLeft: '5%'  // Reduced left margin to start more from the left
           }}
         >
-          <div className="grid grid-cols-[300px,1fr] gap-8 h-full">
-            <div className="p-4">
-              <h3 className="text-lg font-semibold">{initialSlide.title}</h3>
-              <p className="mt-2 text-sm text-gray-600">{initialSlide.description}</p>
+          <div className="grid grid-cols-[400px,1fr] gap-8 h-full">
+            <div className="p-8">
+              <h3 className="text-xl font-semibold mb-4">{initialSlide.title}</h3>
+              <p className="mt-2 text-sm text-gray-600 mb-6">{initialSlide.description}</p>
               <div className="mt-4 flex gap-4 text-sm text-gray-500">
                 <span>{initialSlide.year}</span>
                 <span>{initialSlide.category}</span>
