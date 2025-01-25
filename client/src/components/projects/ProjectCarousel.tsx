@@ -28,7 +28,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   if (!images?.length) return null;
 
   return (
-    <div className="relative h-full pb-12">
+    <div className="relative h-full">
       <Swiper
         modules={[Navigation, Scrollbar, FreeMode, A11y]}
         slidesPerView="auto"
@@ -40,7 +40,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           el: '.swiper-scrollbar'
         }}
         navigation={false}
-        className="w-full h-full project-carousel"
+        className="w-full h-full"
+        style={{ margin: 0, padding: 0 }}
         onSlideChange={handleSlideChange}
         initialSlide={0}
         freeMode={{
@@ -86,9 +87,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             width: 'auto',
             maxWidth: '90%',
             height: '100%',
-            marginLeft: '5%'
+            marginLeft: '5%',
+            margin: 0,
+            padding: 0
           }}
-          className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
+          className="sm:max-w-flex "
         >
           <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-4 h-full">
             <div className="pl-8 pt-8 pr-4">
@@ -117,8 +120,10 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             key={index + 1}
             style={{
               width: 'auto',
-              maxWidth: '90%',
+              maxWidth: '100%',
               height: '100%',
+              margin: 0,
+              padding: 0
             }}
             className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
           >
