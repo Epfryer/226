@@ -39,14 +39,14 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         freeMode={true}
         allowTouchMove={true}
         resistance={false}
-        slidesOffsetBefore={50}
       >
         {/* First slide with text */}
         <SwiperSlide 
           style={{
             width: 'auto',
             maxWidth: '90%',
-            height: '100%'
+            height: '100%',
+            marginLeft: '5%'
           }}
         >
           <div className="grid grid-cols-[400px,1fr] gap-8 h-full">
