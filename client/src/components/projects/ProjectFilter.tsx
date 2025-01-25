@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import type { Project } from "@/lib/projects";
 
 interface ProjectFilterProps {
@@ -14,8 +13,8 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <div className="flex justify-start px-6"> {/* Adjusted padding and alignment */}
-      <div className="flex flex-wrap gap-6 text-sm"> {/* Adjusted gap and text size */}
+    <div className="flex justify-center">
+      <div className="flex flex-wrap gap-6 text-sm">
         <button
           onClick={() => handleClick(null)}
           className={`transition-all ${!activeCategory ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}
