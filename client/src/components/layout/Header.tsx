@@ -18,17 +18,17 @@ export function Header() {
     <header className="fixed top-0 left-0 z-50 p-6">
       <div>
         <div className="flex items-start">
-          <Link href="/">
-            <motion.a 
-              className="text-2xl font-bold inline-block"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                duration: 0.8,
-                ease: "easeInOut",
-                delay: 0.2
-              }}
-            >
+          <motion.div 
+            className="text-2xl font-bold inline-block"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.8,
+              ease: "easeInOut",
+              delay: 0.2
+            }}
+          >
+            <Link href="/">
               {isProjectExpanded && !shouldRevealHeader ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-light">Designed by</span>
@@ -52,8 +52,8 @@ export function Header() {
                   D.EF
                 </motion.span>
               )}
-            </motion.a>
-          </Link>
+            </Link>
+          </motion.div>
         </div>
 
         <div 
@@ -61,14 +61,14 @@ export function Header() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
-            <Link href="/">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+              Projects
             </Link>
-            <Link href="/about">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+              About
             </Link>
-            <Link href="/contact">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+              Contact
             </Link>
           </nav>
         </div>
@@ -86,14 +86,14 @@ export function Header() {
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
-              <Link href="/">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+                Projects
               </Link>
-              <Link href="/about">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+                About
               </Link>
-              <Link href="/contact">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+                Contact
               </Link>
             </nav>
           </div>
