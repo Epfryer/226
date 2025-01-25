@@ -4,6 +4,7 @@ interface ProjectContextType {
   isProjectExpanded: boolean;
   setProjectExpanded: (expanded: boolean) => void;
   shouldRevealHeader: boolean;
+  setShouldRevealHeader: (reveal: boolean) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -36,7 +37,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     <ProjectContext.Provider value={{ 
       isProjectExpanded, 
       setProjectExpanded,
-      shouldRevealHeader 
+      shouldRevealHeader,
+      setShouldRevealHeader
     }}>
       {children}
     </ProjectContext.Provider>

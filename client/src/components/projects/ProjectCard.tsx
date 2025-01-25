@@ -14,7 +14,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded } = useProject();
+  const { setProjectExpanded, setShouldRevealHeader } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
@@ -31,8 +31,24 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         top: targetY,
         behavior: 'smooth'
       });
+
+      // Set up intersection observer for expanded card
+      const observer = new IntersectionObserver(
+        (entries) => {
+          // If the expanded card is not intersecting (out of view), show the header
+          if (!entries[0].isIntersecting) {
+            setShouldRevealHeader(true);
+          }
+        },
+        {
+          threshold: 0.1 // Trigger when at least 10% is visible
+        }
+      );
+
+      observer.observe(cardElement);
+      return () => observer.disconnect();
     }
-  }, [isExpanded, setProjectExpanded]);
+  }, [isExpanded, setProjectExpanded, setShouldRevealHeader]);
 
   const handleExpand = () => {
     onExpand(project.id);
