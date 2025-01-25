@@ -43,14 +43,14 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
       ref={cardRef}
       layout="position"
       className={`relative w-full mx-auto ${
-        isExpanded ? 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-50' : ''
+        isExpanded ? 'fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout="position"
         className={`w-full mx-auto transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-17x1l' : 'max-w-3xl'
+          isExpanded ? 'max-w-6xl' : 'max-w-3xl'
         }`}
       >
         {!isExpanded ? (
@@ -90,25 +90,23 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </div>
           </motion.div>
         ) : (
-          <div className="w-full max-h-[90vh] overflow-y-auto">
-            <motion.div 
-              className="relative aspect-[17/11] w-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ProjectCarousel 
-                images={[project.image, project.image, project.image]}
-                onSlideChange={setCurrentIndex}
-                initialSlide={{
-                  title: project.title,
-                  description: project.description,
-                  year: project.year.toString(),
-                  category: project.category
-                }}
-              />
-            </motion.div>
-          </div>
+          <motion.div 
+            className="relative aspect-[17/11] w-full bg-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ProjectCarousel 
+              images={[project.image, project.image, project.image]}
+              onSlideChange={setCurrentIndex}
+              initialSlide={{
+                title: project.title,
+                description: project.description,
+                year: project.year.toString(),
+                category: project.category
+              }}
+            />
+          </motion.div>
         )}
       </motion.div>
     </motion.div>
