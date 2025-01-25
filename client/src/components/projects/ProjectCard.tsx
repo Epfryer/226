@@ -49,7 +49,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 </p>
               </div>
               <motion.div 
-                className="relative w-[180px]"
+                className="relative w-[280px]"
                 whileHover={{ scale: 0.98 }}
               >
                 <div className="aspect-[11/17]">
