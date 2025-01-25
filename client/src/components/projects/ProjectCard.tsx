@@ -48,22 +48,24 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   {project.location}
                 </p>
               </div>
-              <motion.div
-                className="w-[200px] relative aspect-[11/17]" 
+              <motion.div 
+                className="relative w-[180px]"
                 whileHover={{ scale: 0.98 }}
               >
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-contain rounded-sm" 
-                />
+                <div className="aspect-[11/17]">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-contain rounded-sm"
+                  />
+                </div>
               </motion.div>
             </div>
           </div>
         ) : (
           // Expanded view with multi-item carousel
           <div className="relative w-screen -ml-[50vw] left-1/2">
-            <div className="h-[60vh]">
+            <div className="h-[80vh]">
               <ProjectCarousel 
                 images={content.map(item => item.image)}
                 onSlideChange={setCurrentIndex}

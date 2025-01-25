@@ -55,12 +55,14 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <span>{initialSlide.category}</span>
               </div>
             </div>
-            <div className="h-full relative aspect-[11/17]"> {/* Updated aspect ratio */}
-              <img
-                src={images[0]}
-                alt={`Slide 1`}
-                className="h-full w-full object-contain" /* Changed to object-contain */
-              />
+            <div className="h-full relative" style={{ maxHeight: '800px' }}> 
+              <div className="h-full aspect-[11/17]"> {/* Updated aspect ratio */}
+                <img
+                  src={images[0]}
+                  alt={`Slide 1`}
+                  className="h-full w-full object-contain" /* Changed to object-contain */
+                />
+              </div>
             </div>
           </div>
         </SwiperSlide>
@@ -75,12 +77,14 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               height: '100%',
             }}
           >
-            <div className="h-full relative aspect-[11/17]"> {/* Updated aspect ratio */}
-              <img
-                src={image}
-                alt={`Slide ${index + 2}`}
-                className="h-full w-full object-contain" /* Changed to object-contain */
-              />
+            <div className="h-full relative" style={{ maxHeight: '800px' }}>
+              <div className="h-full aspect-[11/17]"> {/* Updated aspect ratio */}
+                <img
+                  src={image}
+                  alt={`Slide ${index + 2}`}
+                  className="h-full w-full object-contain" /* Changed to object-contain */
+                />
+              </div>
             </div>
           </SwiperSlide>
         ))}
