@@ -62,21 +62,17 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           // Expanded view with multi-item carousel
           <div className="relative w-screen -ml-[50vw] left-1/2">
             <div className="max-w-[90vw] mx-auto">
-              <div ref={carouselRef} className="grid grid-cols-[300px,1fr] gap-8 p-4">
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold">{project.title}</h3>
-                  <p className="mt-2 text-sm text-gray-600">{content[currentIndex].text}</p>
-                  <div className="mt-4 flex gap-4 text-sm text-gray-500">
-                    <span>{project.year}</span>
-                    <span>{project.category}</span>
-                  </div>
-                </div>
-                <div className="relative h-[60vh]">
-                  <ProjectCarousel 
-                    images={content.map(item => item.image)}
-                    onSlideChange={setCurrentIndex}
-                  />
-                </div>
+              <div ref={carouselRef} className="h-[60vh]">
+                <ProjectCarousel 
+                  images={content.map(item => item.image)}
+                  onSlideChange={setCurrentIndex}
+                  initialSlide={{
+                    title: project.title,
+                    description: project.description,
+                    year: project.year,
+                    category: project.category
+                  }}
+                />
               </div>
             </div>
           </div>
