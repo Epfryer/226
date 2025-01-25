@@ -17,7 +17,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
       <div className="flex flex-wrap gap-6 text-sm">
         <button
           onClick={() => handleClick(null)}
-          className={`transition-all ${!activeCategory ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`transition-all ${!activeCategory ? 'font-medium' : ''}`}
         >
           All
         </button>
@@ -25,7 +25,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
           <button
             key={category}
             onClick={() => handleClick(category)}
-            className={`transition-all ${category === activeCategory ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`transition-all ${category === activeCategory ? 'font-medium' : ''}`}
           >
             {category}
           </button>
