@@ -49,13 +49,13 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 </p>
               </div>
               <motion.div
-                className="w-[200px] relative aspect-[17/11]"
+                className="w-[200px] relative aspect-[11/17]" 
                 whileHover={{ scale: 0.98 }}
               >
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-full object-cover rounded-sm"
+                  className="w-full h-full object-contain rounded-sm" 
                 />
               </motion.div>
             </div>

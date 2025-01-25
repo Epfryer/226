@@ -25,7 +25,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   if (!images?.length) return null;
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full pb-12"> {/* Added padding bottom for scrollbar */}
       <Swiper
         modules={[Navigation, Scrollbar]}
         slidesPerView="auto"
@@ -55,11 +55,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <span>{initialSlide.category}</span>
               </div>
             </div>
-            <div className="h-full relative aspect-[17/11]">
+            <div className="h-full relative aspect-[11/17]"> {/* Updated aspect ratio */}
               <img
                 src={images[0]}
                 alt={`Slide 1`}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain" /* Changed to object-contain */
               />
             </div>
           </div>
@@ -75,11 +75,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               height: '100%',
             }}
           >
-            <div className="h-full relative aspect-[17/11]">
+            <div className="h-full relative aspect-[11/17]"> {/* Updated aspect ratio */}
               <img
                 src={image}
                 alt={`Slide ${index + 2}`}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain" /* Changed to object-contain */
               />
             </div>
           </SwiperSlide>
