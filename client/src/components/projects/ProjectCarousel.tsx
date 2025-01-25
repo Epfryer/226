@@ -36,6 +36,9 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         className="w-full h-full project-carousel"
         onSlideChange={handleSlideChange}
         initialSlide={0}
+        freeMode={true}
+        allowTouchMove={true}
+        resistance={false}
       >
         {/* First slide with text */}
         <SwiperSlide 
@@ -56,7 +59,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="w-full aspect-[17/11]">
+              <div className="w-full">
                 <img
                   src={images[0]}
                   alt={`Slide 1`}
@@ -78,7 +81,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             }}
           >
             <div className="flex items-center justify-center h-full">
-              <div className="w-full aspect-[17/11]">
+              <div className="w-full">
                 <img
                   src={image}
                   alt={`Slide ${index + 2}`}

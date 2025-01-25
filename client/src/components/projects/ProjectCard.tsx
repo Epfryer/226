@@ -52,13 +52,11 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 className="relative w-[280px]"
                 whileHover={{ scale: 0.98 }}
               >
-                <div className="aspect-[11/17]">
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-contain rounded-sm"
-                  />
-                </div>
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="w-full h-auto object-contain rounded-sm"
+                />
               </motion.div>
             </div>
           </div>
