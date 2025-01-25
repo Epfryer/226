@@ -6,7 +6,7 @@ import { useProject } from "@/context/ProjectContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isProjectExpanded } = useProject();
+  const { isProjectExpanded, isHeaderHidden } = useProject();
 
   return (
     <header className="fixed top-0 left-0 z-50 p-6">
@@ -21,8 +21,8 @@ export function Header() {
           className="hidden md:block mt-6"
           initial={false}
           animate={{
-            x: isProjectExpanded ? -100 : 0,
-            opacity: isProjectExpanded ? 0 : 1
+            x: isHeaderHidden ? -100 : 0,
+            opacity: isHeaderHidden ? 0 : 1
           }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
         >
@@ -43,8 +43,8 @@ export function Header() {
           className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
           animate={{
-            opacity: isProjectExpanded ? 0 : 1,
-            scale: isProjectExpanded ? 0.8 : 1
+            opacity: isHeaderHidden ? 0 : 1,
+            scale: isHeaderHidden ? 0.8 : 1
           }}
           transition={{ duration: 0.3 }}
         >
