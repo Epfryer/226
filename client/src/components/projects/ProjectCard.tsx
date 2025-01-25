@@ -62,8 +62,8 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           </div>
         ) : (
           // Expanded view with multi-item carousel
-          <div className="relative w-screen -ml-[50vw] left-1/2">
-            <div className="h-[80vh]">
+          <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+            <div className="w-screen max-w-[90vw] h-[80vh]">
               <ProjectCarousel 
                 images={content.map(item => item.image)}
                 onSlideChange={setCurrentIndex}
