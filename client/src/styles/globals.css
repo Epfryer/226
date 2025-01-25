@@ -4,4 +4,34 @@
   --project-expanded-width: min(160%, calc(160vw - var(--project-spacing) * 2));
 }
 
-// ...existing code...
+.project-carousel {
+  overflow: visible !important;
+}
+
+.project-carousel .swiper-slide {
+  transition: transform 0.3s ease;
+}
+
+.project-carousel .swiper-slide-active {
+  z-index: 2;
+}
+
+.project-carousel .swiper-button-next,
+.project-carousel .swiper-button-prev {
+  color: theme('colors.gray.800');
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.project-carousel .swiper-button-next:hover,
+.project-carousel .swiper-button-prev:hover {
+  opacity: 1;
+}
+
+.project-carousel .swiper-scrollbar {
+  background: theme('colors.gray.200');
+}
+
+.project-carousel .swiper-scrollbar-drag {
+  background: theme('colors.gray.400');
+}

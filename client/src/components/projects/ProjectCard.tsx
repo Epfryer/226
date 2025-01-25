@@ -27,7 +27,9 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     >
       <motion.div 
         layout
-        className="w-full mx-auto transition-all duration-300"
+        className={`w-full mx-auto transition-all duration-300 ${
+          isExpanded ? 'max-w-none' : 'max-w-3xl'
+        }`}
       >
         {!isExpanded ? (
           // Centered non-expanded view
@@ -57,22 +59,24 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </div>
           </div>
         ) : (
-          // Expanded view with edge-to-edge carousel
-          <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-            <div ref={carouselRef} className="max-w-7xl mx-auto grid grid-cols-[minmax(200px,25%),1fr] gap-4 p-4">
-              <div className="p-4">
-                <h3 className="text-lg font-semibold">{project.title}</h3>
-                <p className="mt-2 text-sm text-gray-600">{content[currentIndex].text}</p>
-                <div className="mt-4 flex gap-4 text-sm text-gray-500">
-                  <span>{project.year}</span>
-                  <span>{project.category}</span>
+          // Expanded view with multi-item carousel
+          <div className="relative w-screen -ml-[50vw] left-1/2">
+            <div className="max-w-[90vw] mx-auto">
+              <div ref={carouselRef} className="grid grid-cols-[300px,1fr] gap-8 p-4">
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold">{project.title}</h3>
+                  <p className="mt-2 text-sm text-gray-600">{content[currentIndex].text}</p>
+                  <div className="mt-4 flex gap-4 text-sm text-gray-500">
+                    <span>{project.year}</span>
+                    <span>{project.category}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="relative h-[60vh]">
-                <ProjectCarousel 
-                  images={content.map(item => item.image)}
-                  onSlideChange={setCurrentIndex}
-                />
+                <div className="relative h-[60vh]">
+                  <ProjectCarousel 
+                    images={content.map(item => item.image)}
+                    onSlideChange={setCurrentIndex}
+                  />
+                </div>
               </div>
             </div>
           </div>

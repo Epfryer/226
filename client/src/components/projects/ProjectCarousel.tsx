@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import type { CarouselApi } from "@/components/ui/carousel";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { useCallback } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Scrollbar } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/scrollbar';
 
 interface ProjectCarouselProps {
   images: string[];
@@ -14,38 +12,44 @@ interface ProjectCarouselProps {
 }
 
 export function ProjectCarousel({ images, onSlideChange }: ProjectCarouselProps) {
-  const [api, setApi] = useState<CarouselApi>();
-
-  useEffect(() => {
-    if (!api) return;
-
-    api.on("select", () => {
-      onSlideChange?.(api.selectedScrollSnap());
-    });
-  }, [api, onSlideChange]);
+  const handleSlideChange = useCallback((swiper: SwiperType) => {
+    onSlideChange?.(swiper.activeIndex);
+  }, [onSlideChange]);
 
   if (!images?.length) return null;
 
   return (
-    <Carousel
-      className="w-full h-full"
-      setApi={setApi}
+    <Swiper
+      modules={[Navigation, Scrollbar]}
+      slidesPerView="auto"
+      spaceBetween={24}
+      centeredSlides={false}
+      navigation={true}
+      scrollbar={{ draggable: true }}
+      className="w-full h-full project-carousel"
+      onSlideChange={handleSlideChange}
+      style={{
+        paddingRight: '25%', // Add space for overflow items
+      }}
     >
-      <CarouselContent>
-        {images.map((image, index) => (
-          <CarouselItem key={index}>
-            <div className="h-full w-full relative">
-              <img
-                src={image}
-                alt={`Slide ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
-    </Carousel>
+      {images.map((image, index) => (
+        <SwiperSlide 
+          key={index}
+          style={{
+            width: 'auto',
+            maxWidth: '75%', // Limit slide width to show multiple items
+            height: '100%',
+          }}
+        >
+          <div className="h-full relative">
+            <img
+              src={image}
+              alt={`Slide ${index + 1}`}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </SwiperSlide>
+      ))}
+    </Swiper>
   );
 }
