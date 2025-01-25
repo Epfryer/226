@@ -70,7 +70,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 initialSlide={{
                   title: project.title,
                   description: project.description,
-                  year: project.year,
+                  year: project.year.toString(),
                   category: project.category
                 }}
               />

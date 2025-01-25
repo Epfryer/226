@@ -55,7 +55,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <span>{initialSlide.category}</span>
               </div>
             </div>
-            <div className="h-full relative">
+            <div className="h-full relative aspect-[17/11]">
               <img
                 src={images[0]}
                 alt={`Slide 1`}
@@ -75,7 +75,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               height: '100%',
             }}
           >
-            <div className="h-full relative">
+            <div className="h-full relative aspect-[17/11]">
               <img
                 src={image}
                 alt={`Slide ${index + 2}`}
