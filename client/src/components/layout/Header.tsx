@@ -23,7 +23,14 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <Link href="/">
-            <a className="text-2xl font-bold">D.EF</a>
+            {isProjectExpanded && !shouldRevealHeader ? (
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-light"><span className="text-primary text-xl font-bold">Designed</span> by</span>
+                <span className="text-xl font-bold">Ethan Fryer</span>
+              </div>
+            ) : (
+              <a className="text-2xl font-bold">D.EF</a>
+            )}
           </Link>
         </div>
 
