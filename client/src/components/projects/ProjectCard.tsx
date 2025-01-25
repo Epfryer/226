@@ -14,24 +14,10 @@ interface ProjectCardProps {
 export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
   const { setProjectExpanded } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
-
-    if (isExpanded && cardRef.current) {
-      const cardElement = cardRef.current;
-      const viewportHeight = window.innerHeight;
-      const cardRect = cardElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
-
-      window.scrollTo({
-        top: targetY,
-        behavior: 'smooth'
-      });
-    }
   }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
@@ -43,14 +29,14 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
       ref={cardRef}
       layout="position"
       className={`relative w-full mx-auto ${
-        isExpanded ? 'fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4' : ''
+        isExpanded ? 'fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout="position"
-        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-6xl' : 'max-w-3xl'
+        className={`w-full mx-auto px-6 md:px-12 transition-all duration-500 ease-in-out ${
+          isExpanded ? 'max-w-[90vw]' : 'max-w-[1400px]'
         }`}
       >
         {!isExpanded ? (
