@@ -45,17 +45,14 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           swiperRef.current = swiper;
         }}
         breakpoints={{
-          // Mobile
           320: {
             slidesPerView: 1,
             spaceBetween: 0
           },
-          // Tablet
           768: {
             slidesPerView: "auto",
             spaceBetween: 0
           },
-          // Desktop
           1024: {
             slidesPerView: "auto",
             spaceBetween: 0
@@ -72,11 +69,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           }}
           className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
         >
-          <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-8 h-full">
-            <div className="pt-4">
-              <h3 className="text-xl font-semibold mb-4">{initialSlide.title}</h3>
-              <p className="mt-2 text-sm text-gray-600 mb-6">{initialSlide.description}</p>
-              <div className="mt-4 flex gap-4 text-sm text-gray-500">
+          <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-4 h-full">
+            <div className="pl-8 pt-8 pr-4">
+              <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
+              <p className="mt-2 text-sm text-gray-600 mb-4">{initialSlide.description}</p>
+              <div className="mt-3 flex gap-4 text-sm text-gray-500">
                 <span>{initialSlide.year}</span>
                 <span>{initialSlide.category}</span>
               </div>
