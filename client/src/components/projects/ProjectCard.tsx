@@ -36,7 +36,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
       <motion.div 
         layout="position"
         className={`w-full mx-auto px-6 md:px-12 transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-[90vw]' : 'max-w-[1400px]'
+          isExpanded ? 'max-w-[95vw] px-0' : 'max-w-[1400px]'
         }`}
       >
         {!isExpanded ? (
