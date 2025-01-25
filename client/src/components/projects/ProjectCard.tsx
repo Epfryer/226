@@ -24,7 +24,6 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
       const viewportHeight = window.innerHeight;
       const cardRect = cardElement.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
       const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
 
       window.scrollTo({
@@ -35,38 +34,45 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
-    onExpand(project.id);
+    onExpand(isExpanded ? null : project.id);
   };
 
   return (
     <motion.div 
       ref={cardRef}
-      layout
+      layout="position"
       className={`relative w-full overflow-hidden mb-4 ${
         isExpanded ? 'project-card-expanded' : ''
       }`}
       initial={false}
     >
       <motion.div 
-        layout
-        className={`w-full mx-auto ${
+        layout="position"
+        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
           isExpanded ? 'max-w-none' : 'max-w-3xl'
         }`}
       >
         {!isExpanded ? (
-          <div 
-            className="container mx-auto max-w-3xl px-4 cursor-pointer transition-transform duration-300 hover:scale-[0.99]" 
+          <motion.div 
+            className="container mx-auto max-w-3xl px-4 cursor-pointer" 
             onClick={handleExpand}
+            whileHover={{ scale: 0.99 }}
+            transition={{ duration: 0.3 }}
           >
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
-              <div className="flex-1 text-center md:text-right">
-                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate">
+              <motion.div 
+                className="flex-1 text-center md:text-right"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate transition-all duration-300 ease-in-out">
                   {project.title}
                 </h3>
-                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate">
+                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate transition-all duration-300 ease-in-out">
                   {project.location}
                 </p>
-              </div>
+              </motion.div>
               <motion.div 
                 className="relative w-full md:w-[280px]"
                 whileHover={{ scale: 0.98 }}
@@ -75,14 +81,19 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-auto object-contain rounded-sm"
+                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
                 />
               </motion.div>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
-            <div className="h-[80vh] max-h-[800px]">
+            <motion.div 
+              className="h-[80vh] max-h-[800px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               <ProjectCarousel 
                 images={[project.image, project.image, project.image]}
                 onSlideChange={setCurrentIndex}
@@ -93,7 +104,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   category: project.category
                 }}
               />
-            </div>
+            </motion.div>
           </div>
         )}
       </motion.div>

@@ -10,7 +10,7 @@
 }
 
 .project-carousel .swiper-slide {
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .project-carousel .swiper-slide-active {
@@ -32,11 +32,13 @@
   transform: translateX(-50%);
   opacity: 0.5;
   position: absolute;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .project-carousel .swiper-scrollbar-drag {
   background: theme('colors.gray.400');
   height: 1px !important;
+  transition: background-color 0.3s ease-in-out;
 }
 
 /* Smooth transitions for expanded state */
@@ -51,6 +53,18 @@
   width: 100%;
   transform: translateY(-50%);
   z-index: 50;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Text transitions */
+.text-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+h3, p {
+  transition: opacity 0.3s ease-in-out,
+              transform 0.3s ease-in-out,
+              color 0.3s ease-in-out;
 }
 
 /* Responsive adjustments */
@@ -67,9 +81,11 @@
 @media (min-width: 768px) {
   .project-carousel .swiper-slide {
     opacity: 1;
+    transform: scale(1);
   }
 
   .project-carousel .swiper-slide-active {
     opacity: 1;
+    transform: scale(1.02);
   }
 }
