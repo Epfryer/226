@@ -11,7 +11,7 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <Link href="/">
-            <a className="text-2xl font-bold">BIG</a>
+            <a className="text-2xl font-bold">D.EF</a>
           </Link>
         </div>
 

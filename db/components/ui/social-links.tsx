@@ -1,8 +1,6 @@
-"use client"
-
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "@db/lib/utils"
 
 interface Social {
   name: string
@@ -26,27 +24,36 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
   React.useEffect(() => {
     const handleClick = () => {
       setClicked(true)
-      setTimeout(() => setClicked(false), 200)
+      setTimeout(() => {
+        setClicked(false)
+      }, 200)
     }
     window.addEventListener("click", handleClick)
     return () => window.removeEventListener("click", handleClick)
   }, [clicked])
 
   return (
-    <div className={cn("flex items-center justify-center gap-0", className)} {...props}>
+    <div
+      className={cn("flex items-center justify-center gap-0", className)}
+      {...props}
+    >
       {socials.map((social, index) => (
         <div
-          key={index}
           className={cn(
             "relative cursor-pointer px-5 py-2 transition-opacity duration-200",
-            hoveredSocial && hoveredSocial !== social.name ? "opacity-50" : "opacity-100"
+            hoveredSocial && hoveredSocial !== social.name
+              ? "opacity-50"
+              : "opacity-100"
           )}
+          key={index}
           onMouseEnter={() => {
             setHoveredSocial(social.name)
             setRotation(Math.random() * 20 - 10)
           }}
           onMouseLeave={() => setHoveredSocial(null)}
-          onClick={() => setClicked(true)}
+          onClick={() => {
+            setClicked(true)
+          }}
         >
           <span className="block text-lg font-medium">{social.name}</span>
           <AnimatePresence>
@@ -77,21 +84,4 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
       ))}
     </div>
   )
-}
-
-export function Footer() {
-  return (
-    <footer className="bg-white py-6 text-center">
-      <SocialLinks
-      socials={[
-        { name: "GitHub", image: "/github-logo.png" },
-        { name: "Twitter", image: "/twitter-logo.png" },
-      ]}
-      className="justify-center gap-8 mb-4"
-      />
-      <p className="text-sm text-gray-500">
-        © {new Date().getFullYear()} D.EF. All rights reserved.
-      </p>
-    </footer>
-  );
 }

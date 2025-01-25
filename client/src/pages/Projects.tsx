@@ -8,7 +8,7 @@ export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   return (
-    <div className="container px-6 max-w-none w-full" style={{ opacity: 1 }}>
+    <div className="container px-0 max-w-none w-full" style={{ opacity: 1 }}> {/* Removed padding to allow for centering */}
       <div className="flex justify-center mb-12">
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           {/* ...filter buttons... */}
