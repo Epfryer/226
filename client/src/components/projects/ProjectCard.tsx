@@ -42,7 +42,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     <motion.div 
       ref={cardRef}
       layout="position"
-      className={`relative w-full ${
+      className={`relative w-full mx-auto px-4 sm:px-6 lg:px-8 mb-8 ${
         isExpanded ? 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-50' : ''
       }`}
       initial={false}
@@ -90,9 +90,9 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </div>
           </motion.div>
         ) : (
-          <div className="w-full">
+          <div className="w-full max-h-[90vh] overflow-y-auto">
             <motion.div 
-              className="relative aspect-[4/3] w-full"
+              className="relative aspect-[16/9] w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
