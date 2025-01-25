@@ -13,23 +13,23 @@ export default function Contact() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div>
-              <h2 className="text-xl font-medium mb-4">Copenhagen</h2>
+              <h2 className="text-xl font-medium mb-4">Who is D.EF</h2>
               <address className="text-gray-600 not-italic">
-                BIG - Bjarke Ingels Group<br />
-                49 Kløverbladsgade<br />
-                DK-2500 Copenhagen<br />
-                Denmark
+                D.EF - Designs by Ethan Fryer<br />
+                B.Arch Virginia Tech AAD<br />
+                Architectural Designer<br />
+                Honolulu-Tampa-Blacksburg-?
               </address>
               
               <div className="mt-4">
-                <a href="tel:+4572217227" className="text-gray-600 hover:text-black">
-                  +45 7221 7227
+                <a href="tel:+18135050290" className="text-gray-600 hover:text-black">
+                  +1 813 505 0290
                 </a>
               </div>
             </div>
 
             <div>
-              <h2 className="text-xl font-medium mb-4">New York</h2>
+              <h2 className="text-xl font-medium mb-4">What is D.EF</h2>
               <address className="text-gray-600 not-italic">
                 BIG - Bjarke Ingels Group<br />
                 45 Main Street<br />
