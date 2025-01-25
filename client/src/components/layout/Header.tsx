@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,8 +26,18 @@ export function Header() {
           <Link href="/">
             {isProjectExpanded && !shouldRevealHeader ? (
               <div className="flex items-baseline gap-1">
-                <span className="text-sm font-light"><span className="text-primary text-xl font-bold">Designed</span> by</span>
-                <span className="text-xl font-bold">Ethan Fryer</span>
+                <span className="text-sm font-light">
+                  <TypingAnimation 
+                    text="Designed" 
+                    duration={100}
+                    className="text-primary text-xl font-bold inline"
+                  /> by
+                </span>
+                <TypingAnimation 
+                  text="Ethan Fryer"
+                  duration={100}
+                  className="text-xl font-bold inline"
+                />
               </div>
             ) : (
               <a className="text-2xl font-bold">D.EF</a>
