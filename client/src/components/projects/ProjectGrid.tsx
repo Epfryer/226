@@ -12,7 +12,7 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
 
   return (
     <motion.div 
-      className="space-y-8 sm:space-y-12"
+      className="w-full space-y-8 sm:space-y-12"
       layout
     >
       <AnimatePresence>
