@@ -1,22 +1,22 @@
 :root {
-  --project-spacing: clamp(1rem, 2vw, 2rem);
-  --project-width: min(100%, calc(100vw - var(--project-spacing) * 2));
-  --project-expanded-width: min(160%, calc(160vw - var(--project-spacing) * 2));
+  --project-spacing: 0;
+  --project-width: 100vw;
+  --project-expanded-width: 100vw;
 }
 
 .project-carousel {
   overflow: visible !important;
-  padding-bottom: 48px;
-  /* Add any additional styles needed for consistent layout */
+  /* Remove padding to make it seamless */
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
 }
 
 .project-carousel .swiper-slide {
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  width: 100% !important;
 }
 
 .project-carousel .swiper-slide-active {
@@ -31,7 +31,7 @@
 /* Updated scrollbar styles */
 .project-carousel .swiper-scrollbar {
   background: theme('colors.gray.200');
-  bottom: 0 !important;
+  bottom: -24px !important;
   height: 1px !important;
   width: 120px !important;
   left: 50% !important;
@@ -67,28 +67,14 @@
   transition: all 0.3s ease-in-out;
 }
 
-h3, p {
-  transition: opacity 0.3s ease-in-out,
-              transform 0.3s ease-in-out,
-              color 0.3s ease-in-out;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .project-carousel {
-    padding-bottom: 32px;
-  }
-
   .project-carousel .swiper-scrollbar {
     width: 80px !important;
   }
 }
 
 @media (min-width: 768px) {
-  .project-carousel {
-    padding: 2rem;
-  }
-
   .project-carousel .swiper-slide {
     opacity: 1;
     transform: scale(1);
@@ -96,12 +82,6 @@ h3, p {
 
   .project-carousel .swiper-slide-active {
     opacity: 1;
-    transform: scale(1.02);
-  }
-}
-
-@media (min-width: 1024px) {
-  .project-carousel {
-    padding: 3rem;
+    transform: scale(1);
   }
 }

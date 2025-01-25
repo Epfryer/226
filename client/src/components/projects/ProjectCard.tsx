@@ -79,7 +79,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 whileHover={{ scale: 0.98 }}
                 transition={{ duration: 0.3 }}
               >
-                <AspectRatio ratio={4/3} className="overflow-hidden rounded-sm">
+                <AspectRatio ratio={17/11} className="overflow-hidden">
                   <img
                     src={project.image}
                     alt={project.title}
@@ -92,7 +92,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         ) : (
           <div className="w-full">
             <motion.div 
-              className="relative aspect-[4/3] w-full"
+              className="relative aspect-[17/11] w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
