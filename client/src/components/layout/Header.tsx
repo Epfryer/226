@@ -61,14 +61,14 @@ export function Header() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
-            <Link href="/">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+              Projects
             </Link>
-            <Link href="/about">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+              About
             </Link>
-            <Link href="/contact">
-              <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+              Contact
             </Link>
           </nav>
         </div>
@@ -86,14 +86,14 @@ export function Header() {
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
-              <Link href="/">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+                Projects
               </Link>
-              <Link href="/about">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">About</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+                About
               </Link>
-              <Link href="/contact">
-                <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+                Contact
               </Link>
             </nav>
           </div>
