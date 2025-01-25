@@ -46,16 +46,21 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         freeMode={{
           enabled: true,
           sticky: false,
-          momentumRatio: 0.25,
-          momentumBounce: false
+          momentumRatio: 0,
+          momentumBounce: false,
+          minimumVelocity: 0.02
         }}
-        touchEventsTarget="wrapper"
-        touchRatio={1}
-        touchAngle={45}
+        touchEventsTarget="container"
+        touchRatio={2}
+        touchAngle={30}
+        longSwipes={false}
+        shortSwipes={true}
+        followFinger={true}
         grabCursor={true}
-        preventClicks={true}
-        preventClicksPropagation={true}
+        preventClicks={false}
+        preventClicksPropagation={false}
         touchStartPreventDefault={false}
+        resistance={false}
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
