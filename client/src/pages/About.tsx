@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 
 export default function About() {
   return (
-    <div className="min-h-screen flex items-center justify-center py-24">
+    <div className="flex min-h-screen items-center justify-center py-24">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+        className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 md:grid-cols-2"
       >
         <motion.div 
           initial={{ opacity: 0, x: -20 }}

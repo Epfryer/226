@@ -1,26 +1,25 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 interface ProjectContextType {
   isProjectExpanded: boolean;
-  setIsProjectExpanded: (value: boolean) => void;
+  setProjectExpanded: (expanded: boolean) => void;
   shouldRevealHeader: boolean;
-  setShouldRevealHeader: (value: boolean) => void;
+  setShouldRevealHeader: (reveal: boolean) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [isProjectExpanded, setIsProjectExpanded] = useState(false);
+  const [isProjectExpanded, setProjectExpanded] = useState(false);
   const [shouldRevealHeader, setShouldRevealHeader] = useState(false);
 
   return (
-    <ProjectContext.Provider
-      value={{
-        isProjectExpanded,
-        setIsProjectExpanded,
+    <ProjectContext.Provider 
+      value={{ 
+        isProjectExpanded, 
+        setProjectExpanded,
         shouldRevealHeader,
-        setShouldRevealHeader,
+        setShouldRevealHeader
       }}
     >
       {children}

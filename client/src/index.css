@@ -75,11 +75,9 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Example of avoiding @apply overuse */
+.btn {
+  @apply bg-blue-500 text-white py-2 px-4 rounded;
 }
+
+/* Instead of using @apply repeatedly, use utility classes directly in your components */

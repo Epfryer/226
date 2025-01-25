@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
+import { Navigation, Scrollbar, FreeMode, A11y } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -30,7 +30,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   return (
     <div className="relative h-full pb-12">
       <Swiper
-        modules={[Navigation, Scrollbar, FreeMode]}
+        modules={[Navigation, Scrollbar, FreeMode, A11y]}
         slidesPerView="auto"
         spaceBetween={0}
         centeredSlides={false}
