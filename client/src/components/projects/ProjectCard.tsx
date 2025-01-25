@@ -14,49 +14,25 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { 
-    setProjectExpanded, 
-    setHeaderState, 
-    headerStates,
-    currentProjectId,
-    setCurrentProjectId
-  } = useProject();
+  const { setProjectExpanded } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
-    if (isExpanded) {
-      setCurrentProjectId(project.id);
 
+    if (isExpanded && cardRef.current) {
       const cardElement = cardRef.current;
-      if (cardElement) {
-        const viewportHeight = window.innerHeight;
-        const cardRect = cardElement.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
+      const viewportHeight = window.innerHeight;
+      const cardRect = cardElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-        // Store initial header state for this project
-        setHeaderState(project.id, {
-          isVisible: true,
-          scrollPosition: targetY
-        });
+      const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
 
-        window.scrollTo({
-          top: targetY,
-          behavior: 'smooth'
-        });
-      }
-    } else if (!isExpanded && currentProjectId === project.id) {
-      setCurrentProjectId(null);
-      // Restore previous scroll position when closing
-      const state = headerStates.get(project.id);
-      if (state) {
-        window.scrollTo({
-          top: state.scrollPosition,
-          behavior: 'smooth'
-        });
-      }
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      });
     }
-  }, [isExpanded, setProjectExpanded, project.id, setHeaderState, currentProjectId, setCurrentProjectId, headerStates]);
+  }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
     onExpand(project.id);
@@ -100,7 +76,6 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                   src={project.image}
                   alt={project.title}
                   className="w-full h-auto object-contain rounded-sm"
-                  loading="lazy"
                 />
               </motion.div>
             </div>

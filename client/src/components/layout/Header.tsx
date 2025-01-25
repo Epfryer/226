@@ -2,21 +2,14 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
-import { TypingAnimation } from "@/components/ui/typing-animation";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
 
-  const navStyle = {
-    opacity: isProjectExpanded ? (shouldRevealHeader ? 1 : 0) : 1,
-    transform: isProjectExpanded ? (shouldRevealHeader ? 'none' : 'translateX(-100px)') : 'none',
-    transition: 'opacity 0.3s ease, transform 0.3s ease',
-  };
-
   const headerStyle = {
-    opacity: 1,
-    transition: 'opacity 0.3s ease',
+    opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
+    transform: isProjectExpanded && !shouldRevealHeader ? 'translateX(-100px)' : 'none',
   };
 
   return (
@@ -24,24 +17,7 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <Link href="/">
-            {isProjectExpanded && !shouldRevealHeader ? (
-              <div className="flex items-baseline gap-1">
-                <span className="text-sm font-light">
-                  <TypingAnimation 
-                    text="Designed" 
-                    duration={100}
-                    className="text-primary text-xl font-bold inline"
-                  /> by
-                </span>
-                <TypingAnimation 
-                  text="Ethan Fryer"
-                  duration={100}
-                  className="text-xl font-bold inline"
-                />
-              </div>
-            ) : (
-              <a className="text-2xl font-bold">D.EF</a>
-            )}
+            <a className="text-2xl font-bold">D.EF</a>
           </Link>
         </div>
 
@@ -49,7 +25,7 @@ export function Header() {
           className="hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className="flex flex-col space-y-4 text-sm" style={navStyle}>
+          <nav className="flex flex-col space-y-4 text-sm">
             <Link href="/">
               <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
             </Link>
