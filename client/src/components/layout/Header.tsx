@@ -30,7 +30,10 @@ export function Header() {
             x: getXPosition(),
             opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1
           }}
-          transition={{ duration: 1, ease: "easeInOut" }}
+          transition={{ 
+            duration: isProjectExpanded && !shouldRevealHeader ? 2 : 0.5, 
+            ease: "easeInOut" 
+          }}
         >
           <nav className="flex flex-col space-y-4 text-sm">
             <Link href="/">
@@ -52,7 +55,9 @@ export function Header() {
             opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
             scale: isProjectExpanded && !shouldRevealHeader ? 0.8 : 1
           }}
-          transition={{ duration: 1 }}
+          transition={{ 
+            duration: isProjectExpanded && !shouldRevealHeader ? 2 : 0.5, 
+          }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </motion.button>

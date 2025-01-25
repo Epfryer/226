@@ -14,38 +14,28 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
-
     const handleScroll = () => {
       if (!isProjectExpanded) {
         setShouldRevealHeader(false);
         return;
       }
 
-      clearTimeout(scrollTimeout);
+      const currentScrollY = window.scrollY;
+      const scrollDifference = currentScrollY - lastScrollY;
 
-      scrollTimeout = setTimeout(() => {
-        const currentScrollY = window.scrollY;
-        const scrollDifference = currentScrollY - lastScrollY;
+      // Immediate response to scroll
+      if (scrollDifference < 0) { // Scrolling up
+        setShouldRevealHeader(true);
+      } else if (scrollDifference > 0) { // Scrolling down
+        setShouldRevealHeader(false);
+      }
 
-        // Add a threshold for scroll detection
-        if (Math.abs(scrollDifference) > 10) {
-          if (scrollDifference < 0) { // Scrolling up
-            setShouldRevealHeader(true);
-          } else { // Scrolling down
-            setShouldRevealHeader(false);
-          }
-          setLastScrollY(currentScrollY);
-        }
-      }, 50); // Debounce scroll events
+      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
     };
   }, [isProjectExpanded, lastScrollY]);
 
