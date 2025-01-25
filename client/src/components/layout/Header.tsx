@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
 
@@ -8,10 +7,9 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
 
-  const getXPosition = () => {
-    if (!isProjectExpanded) return 0;
-    if (shouldRevealHeader) return 0;
-    return -100;
+  const headerStyle = {
+    opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
+    transform: isProjectExpanded && !shouldRevealHeader ? 'translateX(-100px)' : 'none',
   };
 
   return (
@@ -23,17 +21,9 @@ export function Header() {
           </Link>
         </div>
 
-        <motion.div 
+        <div 
           className="hidden md:block mt-6"
-          initial={false}
-          style={{
-            transform: `translateX(${getXPosition()}px)`,
-            opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1
-          }}
-          transition={{ 
-            duration: isProjectExpanded ? 2 : 0,
-            ease: "easeInOut" 
-          }}
+          style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
             <Link href="/">
@@ -46,29 +36,18 @@ export function Header() {
               <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
             </Link>
           </nav>
-        </motion.div>
+        </div>
 
-        <motion.button 
+        <button 
           className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
-            scale: isProjectExpanded && !shouldRevealHeader ? 0.8 : 1
-          }}
-          transition={{ 
-            duration: isProjectExpanded ? 2 : 0
-          }}
+          style={headerStyle}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </motion.button>
-      </div>
+        </button>
 
-      <AnimatePresence>
         {isOpen && !isProjectExpanded && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+          <div
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
@@ -82,9 +61,9 @@ export function Header() {
                 <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
               </Link>
             </nav>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
     </header>
   );
 }

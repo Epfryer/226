@@ -14,7 +14,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded, setShouldRevealHeader } = useProject();
+  const { setProjectExpanded } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
@@ -31,47 +31,25 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         top: targetY,
         behavior: 'smooth'
       });
-
-      // Set up intersection observer for expanded card
-      const observer = new IntersectionObserver(
-        (entries) => {
-          // If the expanded card is not intersecting (out of view), show the header
-          if (!entries[0].isIntersecting) {
-            setShouldRevealHeader(true);
-          }
-        },
-        {
-          threshold: 0.1 // Trigger when at least 10% is visible
-        }
-      );
-
-      observer.observe(cardElement);
-      return () => observer.disconnect();
     }
-  }, [isExpanded, setProjectExpanded, setShouldRevealHeader]);
+  }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
     onExpand(project.id);
   };
 
-  const content = [
-    { image: project.image, text: project.description },
-    { image: project.image, text: "" },
-    { image: project.image, text: "" },
-  ];
-
   return (
     <motion.div 
       ref={cardRef}
       layout
-      className={`relative w-full overflow-hidden mb-4 transition-all duration-500 ease-in-out ${
+      className={`relative w-full overflow-hidden mb-4 ${
         isExpanded ? 'project-card-expanded' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout
-        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
+        className={`w-full mx-auto ${
           isExpanded ? 'max-w-none' : 'max-w-3xl'
         }`}
       >
@@ -97,16 +75,16 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300"
+                  className="w-full h-auto object-contain rounded-sm"
                 />
               </motion.div>
             </div>
           </div>
         ) : (
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2 transition-all duration-500 ease-in-out">
+          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
             <div className="h-[80vh] max-h-[800px]">
               <ProjectCarousel 
-                images={content.map(item => item.image)}
+                images={[project.image, project.image, project.image]}
                 onSlideChange={setCurrentIndex}
                 initialSlide={{
                   title: project.title,

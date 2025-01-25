@@ -12,26 +12,16 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [isProjectExpanded, setProjectExpanded] = useState(false);
   const [shouldRevealHeader, setShouldRevealHeader] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!isProjectExpanded) {
-        setShouldRevealHeader(false);
-        return;
-      }
-
-      const currentScrollY = window.scrollY;
-      // Simple scroll direction check
-      setShouldRevealHeader(currentScrollY < lastScrollY);
-      setLastScrollY(currentScrollY);
+      if (!isProjectExpanded) return;
+      setShouldRevealHeader(true);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [isProjectExpanded, lastScrollY]);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isProjectExpanded]);
 
   return (
     <ProjectContext.Provider value={{ 
