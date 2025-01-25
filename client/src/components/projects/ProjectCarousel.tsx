@@ -30,13 +30,10 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
       slidesPerView="auto"
       spaceBetween={24}
       centeredSlides={false}
-      navigation={true}
       scrollbar={{ draggable: true }}
+      navigation={false}
       className="w-full h-full project-carousel"
       onSlideChange={handleSlideChange}
-      style={{
-        paddingRight: '25%', // Add space for overflow items
-      }}
     >
       {/* First slide with text */}
       <SwiperSlide 

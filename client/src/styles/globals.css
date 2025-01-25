@@ -30,8 +30,11 @@
 
 .project-carousel .swiper-scrollbar {
   background: theme('colors.gray.200');
+  bottom: 0 !important;
+  height: 2px !important;
 }
 
 .project-carousel .swiper-scrollbar-drag {
   background: theme('colors.gray.400');
+  height: 2px !important;
 }
