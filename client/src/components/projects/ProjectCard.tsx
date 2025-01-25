@@ -14,25 +14,44 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded } = useProject();
+  const { setProjectExpanded, setShouldRevealHeader } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
-
+    
     if (isExpanded && cardRef.current) {
       const cardElement = cardRef.current;
       const viewportHeight = window.innerHeight;
       const cardRect = cardElement.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
       const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
 
       window.scrollTo({
         top: targetY,
         behavior: 'smooth'
       });
+
+      let lastScrollY = window.scrollY;
+      
+      // Handle header animation
+      const handleScroll = () => {
+        const currentScrollY = window.scrollY;
+        const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+        
+        if (scrollDelta > 5) {
+          setShouldRevealHeader(true);
+        }
+        
+        lastScrollY = currentScrollY;
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        setShouldRevealHeader(false);
+      };
     }
-  }, [isExpanded, setProjectExpanded]);
+  }, [isExpanded, setProjectExpanded, setShouldRevealHeader]);
 
   const handleExpand = () => {
     onExpand(project.id);

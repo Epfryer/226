@@ -7,9 +7,15 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
 
+  const navStyle = {
+    opacity: isProjectExpanded ? (shouldRevealHeader ? 1 : 0) : 1,
+    transform: isProjectExpanded ? (shouldRevealHeader ? 'none' : 'translateX(-100px)') : 'none',
+    transition: 'opacity 0.3s ease, transform 0.3s ease',
+  };
+
   const headerStyle = {
-    opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
-    transform: isProjectExpanded && !shouldRevealHeader ? 'translateX(-100px)' : 'none',
+    opacity: 1,
+    transition: 'opacity 0.3s ease',
   };
 
   return (
@@ -25,7 +31,7 @@ export function Header() {
           className="hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className="flex flex-col space-y-4 text-sm">
+          <nav className="flex flex-col space-y-4 text-sm" style={navStyle}>
             <Link href="/">
               <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
             </Link>
