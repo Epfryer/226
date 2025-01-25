@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
+import { motion } from "framer-motion";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +19,40 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <Link href="/">
-            <a className="text-2xl font-bold">D.EF</a>
+            <motion.a 
+              className="text-2xl font-bold inline-block"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: 0.8,
+                ease: "easeInOut",
+                delay: 0.2
+              }}
+            >
+              {isProjectExpanded && !shouldRevealHeader ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-light">Designed by</span>
+                  <span className="text-base">
+                    <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
+                  </span>
+                </div>
+              ) : (
+                <motion.span
+                  initial={{ display: "inline-block" }}
+                  animate={{ 
+                    opacity: [0, 1],
+                    y: [20, 0]
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    ease: "easeOut",
+                    delay: 0.4
+                  }}
+                >
+                  D.EF
+                </motion.span>
+              )}
+            </motion.a>
           </Link>
         </div>
 
