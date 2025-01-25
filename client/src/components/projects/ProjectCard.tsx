@@ -14,10 +14,10 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded } = useProject();
+  const { setIsProjectExpanded } = useProject();
 
   useEffect(() => {
-    setProjectExpanded(isExpanded);
+    setIsProjectExpanded(isExpanded);
 
     if (isExpanded && cardRef.current) {
       const cardElement = cardRef.current;
@@ -31,7 +31,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         behavior: 'smooth'
       });
     }
-  }, [isExpanded, setProjectExpanded]);
+  }, [isExpanded, setIsProjectExpanded]);
 
   const handleExpand = () => {
     onExpand(isExpanded ? null : project.id);

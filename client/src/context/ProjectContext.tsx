@@ -1,38 +1,28 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+import React, { createContext, useContext, useState } from 'react';
 
 interface ProjectContextType {
   isProjectExpanded: boolean;
-  setProjectExpanded: (expanded: boolean) => void;
+  setIsProjectExpanded: (value: boolean) => void;
   shouldRevealHeader: boolean;
-  setShouldRevealHeader: (reveal: boolean) => void;
+  setShouldRevealHeader: (value: boolean) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [isProjectExpanded, setProjectExpanded] = useState(false);
+export function ProjectProvider({ children }: { children: React.ReactNode }) {
+  const [isProjectExpanded, setIsProjectExpanded] = useState(false);
   const [shouldRevealHeader, setShouldRevealHeader] = useState(false);
 
-  useEffect(() => {
-    // Reset header state whenever project expand state changes
-    setShouldRevealHeader(false);
-
-    const handleScroll = () => {
-      if (!isProjectExpanded) return;
-      setShouldRevealHeader(true);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isProjectExpanded]);
-
   return (
-    <ProjectContext.Provider value={{ 
-      isProjectExpanded, 
-      setProjectExpanded,
-      shouldRevealHeader,
-      setShouldRevealHeader
-    }}>
+    <ProjectContext.Provider
+      value={{
+        isProjectExpanded,
+        setIsProjectExpanded,
+        shouldRevealHeader,
+        setShouldRevealHeader,
+      }}
+    >
       {children}
     </ProjectContext.Provider>
   );
