@@ -26,12 +26,12 @@ export function Header() {
         <motion.div 
           className="hidden md:block mt-6"
           initial={false}
-          animate={{
-            x: getXPosition(),
+          style={{
+            transform: `translateX(${getXPosition()}px)`,
             opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1
           }}
           transition={{ 
-            duration: isProjectExpanded && !shouldRevealHeader ? 2 : 0.5, 
+            duration: isProjectExpanded ? 2 : 0,
             ease: "easeInOut" 
           }}
         >
@@ -51,12 +51,12 @@ export function Header() {
         <motion.button 
           className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
-          animate={{
+          style={{
             opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
             scale: isProjectExpanded && !shouldRevealHeader ? 0.8 : 1
           }}
           transition={{ 
-            duration: isProjectExpanded && !shouldRevealHeader ? 2 : 0.5, 
+            duration: isProjectExpanded ? 2 : 0
           }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}

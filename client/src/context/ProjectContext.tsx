@@ -21,15 +21,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       }
 
       const currentScrollY = window.scrollY;
-      const scrollDifference = currentScrollY - lastScrollY;
-
-      // Immediate response to scroll
-      if (scrollDifference < 0) { // Scrolling up
-        setShouldRevealHeader(true);
-      } else if (scrollDifference > 0) { // Scrolling down
-        setShouldRevealHeader(false);
-      }
-
+      // Simple scroll direction check
+      setShouldRevealHeader(currentScrollY < lastScrollY);
       setLastScrollY(currentScrollY);
     };
 
