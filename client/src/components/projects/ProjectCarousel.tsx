@@ -1,10 +1,11 @@
 import { useCallback, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Scrollbar } from 'swiper/modules';
+import { Navigation, Scrollbar, FreeMode } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
+import 'swiper/css/free-mode';
 
 interface ProjectCarouselProps {
   images: string[];
@@ -29,7 +30,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   return (
     <div className="relative h-full pb-12">
       <Swiper
-        modules={[Navigation, Scrollbar]}
+        modules={[Navigation, Scrollbar, FreeMode]}
         slidesPerView="auto"
         spaceBetween={0}
         centeredSlides={false}
@@ -48,8 +49,13 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           momentumRatio: 0.25,
           momentumBounce: true
         }}
-        resistance={true}
-        resistanceRatio={0.85}
+        touchEventsTarget="wrapper"
+        touchRatio={1}
+        touchAngle={45}
+        grabCursor={true}
+        preventClicks={true}
+        preventClicksPropagation={true}
+        touchStartPreventDefault={false}
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
