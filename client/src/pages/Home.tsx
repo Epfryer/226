@@ -23,13 +23,13 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen bg-background">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-[min(100vw-2rem,1400px)] mx-auto px-[clamp(1rem,3vw,2rem)] pt-[clamp(4rem,8vw,8rem)]"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24"
       >
-        <div className="flex justify-center mb-[clamp(2rem,4vw,3rem)]">
+        <div className="flex justify-center mb-12">
           <ProjectFilter 
             categories={categories}
             activeCategory={activeCategory}

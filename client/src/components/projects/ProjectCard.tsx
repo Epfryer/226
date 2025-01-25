@@ -42,40 +42,40 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     <motion.div 
       ref={cardRef}
       layout="position"
-      className={`relative w-full max-w-[min(100vw-2rem,1200px)] mx-auto overflow-hidden mb-[clamp(1rem,2vw,2rem)] ${
-        isExpanded ? 'project-card-expanded' : ''
+      className={`relative w-full mx-auto px-4 sm:px-6 lg:px-8 mb-8 ${
+        isExpanded ? 'fixed inset-x-0 top-1/2 -translate-y-1/2 z-50' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout="position"
         className={`w-full mx-auto transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-none' : 'max-w-[min(100vw-2rem,900px)]'
+          isExpanded ? 'max-w-7xl' : 'max-w-3xl'
         }`}
       >
         {!isExpanded ? (
           <motion.div 
-            className="container mx-auto px-[clamp(1rem,3vw,2rem)] cursor-pointer" 
+            className="w-full cursor-pointer" 
             onClick={handleExpand}
             whileHover={{ scale: 0.99 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-[clamp(1rem,3vw,2rem)]">
+            <div className="flex flex-col md:flex-row items-center gap-6">
               <motion.div 
-                className="flex-1 text-center md:text-right space-y-[clamp(0.5rem,1vw,1rem)]"
+                className="w-full md:w-1/2 text-center md:text-right space-y-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h3 className="text-[clamp(1rem,1.5vw,1.25rem)] font-medium leading-tight">
+                <h3 className="text-lg md:text-xl font-medium">
                   {project.title}
                 </h3>
-                <p className="text-[clamp(0.875rem,1.2vw,1rem)] text-gray-600">
+                <p className="text-sm md:text-base text-gray-600">
                   {project.location}
                 </p>
               </motion.div>
               <motion.div 
-                className="relative w-full md:w-[min(280px,40vw)]"
+                className="w-full md:w-1/2"
                 whileHover={{ scale: 0.98 }}
                 transition={{ duration: 0.3 }}
               >
@@ -90,9 +90,9 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </div>
           </motion.div>
         ) : (
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
+          <div className="w-full max-h-[90vh] overflow-y-auto">
             <motion.div 
-              className="h-[min(80vh,800px)]"
+              className="relative aspect-[16/9] w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
