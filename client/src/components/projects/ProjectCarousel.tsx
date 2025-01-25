@@ -24,19 +24,6 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
     onSlideChange?.(swiper.activeIndex);
   }, [onSlideChange]);
 
-  // Function to scroll to a specific slide and center it
-  const scrollToSlide = useCallback((index: number) => {
-    if (!swiperRef.current) return;
-
-    const swiper = swiperRef.current;
-    const slideWidth = swiper.slides[index]?.offsetWidth || 0;
-    const windowWidth = window.innerWidth;
-    const offset = (windowWidth - slideWidth) / 2;
-
-    swiper.slideTo(index, 300, false);
-    swiper.setTranslate(-slideWidth * index + offset);
-  }, []);
-
   if (!images?.length) return null;
 
   return (
@@ -129,21 +116,6 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           </SwiperSlide>
         ))}
       </Swiper>
-
-      {/* Navigation dots */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex gap-2">
-        {images.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => scrollToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === swiperRef.current?.activeIndex
-                ? 'bg-gray-800'
-                : 'bg-gray-300'
-            }`}
-          />
-        ))}
-      </div>
     </div>
   );
 }

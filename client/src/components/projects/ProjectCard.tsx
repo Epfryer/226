@@ -45,21 +45,21 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     <motion.div 
       ref={cardRef}
       layout
-      className={`relative w-full overflow-hidden mb-4 project-card-container ${
+      className={`relative w-full overflow-hidden mb-4 transition-all duration-500 ease-in-out ${
         isExpanded ? 'project-card-expanded' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout
-        className={`w-full mx-auto transition-all duration-300 ${
+        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
           isExpanded ? 'max-w-none' : 'max-w-3xl'
         }`}
       >
         {!isExpanded ? (
           // Centered non-expanded view
           <div 
-            className="container mx-auto max-w-3xl px-4 cursor-pointer" 
+            className="container mx-auto max-w-3xl px-4 cursor-pointer transition-transform duration-300 hover:scale-[0.99]" 
             onClick={handleExpand}
           >
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
@@ -74,18 +74,19 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
               <motion.div 
                 className="relative w-full md:w-[280px]"
                 whileHover={{ scale: 0.98 }}
+                transition={{ duration: 0.3 }}
               >
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-auto object-contain rounded-sm"
+                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300"
                 />
               </motion.div>
             </div>
           </div>
         ) : (
           // Expanded view with multi-item carousel
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
+          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2 transition-all duration-500 ease-in-out">
             <div className="h-[80vh] max-h-[800px]">
               <ProjectCarousel 
                 images={content.map(item => item.image)}
