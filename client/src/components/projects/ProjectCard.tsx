@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { ProjectCarousel } from "./ProjectCarousel";
+import { useProject } from "@/context/ProjectContext";
 
 interface ProjectCardProps {
   project: Project;
@@ -13,21 +14,17 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-
-  const content = [
-    { image: project.image, text: project.description },
-    { image: project.image, text: "" },
-    { image: project.image, text: "" },
-  ];
+  const { setProjectExpanded } = useProject();
 
   useEffect(() => {
+    setProjectExpanded(isExpanded);
+
     if (isExpanded && cardRef.current) {
       const cardElement = cardRef.current;
       const viewportHeight = window.innerHeight;
       const cardRect = cardElement.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-      // Calculate the target position that centers the card in the viewport
       const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
 
       window.scrollTo({
@@ -35,11 +32,17 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         behavior: 'smooth'
       });
     }
-  }, [isExpanded]);
+  }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
     onExpand(project.id);
   };
+
+  const content = [
+    { image: project.image, text: project.description },
+    { image: project.image, text: "" },
+    { image: project.image, text: "" },
+  ];
 
   return (
     <motion.div 
@@ -57,7 +60,6 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
         }`}
       >
         {!isExpanded ? (
-          // Centered non-expanded view
           <div 
             className="container mx-auto max-w-3xl px-4 cursor-pointer transition-transform duration-300 hover:scale-[0.99]" 
             onClick={handleExpand}
@@ -85,7 +87,6 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
             </div>
           </div>
         ) : (
-          // Expanded view with multi-item carousel
           <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2 transition-all duration-500 ease-in-out">
             <div className="h-[80vh] max-h-[800px]">
               <ProjectCarousel 

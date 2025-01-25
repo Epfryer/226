@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { useProject } from "@/context/ProjectContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isProjectExpanded } = useProject();
 
   return (
     <header className="fixed top-0 left-0 z-50 p-6">
@@ -15,7 +17,15 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="hidden md:block mt-6">
+        <motion.div 
+          className="hidden md:block mt-6"
+          initial={false}
+          animate={{
+            x: isProjectExpanded ? -100 : 0,
+            opacity: isProjectExpanded ? 0 : 1
+          }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+        >
           <nav className="flex flex-col space-y-4 text-sm">
             <Link href="/">
               <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Projects</a>
@@ -27,18 +37,23 @@ export function Header() {
               <a className="hover:opacity-70 transition-opacity uppercase tracking-wide">Contact</a>
             </Link>
           </nav>
-        </div>
+        </motion.div>
 
-        <button 
+        <motion.button 
           className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
+          animate={{
+            opacity: isProjectExpanded ? 0 : 1,
+            scale: isProjectExpanded ? 0.8 : 1
+          }}
+          transition={{ duration: 0.3 }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        </motion.button>
       </div>
 
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isProjectExpanded && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
