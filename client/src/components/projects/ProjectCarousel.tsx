@@ -45,9 +45,9 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         initialSlide={0}
         freeMode={{
           enabled: true,
-          sticky: true,
+          sticky: false,
           momentumRatio: 0.25,
-          momentumBounce: true
+          momentumBounce: false
         }}
         touchEventsTarget="wrapper"
         touchRatio={1}
