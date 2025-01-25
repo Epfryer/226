@@ -12,7 +12,7 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
 
   return (
     <motion.div 
-      className="space-y-0"
+      className="w-full space-y-[clamp(1rem,2vw,2rem)]"
       layout
     >
       <AnimatePresence>
@@ -24,6 +24,7 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            className="w-full"
           >
             <ProjectCard 
               project={project}
