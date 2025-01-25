@@ -33,14 +33,23 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         slidesPerView="auto"
         spaceBetween={0}
         centeredSlides={false}
-        scrollbar={{ draggable: true }}
+        scrollbar={{ 
+          draggable: true,
+          dragSize: 60,
+          el: '.swiper-scrollbar'
+        }}
         navigation={false}
         className="w-full h-full project-carousel"
         onSlideChange={handleSlideChange}
         initialSlide={0}
-        freeMode={true}
-        allowTouchMove={true}
-        resistance={false}
+        freeMode={{
+          enabled: true,
+          sticky: true,
+          momentumRatio: 0.25,
+          momentumBounce: true
+        }}
+        resistance={true}
+        resistanceRatio={0.85}
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
