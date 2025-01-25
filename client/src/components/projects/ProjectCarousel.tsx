@@ -28,7 +28,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   if (!images?.length) return null;
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full pb-12">
       <Swiper
         modules={[Navigation, Scrollbar, FreeMode, A11y]}
         slidesPerView="auto"
@@ -65,39 +65,72 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
+        breakpoints={{
+          320: {
+            slidesPerView: 1,
+            spaceBetween: 0
+          },
+          768: {
+            slidesPerView: "auto",
+            spaceBetween: 0
+          },
+          1024: {
+            slidesPerView: "auto",
+            spaceBetween: 0
+          }
+        }}
       >
-        {/* First slide with text overlay */}
-        <SwiperSlide className="!w-full aspect-[17/11] relative">
-          <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2">
-            <div className="bg-black/80 text-white p-8 flex flex-col justify-center">
+        {/* First slide with text */}
+        <SwiperSlide 
+          style={{
+            width: 'auto',
+            maxWidth: '90%',
+            height: '100%',
+            marginLeft: '5%'
+          }}
+          className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-4 h-full">
+            <div className="pl-8 pt-8 pr-4">
               <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
-              <p className="text-sm text-gray-300 mb-4">{initialSlide.description}</p>
-              <div className="flex gap-4 text-sm text-gray-400">
+              <p className="mt-2 text-sm text-gray-600 mb-4">{initialSlide.description}</p>
+              <div className="mt-3 flex gap-4 text-sm text-gray-500">
                 <span>{initialSlide.year}</span>
                 <span>{initialSlide.category}</span>
               </div>
             </div>
-            <div className="relative aspect-[17/11]">
-              <img
-                src={images[0]}
-                alt={`Slide 1`}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+            <div className="flex items-center justify-center">
+              <div className="w-full">
+                <img
+                  src={images[0]}
+                  alt={`Slide 1`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </div>
           </div>
         </SwiperSlide>
 
-        {/* Rest of the slides */}
+        {/* Rest of the slides without text */}
         {images.slice(1).map((image, index) => (
           <SwiperSlide 
             key={index + 1}
-            className="!w-full aspect-[17/11] relative"
+            style={{
+              width: 'auto',
+              maxWidth: '90%',
+              height: '100%',
+            }}
+            className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
           >
-            <img
-              src={image}
-              alt={`Slide ${index + 2}`}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            <div className="flex items-center justify-center h-full">
+              <div className="w-full">
+                <img
+                  src={image}
+                  alt={`Slide ${index + 2}`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
           </SwiperSlide>
         ))}
       </Swiper>
