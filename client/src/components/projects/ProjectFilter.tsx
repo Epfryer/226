@@ -14,24 +14,22 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <div className="w-full flex justify-center px-4"> {/* Added container with full width */}
-      <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto"> {/* Added max-width and auto margins */}
-        <Button
-          variant={!activeCategory ? "default" : "outline"}
+    <div className="flex justify-start px-6"> {/* Adjusted padding and alignment */}
+      <div className="flex flex-wrap gap-6 text-sm"> {/* Adjusted gap and text size */}
+        <button
           onClick={() => handleClick(null)}
-          className="transition-all"
+          className={`transition-all ${!activeCategory ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}
         >
           All
-        </Button>
+        </button>
         {categories.map((category) => (
-          <Button
+          <button
             key={category}
-            variant={category === activeCategory ? "default" : "outline"}
             onClick={() => handleClick(category)}
-            className="transition-all"
+            className={`transition-all ${category === activeCategory ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}
           >
             {category}
-          </Button>
+          </button>
         ))}
       </div>
     </div>
