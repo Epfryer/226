@@ -16,7 +16,8 @@ export const projects: Project[] = [
     location: "Copenhagen, Denmark",
     year: 2019,
     description: "A waste-to-energy plant topped with a public ski slope, hiking trail and climbing wall.",
-    image: "/docs/proj%2030.png",
+    image: "/docs/proj 30.png",
+    images: ["/docs/proj 30.png", "/docs/proj 302.png", "/docs/proj 303.png", "/docs/proj 304.png", "/docs/proj 305.png"],
     category: "Infrastructure",
     metadata: ["2019", "Infrastructure"]
   },
