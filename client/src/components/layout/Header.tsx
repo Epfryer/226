@@ -6,7 +6,13 @@ import { useProject } from "@/context/ProjectContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isProjectExpanded, isHeaderHidden } = useProject();
+  const { isProjectExpanded, shouldRevealHeader } = useProject();
+
+  const getXPosition = () => {
+    if (!isProjectExpanded) return 0;
+    if (shouldRevealHeader) return 0;
+    return -100;
+  };
 
   return (
     <header className="fixed top-0 left-0 z-50 p-6">
@@ -21,10 +27,10 @@ export function Header() {
           className="hidden md:block mt-6"
           initial={false}
           animate={{
-            x: isHeaderHidden ? -100 : 0,
-            opacity: isHeaderHidden ? 0 : 1
+            x: getXPosition(),
+            opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1
           }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 1, ease: "easeInOut" }}
         >
           <nav className="flex flex-col space-y-4 text-sm">
             <Link href="/">
@@ -43,10 +49,10 @@ export function Header() {
           className="md:hidden"
           onClick={() => setIsOpen(!isOpen)}
           animate={{
-            opacity: isHeaderHidden ? 0 : 1,
-            scale: isHeaderHidden ? 0.8 : 1
+            opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
+            scale: isProjectExpanded && !shouldRevealHeader ? 0.8 : 1
           }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 1 }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </motion.button>
