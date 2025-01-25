@@ -9,7 +9,7 @@
 }
 
 .project-carousel .swiper-slide {
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease-in-out;
 }
 
 .project-carousel .swiper-slide-active {
@@ -18,23 +18,34 @@
 
 .project-carousel .swiper-button-next,
 .project-carousel .swiper-button-prev {
-  color: theme('colors.gray.800');
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-
-.project-carousel .swiper-button-next:hover,
-.project-carousel .swiper-button-prev:hover {
-  opacity: 1;
+  display: none;
 }
 
 .project-carousel .swiper-scrollbar {
   background: theme('colors.gray.200');
-  bottom: 0 !important;
-  height: 2px !important;
+  bottom: -24px !important;
+  height: 1px !important;
+  width: 200px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  opacity: 0.5;
 }
 
 .project-carousel .swiper-scrollbar-drag {
   background: theme('colors.gray.400');
-  height: 2px !important;
+  height: 1px !important;
+}
+
+/* Smooth transitions for expanded state */
+.project-card-container {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card-expanded {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  z-index: 50;
 }

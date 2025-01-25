@@ -22,7 +22,9 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   return (
     <motion.div 
       layout
-      className="relative w-full overflow-hidden mb-4"
+      className={`relative w-full overflow-hidden mb-4 project-card-container ${
+        isExpanded ? 'project-card-expanded' : ''
+      }`}
       initial={false}
     >
       <motion.div 
