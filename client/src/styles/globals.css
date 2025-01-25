@@ -6,6 +6,7 @@
 
 .project-carousel {
   overflow: visible !important;
+  padding-bottom: 48px; /* Add space for the scrollbar */
 }
 
 .project-carousel .swiper-slide {
@@ -23,12 +24,13 @@
 
 .project-carousel .swiper-scrollbar {
   background: theme('colors.gray.200');
-  bottom: -24px !important;
+  bottom: 0 !important;
   height: 1px !important;
-  width: 200px !important;
+  width: 120px !important;
   left: 50% !important;
   transform: translateX(-50%);
   opacity: 0.5;
+  position: absolute;
 }
 
 .project-carousel .swiper-scrollbar-drag {
