@@ -29,7 +29,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
       <Swiper
         modules={[Navigation, Scrollbar]}
         slidesPerView="auto"
-        spaceBetween={24}
+        spaceBetween={8} // Reduced gap between slides
         centeredSlides={false}
         scrollbar={{ draggable: true }}
         navigation={false}
@@ -41,13 +41,13 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         <SwiperSlide 
           style={{
             width: 'auto',
-            maxWidth: '85%',
+            maxWidth: '93%', // Increased from 85% to 93%
             height: '100%',
-            marginLeft: '5%'  // Reduced left margin to start more from the left
+            marginLeft: '2%'  // Reduced left margin
           }}
         >
-          <div className="grid grid-cols-[400px,1fr] gap-8 h-full">
-            <div className="p-8">
+          <div className="grid grid-cols-[400px,1fr] gap-4 h-full"> {/* Reduced gap */}
+            <div className="pt-0"> {/* Removed padding top to align with image */}
               <h3 className="text-xl font-semibold mb-4">{initialSlide.title}</h3>
               <p className="mt-2 text-sm text-gray-600 mb-6">{initialSlide.description}</p>
               <div className="mt-4 flex gap-4 text-sm text-gray-500">
@@ -56,11 +56,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               </div>
             </div>
             <div className="h-full relative" style={{ maxHeight: '800px' }}> 
-              <div className="h-full aspect-[11/17]"> {/* Updated aspect ratio */}
+              <div className="h-full aspect-[11/17]">
                 <img
                   src={images[0]}
                   alt={`Slide 1`}
-                  className="h-full w-full object-contain" /* Changed to object-contain */
+                  className="h-full w-full object-contain"
                 />
               </div>
             </div>
@@ -73,16 +73,16 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             key={index + 1}
             style={{
               width: 'auto',
-              maxWidth: '75%',
+              maxWidth: '93%', // Increased from 75% to 93%
               height: '100%',
             }}
           >
             <div className="h-full relative" style={{ maxHeight: '800px' }}>
-              <div className="h-full aspect-[11/17]"> {/* Updated aspect ratio */}
+              <div className="h-full aspect-[11/17]">
                 <img
                   src={image}
                   alt={`Slide ${index + 2}`}
-                  className="h-full w-full object-contain" /* Changed to object-contain */
+                  className="h-full w-full object-contain"
                 />
               </div>
             </div>
