@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 
 interface ProjectFilterProps {
   categories: string[];
@@ -18,7 +18,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
         <li>
           <button
             onClick={() => handleClick(null)}
-            className={classnames(
+            className={clsx(
               "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
               !activeCategory ? "font-medium" : "opacity-50"
             )}
@@ -30,7 +30,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
           <li key={category}>
             <button
               onClick={() => handleClick(category)}
-              className={classnames(
+              className={clsx(
                 "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
                 category === activeCategory ? "font-medium" : "opacity-50"
               )}
