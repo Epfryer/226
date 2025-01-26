@@ -1,10 +1,9 @@
 import { useCallback, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Scrollbar, FreeMode, A11y } from 'swiper/modules';
+import { Navigation, FreeMode, A11y } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/scrollbar';
 import 'swiper/css/free-mode';
 
 interface ProjectCarouselProps {
@@ -28,19 +27,14 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   if (!images?.length) return null;
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full overflow-hidden flex justify-center">
       <Swiper
-        modules={[Navigation, Scrollbar, FreeMode, A11y]}
+        modules={[Navigation, FreeMode, A11y]}
         slidesPerView="auto"
         spaceBetween={0}
-        centeredSlides={false}
-        scrollbar={{ 
-          draggable: true,
-          dragSize: 60,
-          el: '.swiper-scrollbar'
-        }}
+        centeredSlides={true}
         navigation={false}
-        className="w-full h-full project-carousel"
+        className="w-full h-full max-w-[1800px]"
         onSlideChange={handleSlideChange}
         initialSlide={0}
         freeMode={{
@@ -73,59 +67,34 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           768: {
             slidesPerView: "auto",
             spaceBetween: 0
-          },
-          1024: {
-            slidesPerView: "auto",
-            spaceBetween: 0
           }
         }}
       >
-        {/* First slide with text */}
-        <SwiperSlide 
-          style={{
-            width: 'auto',
-            height: '100%',
-          }}
-          className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-0 h-full">
-            <div className="pl-8 pt-8 pr-4">
-              <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
-              <p className="mt-2 text-sm text-gray-600 mb-4">{initialSlide.description}</p>
-              <div className="mt-3 flex gap-4 text-sm text-gray-500">
-                <span>{initialSlide.year}</span>
-                <span>{initialSlide.category}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-center h-full">
-              <div className="carousel-slide-content">
-                <img
-                  src={images[0]}
-                  alt={`Slide 1`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </SwiperSlide>
-
-        {/* Rest of the slides */}
-        {images.slice(1).map((image, index) => (
+        {images.map((image, index) => (
           <SwiperSlide 
-            key={index + 1}
-            style={{
-              width: 'auto',
-              height: '100%',
-            }}
-            className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
+            key={index}
+            className="!w-auto max-w-[90vw] h-full flex justify-center"
           >
-            <div className="carousel-slide-content">
-              <img
-                src={image}
-                alt={`Slide ${index + 2}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-4 h-full">
+              {index === 0 && (
+                <div className="pl-8 pt-8 pr-4">
+                  <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
+                  <p className="mt-2 text-sm text-gray-600 mb-4">{initialSlide.description}</p>
+                  <div className="mt-3 flex gap-4 text-sm text-gray-500">
+                    <span>{initialSlide.year}</span>
+                    <span>{initialSlide.category}</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-center">
+                <div className="w-full">
+                  <img
+                    src={image}
+                    alt={`Slide ${index + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
             </div>
           </SwiperSlide>
         ))}
