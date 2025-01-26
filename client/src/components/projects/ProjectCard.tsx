@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { useProject } from "@/context/ProjectContext";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ProjectCardProps {
   project: Project;
@@ -14,10 +13,24 @@ interface ProjectCardProps {
 export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const { setProjectExpanded } = useProject();
 
   useEffect(() => {
     setProjectExpanded(isExpanded);
+
+    if (isExpanded && cardRef.current) {
+      const cardElement = cardRef.current;
+      const viewportHeight = window.innerHeight;
+      const cardRect = cardElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
+
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      });
+    }
   }, [isExpanded, setProjectExpanded]);
 
   const handleExpand = () => {
@@ -28,71 +41,71 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     <motion.div 
       ref={cardRef}
       layout="position"
-      className={`relative w-full mx-auto ${
-        isExpanded ? 'fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm' : ''
+      className={`relative w-full overflow-hidden mb-4 ${
+        isExpanded ? 'project-card-expanded' : ''
       }`}
       initial={false}
     >
       <motion.div 
         layout="position"
-        className={`w-full mx-auto px-6 md:px-12 transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-[95vw] px-0' : 'max-w-[1400px]'
+        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
+          isExpanded ? 'max-w-none' : 'max-w-3xl'
         }`}
       >
         {!isExpanded ? (
           <motion.div 
-            className="w-full cursor-pointer" 
+            className="container mx-auto max-w-3xl px-4 cursor-pointer" 
             onClick={handleExpand}
             whileHover={{ scale: 0.99 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
               <motion.div 
-                className="w-full md:w-1/2 text-center md:text-right space-y-2"
+                className="flex-1 text-center md:text-right"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h3 className="text-lg md:text-xl font-medium">
+                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate transition-all duration-300 ease-in-out">
                   {project.title}
                 </h3>
-                <p className="text-sm md:text-base text-gray-600">
+                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate transition-all duration-300 ease-in-out">
                   {project.location}
                 </p>
               </motion.div>
               <motion.div 
-                className="w-full md:w-1/2"
+                className="relative w-full md:w-[280px]"
                 whileHover={{ scale: 0.98 }}
                 transition={{ duration: 0.3 }}
               >
-                <AspectRatio ratio={4/3} className="overflow-hidden rounded-sm">
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover"
-                  />
-                </AspectRatio>
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
+                />
               </motion.div>
             </div>
           </motion.div>
         ) : (
-          <motion.div 
-            className="relative aspect-[17/11] w-full bg-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <ProjectCarousel 
-              images={[project.image, project.image, project.image]}
-              onSlideChange={setCurrentIndex}
-              initialSlide={{
-                title: project.title,
-                description: project.description,
-                year: project.year.toString(),
-                category: project.category
-              }}
-            />
-          </motion.div>
+          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
+            <motion.div 
+              className="h-[80vh] max-h-[800px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ProjectCarousel 
+                images={[project.image, ...project.images]} // Main image first, followed by additional images
+                onSlideChange={setCurrentIndex}
+                initialSlide={{
+                  title: project.title,
+                  description: project.description,
+                  year: project.year.toString(),
+                  category: project.category
+                }}
+              />
+            </motion.div>
+          </div>
         )}
       </motion.div>
     </motion.div>

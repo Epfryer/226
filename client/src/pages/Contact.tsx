@@ -31,15 +31,14 @@ export default function Contact() {
             <div>
               <h2 className="text-xl font-medium mb-4">What is D.EF</h2>
               <address className="text-gray-600 not-italic">
-                BIG - Bjarke Ingels Group<br />
-                45 Main Street<br />
-                New York, NY 11201<br />
-                United States
+                D.EF - Designs by Ethan Fryer<br />
+                B.Arch Virginia Tech AAD<br />
+                Architectural Designer<br />
               </address>
               
               <div className="mt-4">
                 <a href="tel:+12123346853" className="text-gray-600 hover:text-black">
-                  +1 212 334 6853
+                  + More coming soon
                 </a>
               </div>
             </div>
@@ -47,8 +46,8 @@ export default function Contact() {
 
           <div className="mt-12">
             <h2 className="text-xl font-medium mb-4">General Inquiries</h2>
-            <a href="mailto:info@big.dk" className="text-gray-600 hover:text-black">
-              info@big.dk
+            <a href="mailto:Epfryer@vt.edu" className="text-gray-600 hover:text-black">
+              Epfryer@vt.edu
             </a>
           </div>
         </div>

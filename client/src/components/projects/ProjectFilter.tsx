@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import type { Project } from "@/lib/projects";
+import { useCallback } from 'react';
+import { clsx } from 'clsx';
 
 interface ProjectFilterProps {
   categories: string[];
@@ -13,24 +13,33 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <div className="flex justify-center">
-      <div className="flex flex-wrap gap-6 text-sm">
-        <button
-          onClick={() => handleClick(null)}
-          className={`transition-all ${!activeCategory ? 'font-medium' : ''}`}
-        >
-          All
-        </button>
-        {categories.map((category) => (
+    <nav className="fixed top-[88px] left-6 z-40">
+      <ul className="flex flex-col space-y-2">
+        <li>
           <button
-            key={category}
-            onClick={() => handleClick(category)}
-            className={`transition-all ${category === activeCategory ? 'font-medium' : ''}`}
+            onClick={() => handleClick(null)}
+            className={clsx(
+              "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
+              !activeCategory ? "font-medium" : "opacity-50"
+            )}
           >
-            {category}
+            All
           </button>
+        </li>
+        {categories.map((category) => (
+          <li key={category}>
+            <button
+              onClick={() => handleClick(category)}
+              className={clsx(
+                "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
+                category === activeCategory ? "font-medium" : "opacity-50"
+              )}
+            >
+              {category}
+            </button>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </nav>
   );
 }

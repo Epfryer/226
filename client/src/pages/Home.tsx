@@ -23,13 +23,13 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="pt-32">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-full mx-auto"
+        className="max16x9-w- mx-auto px-0"
       >
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-40">
+        <div className="flex justify-center mb-12">
           <ProjectFilter 
             categories={categories}
             activeCategory={activeCategory}
@@ -43,7 +43,6 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full pt-24"
           >
             <ProjectGrid projects={filteredProjects} />
           </motion.div>
