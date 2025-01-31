@@ -22,6 +22,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  margin-right: 0 !important;
 }
 
 .project-carousel img {
@@ -30,6 +31,11 @@
   height: auto;
   object-fit: contain;
   object-position: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.project-carousel img.cursor-zoom-in:hover {
+  transform: scale(1.02);
 }
 
 /* Smooth transitions for expanded state */
