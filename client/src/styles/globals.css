@@ -5,7 +5,6 @@
 
 .project-carousel {
   overflow: visible !important;
-  padding-bottom: 48px;
   height: 100%;
   min-height: 400px;
   max-height: calc(100vh - 200px);
@@ -33,25 +32,6 @@
   object-position: center;
 }
 
-/* Updated scrollbar styles */
-.project-carousel .swiper-scrollbar {
-  background: theme('colors.gray.200');
-  bottom: 0 !important;
-  height: 1px !important;
-  width: 120px !important;
-  left: 50% !important;
-  transform: translateX(-50%);
-  opacity: 0.5;
-  position: absolute;
-  transition: opacity 0.3s ease-in-out;
-}
-
-.project-carousel .swiper-scrollbar-drag {
-  background: theme('colors.gray.400');
-  height: 1px !important;
-  transition: background-color 0.3s ease-in-out;
-}
-
 /* Smooth transitions for expanded state */
 .project-card-container {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,12 +49,7 @@
 
 @media (max-width: 768px) {
   .project-carousel {
-    padding-bottom: 32px;
     min-height: 300px;
-  }
-
-  .project-carousel .swiper-scrollbar {
-    width: 80px !important;
   }
 
   .project-carousel img {
@@ -85,13 +60,13 @@
 
 @media (min-width: 768px) {
   .project-carousel {
-    padding: 2rem;
+    padding: 0;
   }
 }
 
 @media (min-width: 1024px) {
   .project-carousel {
-    padding: 3rem;
+    padding: 0;
   }
 }
 
