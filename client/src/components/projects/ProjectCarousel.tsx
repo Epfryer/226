@@ -22,13 +22,18 @@ interface ProjectCarouselProps {
 export function ProjectCarousel({ images, onSlideChange, initialSlide }: ProjectCarouselProps) {
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     onSlideChange?.(swiper.activeIndex);
   }, [onSlideChange]);
 
-  const handleImageClick = (image: string) => {
+  const handleImageDoubleClick = (image: string) => {
     setZoomImage(image);
+  };
+
+  const handleZoomedImageDoubleClick = () => {
+    setZoomImage(null);
   };
 
   if (!images?.length) return null;
@@ -60,7 +65,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           longSwipes={false}
           shortSwipes={true}
           followFinger={true}
-          grabCursor={true}
+          grabCursor={false}
           preventClicks={false}
           preventClicksPropagation={false}
           touchStartPreventDefault={false}
@@ -68,6 +73,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
           }}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={() => setIsDragging(false)}
           breakpoints={{
             320: {
               slidesPerView: 1,
@@ -98,9 +105,9 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <img
                   src={images[0]}
                   alt={`Slide 1`}
-                  className="w-full h-full object-contain cursor-zoom-in"
+                  className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
                   loading="eager"
-                  onClick={() => handleImageClick(images[0])}
+                  onDoubleClick={() => handleImageDoubleClick(images[0])}
                 />
               </div>
             </div>
@@ -116,9 +123,9 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <img
                   src={image}
                   alt={`Slide ${index + 2}`}
-                  className="w-full h-full object-contain cursor-zoom-in"
+                  className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
                   loading="lazy"
-                  onClick={() => handleImageClick(image)}
+                  onDoubleClick={() => handleImageDoubleClick(image)}
                 />
               </div>
             </SwiperSlide>
@@ -132,7 +139,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             <img
               src={zoomImage || ''}
               alt="Zoomed view"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain cursor-zoom-out"
+              onDoubleClick={handleZoomedImageDoubleClick}
             />
           </div>
         </DialogContent>

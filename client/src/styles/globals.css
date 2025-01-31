@@ -31,11 +31,21 @@
   height: auto;
   object-fit: contain;
   object-position: center;
-  transition: transform 0.2s ease-in-out;
+  transition: all 0.3s ease-out;
+  cursor: default;
+}
+
+.project-carousel img.cursor-zoom-in {
+  cursor: zoom-in;
 }
 
 .project-carousel img.cursor-zoom-in:hover {
   transform: scale(1.02);
+}
+
+.project-carousel img.cursor-grabbing {
+  cursor: grabbing !important;
+  transform: scale(0.98);
 }
 
 /* Smooth transitions for expanded state */
