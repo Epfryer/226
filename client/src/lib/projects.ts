@@ -37,11 +37,18 @@ export const projects: Project[] = [
     id: "Loom Haus",
     title: "Loom Haus",
     location: "Blacksburg, Virginia",
-    year: 2010,
-    description: "A mixed-use development in the shape of a figure 8, featuring apartments, offices and retail.",
-    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1737831615/Stab_.1.12_wb6rua.png",  // Updated to Cloudinary URL
+    year: 2022,
+    description: "Step right up, folks—behold Oasis & Loom! Where strands of inspiration, tangled daydreams, and even the occasional coffee-induced doodle come together in one gloriously oversized ball of yarn. Here in my second-year foray into waft and weft, I’ve spun an architectural tale so delightfully twisted, it’s practically begging you to wander its woven corridors. Don’t worry—no knitting needles required (though they are strongly encouraged).",
+    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293955/Loom_Haus_wmrmis.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1737831615/Stab_.1.12_wb6rua.png"
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738294826/Loom_Haus22_b42xoq.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738294824/Loom_Haus222_h7cf3w.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738294826/Loom_Haus223_gm8umb.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293958/Loom_Haus5_iz1p6k.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293961/Loom_Haus6_dr8u0x.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293962/Loom_Haus7_g2buo5.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293958/Loom_Haus8_kulsfk.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293963/Loom_Haus9_ssxa8r.jpg"
     ],
     category: "Residential",
     metadata: ["2010", "Residential"]
