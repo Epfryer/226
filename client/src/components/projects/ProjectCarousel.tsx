@@ -23,17 +23,44 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     onSlideChange?.(swiper.activeIndex);
   }, [onSlideChange]);
 
-  const handleImageDoubleClick = (image: string) => {
+  const handleImageDoubleClick = (e: React.MouseEvent<HTMLImageElement>, image: string) => {
+    if (zoomImage) {
+      setZoomImage(null);
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
     setZoomImage(image);
+    setScale(2.5);
+    setPosition({ x, y });
   };
 
-  const handleZoomedImageDoubleClick = () => {
+  const handleZoom = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!zoomImage || !imageRef.current) return;
+
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setPosition({ x, y });
+  };
+
+  const resetZoom = () => {
     setZoomImage(null);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
   };
 
   if (!images?.length) return null;
@@ -74,7 +101,9 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             swiperRef.current = swiper;
           }}
           onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => setIsDragging(false)}
+          onTouchEnd={() => {
+            setTimeout(() => setIsDragging(false), 50);
+          }}
           breakpoints={{
             320: {
               slidesPerView: 1,
@@ -107,7 +136,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                   alt={`Slide 1`}
                   className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
                   loading="eager"
-                  onDoubleClick={() => handleImageDoubleClick(images[0])}
+                  onDoubleClick={(e) => handleImageDoubleClick(e, images[0])}
                 />
               </div>
             </div>
@@ -125,7 +154,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                   alt={`Slide ${index + 2}`}
                   className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
                   loading="lazy"
-                  onDoubleClick={() => handleImageDoubleClick(image)}
+                  onDoubleClick={(e) => handleImageDoubleClick(e, image)}
                 />
               </div>
             </SwiperSlide>
@@ -133,14 +162,20 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         </Swiper>
       </div>
 
-      <Dialog open={!!zoomImage} onOpenChange={() => setZoomImage(null)}>
+      <Dialog open={!!zoomImage} onOpenChange={resetZoom}>
         <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] p-0">
           <div className="w-full h-full flex items-center justify-center bg-black/90">
             <img
+              ref={imageRef}
               src={zoomImage || ''}
               alt="Zoomed view"
-              className="max-w-full max-h-full object-contain cursor-zoom-out"
-              onDoubleClick={handleZoomedImageDoubleClick}
+              style={{
+                transformOrigin: `${position.x}% ${position.y}%`,
+                transform: `scale(${scale})`,
+              }}
+              className="w-auto h-auto max-w-full max-h-full object-contain cursor-zoom-out transition-transform duration-200"
+              onDoubleClick={(e) => handleImageDoubleClick(e, zoomImage || '')}
+              onMouseMove={handleZoom}
             />
           </div>
         </DialogContent>

@@ -99,3 +99,20 @@ h3, p {
 .project-carousel .text-slide {
   display: none;
 }
+
+/* Dialog zoom styles */
+.dialog-zoom-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.dialog-zoom-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  transition: transform 0.2s ease-out;
+  cursor: zoom-out;
+}
