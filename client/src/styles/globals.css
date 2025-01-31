@@ -1,57 +1,36 @@
 :root {
   --project-spacing: clamp(1rem, 2vw, 2rem);
   --project-width: min(100%, calc(100vw - var(--project-spacing) * 2));
-  --project-expanded-width: min(160%, calc(160vw - var(--project-spacing) * 2));
 }
 
 .project-carousel {
-  --aspect-ratio: calc(11 / 17);
-  --carousel-height: min(85vh, calc(100vw * var(--aspect-ratio)));
-  
   overflow: visible !important;
   padding-bottom: 48px;
-  height: var(--carousel-height);
+  height: 100%;
+  min-height: 400px;
+  max-height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  margin: 0;
+  position: relative;
 }
 
-.project-carousel .carousel-slide-content {
+.project-carousel .swiper-slide {
   height: 100%;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0;
 }
 
-.project-carousel .carousel-slide-content img {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
+.project-carousel img {
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   object-position: center;
-}
-
-.project-carousel .swiper-slide {
-  margin: 0 !important;
-  padding: 0;
-  height: var(--carousel-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.project-carousel .swiper-slide-active {
-  z-index: 2;
-}
-
-.project-carousel .swiper-button-next,
-.project-carousel .swiper-button-prev {
-  display: none;
 }
 
 /* Updated scrollbar styles */
@@ -88,7 +67,34 @@
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Text transitions */
+@media (max-width: 768px) {
+  .project-carousel {
+    padding-bottom: 32px;
+    min-height: 300px;
+  }
+
+  .project-carousel .swiper-scrollbar {
+    width: 80px !important;
+  }
+
+  .project-carousel img {
+    max-width: 100%;
+    max-height: 60vh;
+  }
+}
+
+@media (min-width: 768px) {
+  .project-carousel {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .project-carousel {
+    padding: 3rem;
+  }
+}
+
 .text-transition {
   transition: all 0.3s ease-in-out;
 }
@@ -101,40 +107,4 @@ h3, p {
 
 .project-carousel .text-slide {
   display: none;
-}
-
-/* Remove old fixed-text-widget styles */
-
-@media (max-width: 768px) {
-  .project-carousel {
-    padding-bottom: 32px;
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .project-carousel .swiper-scrollbar {
-    width: 80px !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .project-carousel {
-    padding: 2rem;
-  }
-
-  .project-carousel .swiper-slide {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .project-carousel .swiper-slide-active {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-}
-
-@media (min-width: 1024px) {
-  .project-carousel {
-    padding: 3rem;
-  }
 }

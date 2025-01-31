@@ -28,7 +28,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
   if (!images?.length) return null;
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden">
       <Swiper
         modules={[Navigation, Scrollbar, FreeMode, A11y]}
         slidesPerView="auto"
@@ -82,14 +82,10 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
       >
         {/* First slide with text */}
         <SwiperSlide 
-          style={{
-            width: 'auto',
-            height: '100%',
-          }}
-          className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
+          className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full"
         >
-          <div className="grid grid-cols-1 md:grid-cols-[400px,1fr] gap-0 h-full">
-            <div className="pl-8 pt-8 pr-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr,2fr] gap-4 h-full p-4">
+            <div className="p-4 md:p-8">
               <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
               <p className="mt-2 text-sm text-gray-600 mb-4">{initialSlide.description}</p>
               <div className="mt-3 flex gap-4 text-sm text-gray-500">
@@ -97,14 +93,13 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <span>{initialSlide.category}</span>
               </div>
             </div>
-            <div className="flex items-center justify-center h-full">
-              <div className="carousel-slide-content">
-                <img
-                  src={images[0]}
-                  alt={`Slide 1`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh]">
+              <img
+                src={images[0]}
+                alt={`Slide 1`}
+                className="w-full h-full object-contain"
+                loading="eager"
+              />
             </div>
           </div>
         </SwiperSlide>
@@ -113,23 +108,20 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         {images.slice(1).map((image, index) => (
           <SwiperSlide 
             key={index + 1}
-            style={{
-              width: 'auto',
-              height: '100%',
-            }}
-            className="sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]"
+            className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full"
           >
-            <div className="carousel-slide-content">
+            <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh] p-4">
               <img
                 src={image}
                 alt={`Slide ${index + 2}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 loading="lazy"
               />
             </div>
           </SwiperSlide>
         ))}
       </Swiper>
+      <div className="swiper-scrollbar absolute bottom-0 left-1/2 transform -translate-x-1/2" />
     </div>
   );
 }
