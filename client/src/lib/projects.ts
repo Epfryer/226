@@ -34,8 +34,8 @@ export const projects: Project[] = [
     metadata: ["3rd Year", "Ben Penell","Rhino","Grasshopper"]
   },
   {
-    id: "Loom Haus",
-    title: "Loom Haus",
+    id: "OASIS & LOOM",
+    title: "OASIS & LOOM",
     location: "Blacksburg, Virginia",
     year: 2022,
     description: "Step right up, folks—behold Oasis & Loom! Where strands of inspiration, tangled daydreams, and even the occasional coffee-induced doodle come together in one gloriously oversized ball of yarn. Here in my second-year foray into waft and weft, I’ve spun an architectural tale so delightfully twisted, it’s practically begging you to wander its woven corridors. Don’t worry—no knitting needles required (though they are strongly encouraged).",
@@ -54,14 +54,21 @@ export const projects: Project[] = [
     metadata: ["2010", "Residential"]
   },
   {
-    id: "via-57-west",
-    title: "VIA 57 West",
-    location: "New York, USA",
-    year: 2016,
-    description: "A hybrid between the European perimeter block and a traditional Manhattan high-rise.",
-    image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1600607687920/proj_via_57_west.png",  // Updated to Cloudinary URL
+    id: "SCULPTURE OF HOME",
+    title: "SCULPTURE OF HOME",
+    location: "Berlin, DE",
+    year: 2022,
+    description: "In my second-year project, I drew on George Klobe’s evocative sculptures—‘The Dancer,’ ‘Dawn,’ and ‘Crying’—to create a serene, two-tiered rural sanctuary. Concrete, wood, and glass unite in a composition that symbolizes life’s transcendence: a grounded concrete basin below and an ethereal glass pavilion tucked amid towering pines above. Visitors enter under the graceful gaze of ‘The Dancer,’ encounter the solemnity of ‘Crying,’ and ascend toward the gentle glow of ‘Dawn’—an architectural journey that transforms raw emotion into spatial poetry.",
+    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/your_cloud_name/image/upload/v1600607687920/proj_via_57_west.png"
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus4_uvl6f0.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus1_nlesjf.jpg", 
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337944/Statue_Haus12_c4q60i.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus13_u8f5xg.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus8_pzqz9v.jpg",
+      """
     ],
     category: "Residential",
     metadata: ["2016", "Residential"]

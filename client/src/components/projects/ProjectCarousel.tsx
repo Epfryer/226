@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Scrollbar, FreeMode, A11y } from 'swiper/modules';
+import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import 'swiper/css';
@@ -69,40 +69,30 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
     <>
       <div className="relative w-full h-full">
         <Swiper
-          modules={[Navigation, Scrollbar, FreeMode, A11y]}
+          modules={[Navigation, Scrollbar, FreeMode, A11y, Mousewheel]}
           slidesPerView="auto"
-          spaceBetween={0}
+          spaceBetween={-1}
           centeredSlides={false}
           scrollbar={false}
           navigation={false}
           className="w-full h-full project-carousel"
           onSlideChange={handleSlideChange}
           initialSlide={0}
+          allowTouchMove={true}
+          simulateTouch={true}
+          mousewheel={false}
           freeMode={{
             enabled: true,
-            sticky: false,
-            momentumRatio: 0.15,
             momentumBounce: false,
-            momentumVelocityRatio: 0.5,
-            minimumVelocity: 0.1
+            momentumRatio: 0.1,
+            momentumVelocityRatio: 0.1
           }}
-          touchEventsTarget="container"
-          touchRatio={2}
-          touchAngle={30}
-          longSwipes={false}
-          shortSwipes={true}
-          followFinger={true}
-          grabCursor={false}
-          preventClicks={false}
-          preventClicksPropagation={false}
-          touchStartPreventDefault={false}
+          touchRatio={1}
           resistance={false}
+          touchAngle={45}
+          grabCursor={true}
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
-          }}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => {
-            setTimeout(() => setIsDragging(false), 50);
           }}
           breakpoints={{
             320: {
@@ -134,7 +124,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <img
                   src={images[0]}
                   alt={`Slide 1`}
-                  className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
+                  className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
                   loading="eager"
                   onDoubleClick={(e) => handleImageDoubleClick(e, images[0])}
                 />
@@ -144,7 +134,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
 
           {/* Rest of the slides */}
           {images.slice(1).map((image, index) => (
-            <SwiperSlide 
+            <SwiperSlide
               key={index + 1}
               className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full"
             >
@@ -152,7 +142,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 <img
                   src={image}
                   alt={`Slide ${index + 2}`}
-                  className={`w-full h-full object-contain cursor-zoom-in transition-all duration-300 ${isDragging ? 'cursor-grabbing' : ''}`}
+                  className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
                   loading="lazy"
                   onDoubleClick={(e) => handleImageDoubleClick(e, image)}
                 />

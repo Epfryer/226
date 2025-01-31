@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-right: 0 !important;
+  margin: 0 !important;
 }
 
 .project-carousel img {
