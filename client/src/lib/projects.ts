@@ -15,13 +15,21 @@ export const projects: Project[] = [
     id: "Corp0rate-Circus",
     title: "Corp0rate-Circus",
     location: "Capri, Italy",
-    year: 2003,
+    year: 2023,
     description: "For whom, no one knows nor cares, lies the designer forced to meet desires of disconected thoughts of corporate greed, I mean..., Uhh Thats akward that was for my creative Writing Course, Welcome to Italys Newest Attraction, the Great American Corporate Circus ",
-    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1737846972/Untitled-1_x6abxm.jpg",  // Updated Cloudinary URL
+    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289072/Circus_kaz4or.jpg",  // Updated Cloudinary URL
     images: [
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1737846973/Untitled-12_zheci2.jpg",  // Added comma here
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1737846972/Untitled-13_wq1d15.jpg"
-    ],
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289073/Circus2_jnfynq.jpg",  // Added comma here
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289071/Circus3_azussb.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289078/Circus4_c69anh.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289074/Circus5_rxn4zj.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289176/Untitled-1_vozsjt.jpg", 
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289175/Untitled-12_mglonv.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289079/Circus8_xuryh8.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289076/Circus9_ecsu04.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289077/Circus10_xgnst0.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289072/Circus11_wcabdr.jpg",
+      ],
     category: "Project's",
     metadata: ["3rd Year", "Ben Penell","Rhino","Grasshopper"]
   },

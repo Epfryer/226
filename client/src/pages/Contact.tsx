@@ -31,14 +31,15 @@ export default function Contact() {
             <div>
               <h2 className="text-xl font-medium mb-4">What is D.EF</h2>
               <address className="text-gray-600 not-italic">
-                D.EF - Designs by Ethan Fryer<br />
-                B.Arch Virginia Tech AAD<br />
-                Architectural Designer<br />
+                D.EF - Dangerously Euphoric Functions<br />
+                45 Main Street<br />
+                New York, NY 11201<br />
+                United States
               </address>
               
               <div className="mt-4">
                 <a href="tel:+12123346853" className="text-gray-600 hover:text-black">
-                  + More coming soon
+                  
                 </a>
               </div>
             </div>

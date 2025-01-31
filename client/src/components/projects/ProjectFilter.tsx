@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
-import { clsx } from 'clsx';
+import { useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import type { Project } from "@/lib/projects";
 
 interface ProjectFilterProps {
   categories: string[];
@@ -13,33 +14,26 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <nav className="fixed top-[88px] left-6 z-40">
-      <ul className="flex flex-col space-y-2">
-        <li>
-          <button
-            onClick={() => handleClick(null)}
-            className={clsx(
-              "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
-              !activeCategory ? "font-medium" : "opacity-50"
-            )}
-          >
-            All
-          </button>
-        </li>
+    <div className="w-full flex justify-center px-4"> {/* Added container with full width */}
+      <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto"> {/* Added max-width and auto margins */}
+        <Button
+          variant={!activeCategory ? "default" : "outline"}
+          onClick={() => handleClick(null)}
+          className="transition-all"
+        >
+          All
+        </Button>
         {categories.map((category) => (
-          <li key={category}>
-            <button
-              onClick={() => handleClick(category)}
-              className={clsx(
-                "text-sm uppercase tracking-wide transition-opacity hover:opacity-70",
-                category === activeCategory ? "font-medium" : "opacity-50"
-              )}
-            >
-              {category}
-            </button>
-          </li>
+          <Button
+            key={category}
+            variant={category === activeCategory ? "default" : "outline"}
+            onClick={() => handleClick(category)}
+            className="transition-all"
+          >
+            {category}
+          </Button>
         ))}
-      </ul>
-    </nav>
+      </div>
+    </div>
   );
 }
