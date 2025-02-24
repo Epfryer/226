@@ -88,8 +88,8 @@ export function Footer() {
     <footer className="bg-white py-6 text-center">
       <SocialLinks
       socials={[
-        { name: "GitHub", image: "/github-mark.svg", href: "https://github.com/yourusername" },
-        { name: "Twitter", image: "/twitter-logo.svg", href: "https://twitter.com/yourusername" },
+        { name: "Issu", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740437728/issuu-logo-symbol-colour_coyexg.png", href: "https://issuu.com/epfryer/docs/epf_-2025_worksample" },
+        { name: "Linkden", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740438245/linkden_m1p1nx.png", href: "https://www.linkedin.com/in/epfryer/" },
       ]}
       className="justify-center gap-8 mb-4"
       />
