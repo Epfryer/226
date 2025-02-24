@@ -56,35 +56,37 @@ export const projects: Project[] = [
   {
     id: "SCULPTURE OF HOME",
     title: "SCULPTURE OF HOME",
-    location: "Berlin, DE",
+    location: "Berlin, Germany",
     year: 2022,
     description: "In my second-year project, I drew on George Klobe’s evocative sculptures—‘The Dancer,’ ‘Dawn,’ and ‘Crying’—to create a serene, two-tiered rural sanctuary. Concrete, wood, and glass unite in a composition that symbolizes life’s transcendence: a grounded concrete basin below and an ethereal glass pavilion tucked amid towering pines above. Visitors enter under the graceful gaze of ‘The Dancer,’ encounter the solemnity of ‘Crying,’ and ascend toward the gentle glow of ‘Dawn’—an architectural journey that transforms raw emotion into spatial poetry.",
     image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337827/Statue_Haus2_rvwcqd.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337828/Statue_Haus3_xeep34.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus4_uvl6f0.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus1_nlesjf.jpg", 
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337944/Statue_Haus12_c4q60i.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus13_u8f5xg.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus8_pzqz9v.jpg",
-      """
-    ],
+      ],
     category: "Residential",
     metadata: ["2016", "Residential"]
   },
   {
-    id: "serpentine",
-    title: "Serpentine Pavilion",
-    location: "London, UK",
-    year: 2016,
-    description: "A temporary pavilion design featuring an 'unzipped wall' transformed into a space for gathering.",
-    image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1600585153490/proj_serpentine.png",  // Updated to Cloudinary URL
+    id: "BIKE HUB",
+    title: "BIKE HUB^2",
+    location: "Cowgill Lawn,Virginia",
+    year: 2023,
+    description: "For the Virginia Tech Cowgill Hall bike hub competition, I distilled the essence of biking into architectural form. Integrating the sleek lines of a bicycle, I designed a dynamic structure housing essential amenities like a cafe and showers. This project pushed my boundaries in geometry and rendering, completed within an intense 48-hour time frame. It underscored the profound synthesis of form and function fundamental to architectural practice..",
+    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343812/Bike_Hub_uxsk4l.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/your_cloud_name/image/upload/v1600585153490/proj_serpentine.png"
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343815/Bike_Hub2_hnq8be.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343813/Bike_Hub3_enycv9.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343815/Bike_Hub4_no3dfl.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343812/Bike_Hub5_dp8ebn.jpg"
     ],
     category: "Cultural",
-    metadata: ["2016", "Cultural"]
+    metadata: ["2023", "Cultural"]
   },
   {
     id: "lego-house",
