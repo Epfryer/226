@@ -1,0 +1,105 @@
+
+import { useState } from "react";
+import { Link } from "wouter";
+import { Menu, X } from "lucide-react";
+import { useProject } from "@/context/ProjectContext";
+import { motion } from "framer-motion";
+import { TypingAnimation } from "@/components/ui/typing-animation";
+
+export function WhiteHeader() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { isProjectExpanded, shouldRevealHeader } = useProject();
+
+  const headerStyle = {
+    opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
+    transform: isProjectExpanded && !shouldRevealHeader ? 'translateX(-100px)' : 'none',
+  };
+
+  return (
+    <header className="fixed top-0 left-0 z-50 p-6">
+      <div>
+        <div className="flex items-start">
+          <motion.div 
+            className="text-2xl font-bold inline-block text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.8,
+              ease: "easeInOut",
+              delay: 0.2
+            }}
+          >
+            <Link href="/">
+              {isProjectExpanded && !shouldRevealHeader ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-light text-white">Designed by</span>
+                  <span className="text-base text-white">
+                    <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
+                  </span>
+                </div>
+              ) : (
+                <motion.span
+                  initial={{ display: "inline-block" }}
+                  animate={{ 
+                    opacity: [0, 1],
+                    y: [20, 0]
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    ease: "easeOut",
+                    delay: 0.4
+                  }}
+                >
+                  D.EF
+                </motion.span>
+              )}
+            </Link>
+          </motion.div>
+        </div>
+
+        <div 
+          className="hidden md:block mt-6"
+          style={headerStyle}
+        >
+          <nav className="flex flex-col space-y-4 text-sm">
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/">
+              Projects
+            </Link>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
+              About
+            </Link>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
+              Contact
+            </Link>
+          </nav>
+        </div>
+
+        <button 
+          className="md:hidden text-white"
+          onClick={() => setIsOpen(!isOpen)}
+          style={headerStyle}
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {isOpen && !isProjectExpanded && (
+          <div
+            className="absolute top-16 left-0 bg-transparent py-4 px-6 md:hidden"
+          >
+            <nav className="flex flex-col space-y-4">
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/">
+                Projects
+              </Link>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
+                About
+              </Link>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
+                Contact
+              </Link>
+            </nav>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
