@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 export default function About() {
   return (
-    <div className="flex min-h-screen items-center justify-center py-24 bg-black text-white">
+    <div className="flex min-h-screen items-center justify-center py-24">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -20,10 +20,10 @@ export default function About() {
           />
         </motion.div>
 
-        <div className="max-w-xl text-white"> {/* Added text-white here */}
+        <div className="max-w-xl">
           <h1 className="text-4xl font-bold mb-8">About D.EF</h1>
 
-          <div className="prose prose-lg text-white"> {/* Added text-white here */}
+          <div className="prose prose-lg">
             <p>
               Ethan Fryer is an architecture student at Virginia Tech College of Architecture Arts and Design.
             </p>
