@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter"; // Added useLocation
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ import { TypingAnimation } from "@/components/ui/typing-animation";
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
+  const location = useLocation(); // Added useLocation hook
 
   const headerStyle = {
     opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
@@ -19,7 +20,7 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <motion.div 
-            className="text-2xl font-bold inline-block text-white" // Added text-white
+            className={`text-2xl font-bold inline-block ${location === '/about' ? 'text-white' : 'text-black'}`} // Added conditional styling
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -30,7 +31,7 @@ export function Header() {
           >
             <Link href="/">
               {isProjectExpanded && !shouldRevealHeader ? (
-                <div className="flex items-center gap-2 text-white"> {/* Added text-white */}
+                <div className={`flex items-center gap-2 ${location === '/about' ? 'text-white' : 'text-black'}`}> {/* Added conditional styling */}
                   <span className="text-sm font-light">Designed by</span>
                   <span className="text-base">
                     <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
@@ -60,7 +61,7 @@ export function Header() {
           className="hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className={`flex flex-col space-y-4 text-sm ${location === '/about' ? 'text-white' : 'text-black'}`}> {/* Added text-white */}
+          <nav className={`flex flex-col space-y-4 text-sm ${location === '/about' ? 'text-white' : 'text-black'}`}>
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
               Projects
             </Link>
@@ -74,7 +75,7 @@ export function Header() {
         </div>
 
         <button 
-          className={`md:hidden ${location === '/about' ? 'text-white' : 'text-black'}`} // Added text-white
+          className={`md:hidden ${location === '/about' ? 'text-white' : 'text-black'}`}
           onClick={() => setIsOpen(!isOpen)}
           style={headerStyle}
         >
@@ -85,7 +86,7 @@ export function Header() {
           <div
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
-            <nav className="flex flex-col space-y-4 text-white"> {/* Added text-white */}
+            <nav className={`flex flex-col space-y-4 text-sm ${location === '/about' ? 'text-white' : 'text-black'}`}>
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
                 Projects
               </Link>
