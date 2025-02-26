@@ -30,7 +30,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289077/Circus10_xgnst0.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289072/Circus11_wcabdr.jpg",
       ],
-    category: "Project's",
+    category: "Academic",
     metadata: ["3rd Year", "Ben Penell","Rhino","Grasshopper"]
   },
   {
@@ -50,7 +50,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293958/Loom_Haus8_kulsfk.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293963/Loom_Haus9_ssxa8r.jpg"
     ],
-    category: "Residential",
+    category: "Academic",
     metadata: ["2010", "Residential"]
   },
   {
@@ -69,7 +69,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus13_u8f5xg.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus8_pzqz9v.jpg",
       ],
-    category: "Residential",
+    category: "Academic",
     metadata: ["2016", "Residential"]
   },
   {
@@ -85,7 +85,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343815/Bike_Hub4_no3dfl.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343812/Bike_Hub5_dp8ebn.jpg"
     ],
-    category: "Cultural",
+    category: "Competiton",
     metadata: ["2023", "Cultural"]
   },
   {
@@ -98,7 +98,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1520529890308/proj_lego_house.png"
     ],
-    category: "Cultural",
+    category: "Acadmeic",
     metadata: ["2017", "Cultural"]
   },
   {
@@ -111,7 +111,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Office",
+    category: "Acadmeic",
     metadata: ["2022", "Office"]
   },
   {
@@ -124,7 +124,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Office",
+    category: "Acadmeic",
     metadata: ["2022", "Office"]
   }
 ];
