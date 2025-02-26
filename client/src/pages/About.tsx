@@ -11,12 +11,12 @@ export default function About() {
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="w-full h-[800px] bg-gray-100 flex items-center justify-center"
+          className="aspect-[4/3] bg-gray-100"
         >
           <img
             src="https://res.cloudinary.com/dtxqagii0/image/upload/v1740596263/Facetune_26-02-2025-12-56-48_adljiy.jpg"
             alt="Who Is Ethan Fryer"
-            className="w-[800px] h-[800px] object-contain"
+            className="w-full h-full object-cover"
           />
         </motion.div>
 
