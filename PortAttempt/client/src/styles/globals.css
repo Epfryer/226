@@ -1,0 +1,140 @@
+:root {
+  --project-spacing: clamp(1rem, 2vw, 2rem);
+  --project-width: min(100%, calc(100vw - var(--project-spacing) * 2));
+  --project-expanded-width: min(160%, calc(160vw - var(--project-spacing) * 2));
+}
+
+.project-carousel {
+  overflow: visible !important;
+  padding-bottom: 48px;
+  /* Add any additional styles needed for consistent layout */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  aspect-ratio: 3/2;
+  height: 100% !important;
+  max-height: 60vh !important;
+  width: auto !important;
+}
+
+.project-carousel .swiper-wrapper {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  aspect-ratio: 3/2;
+  max-height: 60vh !important;
+}
+
+.project-carousel .swiper-slide {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  height: auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  aspect-ratio: 3/2;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  max-height: 60vh !important;
+  transform: scale(0.95);
+}
+
+.project-carousel img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-carousel .swiper-slide-active {
+  z-index: 2;
+  transform: scale(1);
+}
+
+.project-carousel .swiper-button-next,
+.project-carousel .swiper-button-prev {
+  display: none;
+}
+
+/* Updated scrollbar styles */
+.project-carousel .swiper-scrollbar {
+  background: theme('colors.gray.200');
+  bottom: -24px !important;
+  height: 1px !important;
+  width: 120px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  opacity: 0.5;
+  position: absolute;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.project-carousel .swiper-scrollbar-drag {
+  background: theme('colors.gray.400');
+  height: 1px !important;
+  transition: background-color 0.3s ease-in-out;
+}
+
+/* Smooth transitions for expanded state */
+.project-card-container {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card-expanded {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  z-index: 50;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Text transitions */
+.text-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+h3, p {
+  transition: opacity 0.3s ease-in-out,
+              transform 0.3s ease-in-out,
+              color 0.3s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .project-carousel {
+    padding-bottom: 32px;
+  }
+
+  .project-carousel .swiper-scrollbar {
+    width: 80px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .project-carousel {
+    padding: 2rem;
+  }
+
+  .project-carousel .swiper-slide {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .project-carousel .swiper-slide-active {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@media (min-width: 1024px) {
+  .project-carousel {
+    padding: 3rem;
+  }
+}

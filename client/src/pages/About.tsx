@@ -14,7 +14,7 @@ export default function About() {
           className="aspect-[4/3] bg-gray-100"
         >
           <img
-            src="https://images.unsplash.com/photo-1487958449943-2429e8be8625"
+            src="https://res.cloudinary.com/dtxqagii0/image/upload/v1740596263/Facetune_26-02-2025-12-56-48_adljiy.jpg"
             alt="Who Is Ethan Fryer"
             className="w-full h-full object-cover"
           />
