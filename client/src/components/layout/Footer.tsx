@@ -85,7 +85,7 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
 
 export function Footer() {
   return (
-    <footer className="bg-black py-6 text-center text-white">
+    <footer className={`${location === '/about' ? 'bg-black text-white' : 'bg-white text-black'} py-6 text-center`}>
       <SocialLinks
       socials={[
         { name: "Issu", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740437728/issuu-logo-symbol-colour_coyexg.png", href: "https://issuu.com/epfryer/docs/epf_-2025_worksample" },

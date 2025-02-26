@@ -60,7 +60,7 @@ export function Header() {
           className="hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className="flex flex-col space-y-4 text-sm text-white"> {/* Added text-white */}
+          <nav className={`flex flex-col space-y-4 text-sm ${location === '/about' ? 'text-white' : 'text-black'}`}> {/* Added text-white */}
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
               Projects
             </Link>
@@ -74,7 +74,7 @@ export function Header() {
         </div>
 
         <button 
-          className="md:hidden text-white" // Added text-white
+          className={`md:hidden ${location === '/about' ? 'text-white' : 'text-black'}`} // Added text-white
           onClick={() => setIsOpen(!isOpen)}
           style={headerStyle}
         >
