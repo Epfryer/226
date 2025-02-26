@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
 import { motion } from "framer-motion";
@@ -8,6 +8,8 @@ import { TypingAnimation } from "@/components/ui/typing-animation";
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
+  const location = useLocation();
+  const isAboutPage = location === "/about";
 
   const headerStyle = {
     opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
@@ -19,7 +21,7 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <motion.div 
-            className="text-2xl font-bold inline-block"
+            className={`text-2xl font-bold inline-block ${isAboutPage ? 'text-white' : ''}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -31,8 +33,8 @@ export function Header() {
             <Link href="/">
               {isProjectExpanded && !shouldRevealHeader ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-light">Designed by</span>
-                  <span className="text-base">
+                  <span className={`text-sm font-light ${isAboutPage ? 'text-white' : ''}`}>Designed by</span>
+                  <span className={`text-base ${isAboutPage ? 'text-white' : ''}`}>
                     <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
                   </span>
                 </div>
@@ -61,13 +63,13 @@ export function Header() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/">
               Projects
             </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
               About
             </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/contact">
               Contact
             </Link>
           </nav>
@@ -86,13 +88,13 @@ export function Header() {
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/">
                 Projects
               </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
                 About
               </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/contact">
                 Contact
               </Link>
             </nav>
