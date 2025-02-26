@@ -98,7 +98,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1520529890308/proj_lego_house.png"
     ],
-    category: "Acadmeic",
+    category: "Academic",
     metadata: ["2017", "Cultural"]
   },
   {
@@ -111,20 +111,21 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Acadmeic",
+    category: "Academic",
     metadata: ["2022", "Office"]
   },
   {
-    id: "google-campus",
+    id: "hidden-template",
     title: "Template",
     location: "n/a",
     year: 2022,
+    hidden: true,
     description: "A sustainable and innovative headquarters featuring a tent-like canopy roof.",
     image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png",  // Updated to Cloudinary URL
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Acadmeic",
+    category: "",
     metadata: ["2022", "Office"]
   }
 ];
