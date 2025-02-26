@@ -17,8 +17,8 @@ export default function Home() {
 
   const filteredProjects = useMemo(() => 
     activeCategory 
-      ? projects.filter(p => p.category === activeCategory)
-      : projects,
+      ? projects.filter(p => !p.hidden && p.category === activeCategory)
+      : projects.filter(p => !p.hidden),
     [activeCategory]
   );
 
