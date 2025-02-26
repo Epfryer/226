@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 interface Social {
   name: string
   image: string
+  href: string
 }
 
 interface SocialLinksProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -46,7 +47,10 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
             setRotation(Math.random() * 20 - 10)
           }}
           onMouseLeave={() => setHoveredSocial(null)}
-          onClick={() => setClicked(true)}
+          onClick={() => {
+            setClicked(true);
+            window.open(social.href, '_blank');
+          }}
         >
           <span className="block text-lg font-medium">{social.name}</span>
           <AnimatePresence>
@@ -84,8 +88,8 @@ export function Footer() {
     <footer className="bg-white py-6 text-center">
       <SocialLinks
       socials={[
-        { name: "GitHub", image: "/github-logo.png" },
-        { name: "Twitter", image: "/twitter-logo.png" },
+        { name: "Issu", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740437728/issuu-logo-symbol-colour_coyexg.png", href: "https://issuu.com/epfryer/docs/epf_-2025_worksample" },
+        { name: "Linkden", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740438245/linkden_m1p1nx.png", href: "https://www.linkedin.com/in/epfryer/" },
       ]}
       className="justify-center gap-8 mb-4"
       />

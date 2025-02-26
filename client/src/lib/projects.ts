@@ -30,7 +30,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289077/Circus10_xgnst0.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289072/Circus11_wcabdr.jpg",
       ],
-    category: "Project's",
+    category: "Academic",
     metadata: ["3rd Year", "Ben Penell","Rhino","Grasshopper"]
   },
   {
@@ -50,7 +50,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293958/Loom_Haus8_kulsfk.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738293963/Loom_Haus9_ssxa8r.jpg"
     ],
-    category: "Residential",
+    category: "Academic",
     metadata: ["2010", "Residential"]
   },
   {
@@ -69,7 +69,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus13_u8f5xg.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus8_pzqz9v.jpg",
       ],
-    category: "Residential",
+    category: "Academic",
     metadata: ["2016", "Residential"]
   },
   {
@@ -85,20 +85,20 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343815/Bike_Hub4_no3dfl.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343812/Bike_Hub5_dp8ebn.jpg"
     ],
-    category: "Cultural",
+    category: "Competiton",
     metadata: ["2023", "Cultural"]
   },
   {
-    id: "lego-house",
-    title: "LEGO House",
-    location: "Billund, Denmark",
-    year: 2017,
-    description: "A experience center and gathering point for LEGO fans of all ages.",
+    id: "Behind The Curtain",
+    title: "Behind The Curtain",
+    location: " Milwaukee Ave,Chicago",
+    year: 2024,
+    description: "For the Spring 2024 Chicago Studio, my partner  Spencer Schmalzried and I were tasked with transforming a vacant site in Logan Square into a 100-unit mixed-use affordable housing complex and cultural venue along the future “Milwaukee Cultural Corridor.” Rooted in the concept of the “curtain” as a threshold between public and private, our design blends residential, commercial, and cultural spaces. The project features low-rise housing, a 10,000-square-foot music school, and 3,000 square feet of commercial space to support local businesses. The narrative unfolds through three courtyards: a resident-focused sanctuary with a gym, daycare, and co-working spaces; a public plaza hosting markets and art installations; and a performance courtyard with an amphitheater for music recitals. Inspired by the Congress Theatre and Concord Music Hall, “Behind the Curtain” blurs the line between performance and daily life, fostering a vibrant community where creativity and connection thrive.",
     image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1520529890308/proj_lego_house.png",  // Updated to Cloudinary URL
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1520529890308/proj_lego_house.png"
     ],
-    category: "Cultural",
+    category: "Academic",
     metadata: ["2017", "Cultural"]
   },
   {
@@ -111,7 +111,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Office",
+    category: "Academic",
     metadata: ["2022", "Office"]
   }
 ];
