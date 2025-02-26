@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { Timeline } from "@/components/Timeline";
 import { WhiteHeader } from "@/components/layout/WhiteHeader";
+// Added import for WhiteFooter
+import { WhiteFooter } from "@/components/layout/WhiteFooter";
+
 
 export default function About() {
   const timelineData = [
@@ -91,6 +94,16 @@ export default function About() {
         </motion.div>
         <Timeline data={timelineData} />
       </div>
+      <WhiteFooter />
     </div>
+  );
+}
+
+// Placeholder WhiteFooter component
+function WhiteFooter() {
+  return (
+    <footer className="bg-white text-black py-4">
+      <p className="text-center">Copyright &copy; 2024 My Website</p>
+    </footer>
   );
 }
