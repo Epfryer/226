@@ -100,10 +100,3 @@ export default function About() {
 }
 
 // Placeholder WhiteFooter component
-function WhiteFooter() {
-  return (
-    <footer className="bg-white text-black py-4">
-      <p className="text-center">Copyright &copy; 2024 My Website</p>
-    </footer>
-  );
-}
