@@ -125,7 +125,7 @@ export const projects: Project[] = [
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
     ],
-    category: "Acadmeic",
+    category: "",
     metadata: ["2022", "Office"]
   }
 ];
