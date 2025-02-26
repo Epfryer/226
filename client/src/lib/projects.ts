@@ -113,19 +113,5 @@ export const projects: Project[] = [
     ],
     category: "Academic",
     metadata: ["2022", "Office"]
-  },
-  {
-    id: "hidden-template",
-    title: "Template",
-    location: "n/a",
-    year: 2022,
-    hidden: true,
-    description: "A sustainable and innovative headquarters featuring a tent-like canopy roof.",
-    image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png",  // Updated to Cloudinary URL
-    images: [
-      "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
-    ],
-    category: "Acadmeic",
-    metadata: ["2022", "Office"]
   }
 ];
