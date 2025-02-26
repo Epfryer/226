@@ -20,10 +20,10 @@ export default function About() {
           />
         </motion.div>
 
-        <div className="max-w-xl">
+        <div className="max-w-xl text-white"> {/* Added text-white here */}
           <h1 className="text-4xl font-bold mb-8">About D.EF</h1>
 
-          <div className="prose prose-lg">
+          <div className="prose prose-lg text-white"> {/* Added text-white here */}
             <p>
               Ethan Fryer is an architecture student at Virginia Tech College of Architecture Arts and Design.
             </p>

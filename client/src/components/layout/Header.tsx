@@ -19,7 +19,7 @@ export function Header() {
       <div>
         <div className="flex items-start">
           <motion.div 
-            className="text-2xl font-bold inline-block"
+            className="text-2xl font-bold inline-block text-white" // Added text-white
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -30,7 +30,7 @@ export function Header() {
           >
             <Link href="/">
               {isProjectExpanded && !shouldRevealHeader ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-white"> {/* Added text-white */}
                   <span className="text-sm font-light">Designed by</span>
                   <span className="text-base">
                     <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
@@ -60,7 +60,7 @@ export function Header() {
           className="hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className="flex flex-col space-y-4 text-sm">
+          <nav className="flex flex-col space-y-4 text-sm text-white"> {/* Added text-white */}
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
               Projects
             </Link>
@@ -74,7 +74,7 @@ export function Header() {
         </div>
 
         <button 
-          className="md:hidden"
+          className="md:hidden text-white" // Added text-white
           onClick={() => setIsOpen(!isOpen)}
           style={headerStyle}
         >
@@ -85,7 +85,7 @@ export function Header() {
           <div
             className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
           >
-            <nav className="flex flex-col space-y-4">
+            <nav className="flex flex-col space-y-4 text-white"> {/* Added text-white */}
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
                 Projects
               </Link>
