@@ -85,7 +85,7 @@ export function Header() {
 
         {isOpen && !isProjectExpanded && (
           <div
-            className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
+            className={`absolute top-16 left-0 ${isAboutPage ? 'bg-transparent' : 'bg-white'} py-4 px-6 md:hidden`}
           >
             <nav className="flex flex-col space-y-4">
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/">
