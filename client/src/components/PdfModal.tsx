@@ -1,12 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, Maximize2 } from "lucide-react";
+import { X, Download } from "lucide-react";
 import type { Publication } from "@/data/publications";
+import { FlipbookViewer } from "./FlipbookViewer";
 import { asset } from "@/utils/asset";
-import { GlobalWorkerOptions } from "pdfjs-dist";
-
-// Set up PDF.js worker globally
-GlobalWorkerOptions.workerSrc = asset("pdfjs/build/pdf.worker.min.mjs");
 
 interface PdfModalProps {
   open: boolean;
@@ -18,6 +15,11 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+
+  useEffect(() => {
+    setAspectRatio(null);
+  }, [pub]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -73,17 +75,10 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
 
   if (!pub) return null;
 
-  const viewerUrl = asset("pdfjs/web/viewer.html");
-  // pub.pdfPath already has no leading slash now
-  const fileUrl = asset(pub.pdfPath);
-  
-  // Be resilient to hosts that dislike Range requests in prod
-  const hash = import.meta.env.DEV
-    ? "#zoom=page-fit"
-    : "#zoom=page-fit&disableRange=true";
-    
   const handleFullscreen = () => {
-    window.open(`${viewerUrl}?file=${encodeURIComponent(fileUrl)}${hash}`, '_blank');
+    const viewerUrl = asset('pdfjs/web/viewer.html');
+    const fileUrl = asset(pub.pdfPath);
+    window.open(`${viewerUrl}?file=${encodeURIComponent(fileUrl)}#zoom=page-fit`, '_blank');
   };
 
   return (
@@ -129,18 +124,17 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden">
-                <iframe
-                  className="w-full h-full"
-                  src={`${viewerUrl}?file=${encodeURIComponent(fileUrl)}${hash}`}
-                  loading="lazy"
-                  title="PDF Viewer"
+              <div className="flex-1 flex items-center justify-center overflow-hidden">
+                <FlipbookViewer 
+                  pdfUrl={asset(pub.pdfPath)} 
+                  onFullscreen={handleFullscreen}
+                  onAspectRatioDetected={setAspectRatio}
                 />
               </div>
 
               <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-t border-white/10 flex-shrink-0">
                 <a
-                  href={fileUrl}
+                  href={asset(pub.pdfPath)}
                   download
                   className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
                 >
@@ -148,14 +142,6 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                   <span className="hidden sm:inline">Download PDF</span>
                   <span className="sm:hidden">Download</span>
                 </a>
-                <button
-                  onClick={handleFullscreen}
-                  className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
-                >
-                  <Maximize2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Fullscreen</span>
-                  <span className="sm:hidden">Full</span>
-                </button>
               </div>
             </motion.div>
           </div>
