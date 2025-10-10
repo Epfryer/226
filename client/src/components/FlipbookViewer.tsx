@@ -87,6 +87,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [containerSize, pdfAspectRatio]);
 
   const handleFlip = (e: any) => {
+    // e.data is the 0-based index of the LEFT page in the current spread
     setCurrentPage(e.data);
   };
 
@@ -203,13 +204,17 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         <div className="text-sm font-medium px-5 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white">
           {currentPage === 0 
             ? `Page 1 of ${numPages}` 
-            : `Pages ${(currentPage - 1) * 2 + 2}-${Math.min((currentPage - 1) * 2 + 3, numPages)} of ${numPages}`
+            : numPages === 1 
+              ? `Page 1 of 1`
+              : currentPage + 1 >= numPages
+                ? `Page ${numPages} of ${numPages}`
+                : `Pages ${currentPage + 1}-${currentPage + 2} of ${numPages}`
           }
         </div>
 
         <button
           onClick={goToNextPage}
-          disabled={currentPage === 0 ? (numPages <= 1) : ((currentPage - 1) * 2 + 3 >= numPages)}
+          disabled={currentPage === 0 ? (numPages <= 1) : (currentPage + 2 >= numPages)}
           className="p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
           aria-label="Next page"
         >
