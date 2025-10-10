@@ -8,6 +8,7 @@ import { ProjectProvider } from "@/context/ProjectContext";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
+import Publications from "@/pages/Publications";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/publications" component={Publications} />
       <Route component={NotFound} />
     </Switch>
   );
