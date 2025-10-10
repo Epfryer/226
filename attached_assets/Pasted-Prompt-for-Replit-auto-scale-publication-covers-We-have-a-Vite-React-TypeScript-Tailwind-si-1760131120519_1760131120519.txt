@@ -1,0 +1,147 @@
+Prompt for Replit (auto-scale publication covers)
+
+We have a Vite + React + TypeScript + Tailwind site with a /publications grid. The two issues:
+
+Covers have different aspect ratios, so cards look uneven.
+
+Some images squish or leave empty space.
+
+Goal
+
+Make all cover images auto-scale into uniform cards without distortion:
+
+Same card aspect across the grid (responsive).
+
+Images fill the visual area using object-fit cover (no squish).
+
+Keep Framer Motion shared-element zoom working.
+
+Lazy-load images.
+
+Implementation plan
+
+Use a fixed aspect ratio wrapper for every card (content box that defines visual size).
+
+On mobile: 4:5
+
+On md+: 3:4
+(Adjustable via Tailwind utilities.)
+
+Inside the wrapper, render the <img> with object-cover object-center w-full h-full so it crops smartly.
+
+Add a gradient overlay for title legibility.
+
+Ensure the layoutId for Framer Motion is on the outer clickable card only (no duplicates).
+
+Use the CSS aspect-ratio feature through Tailwind (aspect-[x/y]) and a min-height fallback for very small viewports.
+
+Add loading="lazy", width/height attributes for CLS, and optional srcSet/sizes.
+
+Files to edit
+
+src/components/PublicationCard.tsx
+
+(If needed) small tweaks in src/pages/PublicationsPage.tsx grid container.
+
+Code changes (exact)
+
+A) PublicationCard.tsx — replace the cover section with this:
+
+import { motion } from "framer-motion";
+import React from "react";
+import type { Publication } from "@/data/publications";
+
+type Props = {
+  pub: Publication;
+  onOpen: (p: Publication) => void;
+};
+
+export default function PublicationCard({ pub, onOpen }: Props) {
+  return (
+    <motion.button
+      layoutId={pub.slug} // shared element: only here and in modal
+      onClick={() => onOpen(pub)}
+      className="group relative w-full overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 transition hover:shadow-xl"
+      aria-label={`Open ${pub.title}`}
+    >
+      {/* Aspect wrapper: uniform card size */}
+      <div className="
+        relative
+        w-full
+        aspect-[4/5] md:aspect-[3/4]
+        min-h-[260px]
+        bg-neutral-200
+        overflow-hidden
+      ">
+        {/* Cover image auto-scales, no squish */}
+        <img
+          src={pub.coverPath ?? '/fallback-cover.jpg'}
+          alt={pub.title}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          width={1200} height={1600}  /* intrinsic hint; not enforced */
+        />
+
+        {/* Soft gradient for text legibility */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/0 opacity-90 transition-opacity group-hover:opacity-100" />
+
+        {/* Title block */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className="text-white/95 drop-shadow-sm text-lg font-semibold leading-tight">
+            {pub.title}
+          </div>
+          <div className="text-white/80 text-sm">{pub.year}</div>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+
+B) Publications grid — use an auto-fit grid so columns stay even and the right side doesn’t leave big gaps:
+
+// in PublicationsPage.tsx where the grid is rendered:
+<div
+  className="
+    grid gap-6
+    grid-cols-1
+    sm:grid-cols-2
+    xl:grid-cols-3
+    [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]
+  "
+>
+  {/* map PublicationCard here */}
+</div>
+
+
+Note: the bracketed CSS sets a robust auto-fit min column size while still obeying your sm/xl breakpoints. You can remove it if you prefer strict breakpoints.
+
+C) Tailwind touch-ups (optional)
+
+If some images are super tall, add object-[50%_40%] to nudge crop toward upper center.
+
+If you want a subtle inner border, add ring-1 ring-black/10 to the aspect wrapper.
+
+D) Keep zoom animation correct
+
+Ensure only the outer motion.button (above) and the modal container use the same layoutId={pub.slug}.
+
+Do not put layoutId on the inner image/wrapper; it can cause “ghost” duplicates.
+
+Acceptance criteria
+
+All cards have identical size/ratio at each breakpoint (no uneven heights).
+
+Every cover fills its card without distortion or blank bars.
+
+Titles are readable across covers.
+
+The zoom-in animation still works.
+
+Lighthouse CLS does not worsen (thanks to width/height and fixed aspect wrapper).
+
+Works for both portrait and landscape source images.
+
+Bonus (optional)
+
+If some covers are pure PDFs without a cover image, add a default placeholder with a big “PDF” icon and the same aspect wrapper (so layout remains consistent). We’ll integrate PDF-page-1 thumbnails later if needed.

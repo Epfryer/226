@@ -22,17 +22,12 @@ if (existsSync(webSourcePath)) {
   console.log('✓ Copied PDF.js web viewer');
 }
 
-// Create build directory and copy worker
-const buildDir = join(publicPdfjsDir, 'build');
-if (!existsSync(buildDir)) {
-  mkdirSync(buildDir, { recursive: true });
-}
-
-const workerSourcePath = join(pdfjsDistPath, 'build', 'pdf.worker.min.js');
-const workerDestPath = join(buildDir, 'pdf.worker.min.js');
-if (existsSync(workerSourcePath)) {
-  cpSync(workerSourcePath, workerDestPath);
-  console.log('✓ Copied PDF.js worker');
+// Copy all build files (worker, etc)
+const buildSourcePath = join(pdfjsDistPath, 'build');
+const buildDestPath = join(publicPdfjsDir, 'build');
+if (existsSync(buildSourcePath)) {
+  cpSync(buildSourcePath, buildDestPath, { recursive: true });
+  console.log('✓ Copied PDF.js build files (worker)');
 }
 
 console.log('PDF.js setup complete!');

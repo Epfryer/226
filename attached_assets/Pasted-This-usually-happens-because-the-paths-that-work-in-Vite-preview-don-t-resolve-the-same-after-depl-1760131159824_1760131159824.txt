@@ -1,0 +1,111 @@
+This usually happens because the **paths that work in Vite preview don’t resolve the same after deploy** (worker path, viewer path, or the PDF path). On Replit/static hosting you must build every URL off the app’s **base** and keep the viewer/worker + PDFs on the **same origin**.
+
+Here’s a copy-paste **Replit Ghostwriter prompt** that fixes it end-to-end:
+
+---
+
+# Prompt for Replit (fix “Failed to load PDF” after deploy)
+
+We have a Vite + React + TS + Tailwind site. PDFs open in dev/preview but fail after deploy. Fix pathing so the PDF.js **viewer**, **worker**, and **PDF files** load in production.
+
+## Requirements
+
+* All URLs must be built from `import.meta.env.BASE_URL` (works for root or subpath).
+* Serve the stock viewer from `/pdfjs/web/viewer.html` (don’t relocate it).
+* Ensure the worker is at `/pdfjs/build/pdf.worker.min.js`.
+* Ensure PDFs live in `/public/publications/*` and are referenced with the same-origin URL.
+* If the app is ever served from a subpath, everything must still work.
+
+## 1) Add a tiny asset helper
+
+Create `src/utils/asset.ts`:
+
+```ts
+export function asset(path: string) {
+  const base = import.meta.env.BASE_URL || "/";
+  const clean = path.replace(/^\/+/, "");
+  return base.endsWith("/") ? base + clean : base + "/" + clean;
+}
+```
+
+## 2) Use the helper for viewer, worker, and PDF paths
+
+In your modal/viewer component (`PdfModal.tsx` or similar), adjust:
+
+```ts
+import { asset } from "@/utils/asset";
+import { GlobalWorkerOptions } from "pdfjs-dist";
+
+// Point worker to deployed path
+GlobalWorkerOptions.workerSrc = asset("pdfjs/build/pdf.worker.min.js");
+
+// Build viewer + file URLs from BASE_URL
+const viewerUrl = asset("pdfjs/web/viewer.html");
+const fileUrl   = asset(pub.pdfPath.replace(/^\/+/, "")); // e.g. "publications/hybrid-urbanism.pdf"
+
+// Iframe src:
+<iframe
+  className="w-full h-full"
+  src={`${viewerUrl}?file=${encodeURIComponent(fileUrl)}#zoom=page-fit`}
+  loading="lazy"
+/>
+```
+
+## 3) Ensure files exist in the build output
+
+* PDFs: `public/publications/*.pdf`
+* PDF.js: copy the **entire** `node_modules/pdfjs-dist/web/**` → `public/pdfjs/web/`
+* Worker: copy `node_modules/pdfjs-dist/build/pdf.worker.min.js` → `public/pdfjs/build/pdf.worker.min.js`
+
+(If you already have a `scripts/copy-pdfjs.js`, keep it, just verify the target folders match above.)
+
+## 4) Vite base (safety)
+
+Open `vite.config.ts` and ensure:
+
+```ts
+export default defineConfig({
+  base: '/', // or the real subpath if you deploy under one (e.g. '/site/')
+  // ...
+});
+```
+
+If you ever change base to a subpath, the `asset()` helper keeps everything working.
+
+## 5) Same-origin check (no CORS)
+
+Make sure `pub.pdfPath` points to **your own build** (e.g., `publications/my.pdf`).
+Do **not** point to GitHub Raw, Issuu, etc., unless they send permissive CORS headers (they usually don’t).
+
+## 6) Quick self-tests (production)
+
+After deploy, open the console and verify these URLs return **200**:
+
+* `${BASE_URL}pdfjs/web/viewer.html`
+* `${BASE_URL}pdfjs/build/pdf.worker.min.js`
+* `${BASE_URL}publications/<your.pdf>`
+
+Directly hit them in the browser to confirm.
+
+## 7) Optional headers (nice to have)
+
+If your host supports custom headers, allow byte range for faster seeking:
+
+```
+/publications/*
+  Accept-Ranges: bytes
+```
+
+PDF.js will still load without this, but range improves UX.
+
+## Acceptance
+
+* The same build works in preview and after publish.
+* Viewer opens; no “Failed to load PDF” or “worker not found”.
+* All paths resolve correctly even if the app is mounted at a subpath.
+
+Please implement these changes and commit.
+
+---
+
+If it still errors after this, check the network tab on the **deployed** site—tell me which URL is 404/403 and I’ll tailor a tiny patch for that path.
