@@ -97,15 +97,16 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               onLoadSuccess={(page) => {
                 const { width, height } = page;
                 const aspectRatio = width / height;
-                const maxSpreadWidth = 1000;
-                const maxHeight = 700;
                 
-                let displayWidth = maxSpreadWidth / 2;
-                let displayHeight = displayWidth / aspectRatio;
+                const maxHeight = 600;
+                const maxPageWidth = 800;
                 
-                if (displayHeight > maxHeight) {
-                  displayHeight = maxHeight;
-                  displayWidth = displayHeight * aspectRatio;
+                let displayHeight = maxHeight;
+                let displayWidth = displayHeight * aspectRatio;
+                
+                if (displayWidth > maxPageWidth) {
+                  displayWidth = maxPageWidth;
+                  displayHeight = displayWidth / aspectRatio;
                 }
                 
                 setPageWidth(displayWidth);
@@ -125,11 +126,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             <HTMLFlipBook
               width={pageWidth}
               height={pageHeight}
-              size="stretch"
-              minWidth={300}
-              maxWidth={1200}
-              minHeight={400}
-              maxHeight={800}
+              size="fixed"
+              minWidth={pageWidth}
+              maxWidth={pageWidth}
+              minHeight={pageHeight}
+              maxHeight={pageHeight}
+              autoSize={false}
               showCover={true}
               flippingTime={800}
               usePortrait={false}
@@ -141,7 +143,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               mobileScrollSupport={true}
               style={{}}
               startZIndex={0}
-              autoSize={true}
               maxShadowOpacity={0.5}
               showPageCorners={true}
               disableFlipByClick={false}
