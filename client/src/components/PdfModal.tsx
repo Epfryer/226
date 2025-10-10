@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, ExternalLink } from "lucide-react";
+import { X, Download } from "lucide-react";
 import type { Publication } from "@/data/publications";
 import { FlipbookViewer } from "./FlipbookViewer";
 
@@ -78,10 +78,6 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     window.open(`/pdfjs/web/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`, '_blank');
   };
 
-  const getModalClass = () => {
-    return "relative w-full max-w-7xl max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col";
-  };
-
   return (
     <AnimatePresence>
       {open && (
@@ -90,42 +86,42 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/80 z-50"
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-xl z-50"
             onClick={onClose}
             aria-hidden="true"
           />
           
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
           >
             <motion.div
               ref={modalRef}
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={getModalClass()}
+              className="relative w-full h-full flex flex-col max-w-[95vw] max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-                <h2 id="modal-title" className="text-xl font-semibold">
+              <div className="flex items-center justify-between px-6 py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
+                <h2 id="modal-title" className="text-xl font-semibold text-white drop-shadow-lg">
                   {pub.title} ({pub.year})
                 </h2>
                 <button
                   ref={closeButtonRef}
                   onClick={onClose}
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  className="p-2 hover:bg-white/10 rounded-full transition-all"
                   aria-label="Close modal"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-6 h-6 text-white" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 flex items-center justify-center overflow-hidden">
                 <FlipbookViewer 
                   pdfUrl={pub.pdfPath} 
                   onFullscreen={handleFullscreen}
@@ -133,11 +129,11 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-center gap-4 p-4 border-t bg-muted/50 flex-shrink-0">
+              <div className="flex items-center justify-center gap-4 px-6 py-4 bg-white/5 backdrop-blur-md border-t border-white/10 flex-shrink-0">
                 <a
                   href={pub.pdfPath}
                   download
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
                 >
                   <Download className="w-4 h-4" />
                   Download PDF
