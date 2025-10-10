@@ -75,16 +75,17 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     const availableHeight = containerSize.height - controlsHeight;
     const availableWidth = containerSize.width - (padding * 2);
 
-    let displayHeight = availableHeight * 0.95;
-    let displayWidth = displayHeight * pdfAspectRatio;
+    const containerAspectRatio = availableWidth / availableHeight;
+    const scaleFactor = 0.95;
 
-    if (displayWidth > availableWidth) {
-      displayWidth = availableWidth;
+    let displayWidth: number;
+    let displayHeight: number;
+
+    if (pdfAspectRatio > containerAspectRatio) {
+      displayWidth = availableWidth * scaleFactor;
       displayHeight = displayWidth / pdfAspectRatio;
-    }
-
-    if (displayHeight > availableHeight) {
-      displayHeight = availableHeight * 0.95;
+    } else {
+      displayHeight = availableHeight * scaleFactor;
       displayWidth = displayHeight * pdfAspectRatio;
     }
 
