@@ -6,8 +6,8 @@ import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Use relative path to avoid host checking issues
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/build/pdf.worker.mjs';
+// Use asset helper to ensure correct path in production
+pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
 
 interface FlipbookViewerProps {
   pdfUrl: string;
