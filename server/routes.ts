@@ -9,16 +9,23 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/publications/:filename", async (req, res) => {
     try {
       const filename = req.params.filename;
-      const objectName = `publications/${filename}`;
+      const objectName = filename;
       
-      const pdfBuffer = await client.downloadAsBytes(objectName);
+      const result = await client.downloadAsBytes(objectName);
+      
+      if (!result.ok) {
+        console.error('Error fetching PDF:', result.error);
+        return res.status(404).json({ message: 'PDF not found' });
+      }
+      
+      const pdfBuffer = result.value[0];
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      res.send(Buffer.from(pdfBuffer));
+      res.send(pdfBuffer);
     } catch (error) {
       console.error('Error fetching PDF:', error);
-      res.status(404).json({ message: 'PDF not found' });
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 
