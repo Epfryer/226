@@ -209,7 +209,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
         <button
           onClick={goToNextPage}
-          disabled={currentPage * 2 + 1 >= numPages}
+          disabled={currentPage === 0 ? (numPages <= 1) : ((currentPage - 1) * 2 + 3 >= numPages)}
           className="p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
           aria-label="Next page"
         >
