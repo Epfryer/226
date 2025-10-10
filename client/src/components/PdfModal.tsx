@@ -97,29 +97,52 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-full max-w-7xl bg-background rounded-2xl shadow-2xl overflow-hidden h-[95vh]"
+              className="relative w-full max-w-7xl bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                ref={closeButtonRef}
-                onClick={onClose}
-                className="sr-only"
-                aria-label="Close modal (press ESC)"
-              >
-                Close
-              </button>
-              
-              <h2 id="modal-title" className="sr-only">
-                {pub.title} ({pub.year})
-              </h2>
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 id="modal-title" className="text-xl font-semibold">
+                  {pub.title} ({pub.year})
+                </h2>
+                <button
+                  ref={closeButtonRef}
+                  onClick={onClose}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-              <iframe
-                src={viewerUrl}
-                className="w-full h-full"
-                title={`${pub.title} PDF viewer`}
-                loading="lazy"
-                allow="fullscreen"
-              />
+              <div className="flex-1 overflow-hidden">
+                <iframe
+                  src={viewerUrl}
+                  className="w-full h-full"
+                  title={`${pub.title} PDF viewer`}
+                  loading="lazy"
+                  allow="fullscreen"
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-4 p-4 border-t bg-muted/50">
+                <a
+                  href={pub.pdfPath}
+                  download
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Download PDF
+                </a>
+                <a
+                  href={viewerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open in New Tab
+                </a>
+              </div>
             </motion.div>
           </div>
         </>
