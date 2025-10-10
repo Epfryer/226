@@ -70,11 +70,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
 
-    const controlsHeight = 80;
+    const controlsHeight = 120;
+    const padding = 16;
     const availableHeight = containerSize.height - controlsHeight;
-    const availableWidth = containerSize.width - 32;
+    const availableWidth = containerSize.width - (padding * 2);
 
-    let displayHeight = Math.min(availableHeight, 625);
+    let displayHeight = availableHeight * 0.95;
     let displayWidth = displayHeight * pdfAspectRatio;
 
     if (displayWidth > availableWidth) {
@@ -82,8 +83,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       displayHeight = displayWidth / pdfAspectRatio;
     }
 
-    setPageWidth(displayWidth);
-    setPageHeight(displayHeight);
+    if (displayHeight > availableHeight) {
+      displayHeight = availableHeight * 0.95;
+      displayWidth = displayHeight * pdfAspectRatio;
+    }
+
+    setPageWidth(Math.floor(displayWidth));
+    setPageHeight(Math.floor(displayHeight));
   }, [containerSize, pdfAspectRatio]);
 
   const handleFlip = (e: any) => {
@@ -104,7 +110,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-4 overflow-hidden">
+    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
       <Document
         file={pdfUrl}
         onLoadSuccess={({ numPages }) => {
@@ -191,48 +197,50 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         ) : null}
       </Document>
 
-      <div className="flex items-center gap-4 mt-4">
-        <button
-          onClick={goToPrevPage}
-          disabled={currentPage === 0}
-          className="p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mt-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button
+            onClick={goToPrevPage}
+            disabled={currentPage === 0}
+            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
 
-        <div className="text-sm font-medium px-5 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white">
-          {currentPage === 0 
-            ? `Page 1 of ${numPages}` 
-            : numPages === 1 
-              ? `Page 1 of 1`
-              : currentPage + 1 >= numPages
-                ? `Page ${numPages} of ${numPages}`
-                : `Pages ${currentPage + 1}-${currentPage + 2} of ${numPages}`
-          }
+          <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
+            {currentPage === 0 
+              ? `Page 1 of ${numPages}` 
+              : numPages === 1 
+                ? `Page 1 of 1`
+                : currentPage + 1 >= numPages
+                  ? `Page ${numPages} of ${numPages}`
+                  : `Pages ${currentPage + 1}-${currentPage + 2} of ${numPages}`
+            }
+          </div>
+
+          <button
+            onClick={goToNextPage}
+            disabled={currentPage === 0 ? (numPages <= 1) : (currentPage + 2 >= numPages)}
+            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+            aria-label="Next page"
+          >
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
         </div>
-
-        <button
-          onClick={goToNextPage}
-          disabled={currentPage === 0 ? (numPages <= 1) : (currentPage + 2 >= numPages)}
-          className="p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-          aria-label="Next page"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
 
         {onFullscreen && (
           <button
             onClick={onFullscreen}
-            className="p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20 ml-2"
+            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
             aria-label="Fullscreen"
           >
-            <Maximize2 className="w-5 h-5" />
+            <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         )}
       </div>
 
-      <p className="text-xs text-white/60 mt-2">
+      <p className="text-xs text-white/60 mt-2 text-center hidden sm:block">
         Click pages to flip • Use arrow keys to navigate
       </p>
     </div>

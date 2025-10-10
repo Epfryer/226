@@ -93,7 +93,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
           />
           
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
@@ -104,20 +104,20 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-full h-full flex flex-col max-w-[95vw] max-h-[95vh]"
+              className="relative w-full h-full flex flex-col max-w-[98vw] sm:max-w-[95vw] max-h-[98vh] sm:max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-6 py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
-                <h2 id="modal-title" className="text-xl font-semibold text-white drop-shadow-lg">
+              <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
+                <h2 id="modal-title" className="text-sm sm:text-lg md:text-xl font-semibold text-white drop-shadow-lg truncate mr-2">
                   {pub.title} ({pub.year})
                 </h2>
                 <button
                   ref={closeButtonRef}
                   onClick={onClose}
-                  className="p-2 hover:bg-white/10 rounded-full transition-all"
+                  className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                   aria-label="Close modal"
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </button>
               </div>
 
@@ -129,14 +129,15 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-center gap-4 px-6 py-4 bg-white/5 backdrop-blur-md border-t border-white/10 flex-shrink-0">
+              <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-t border-white/10 flex-shrink-0">
                 <a
                   href={pub.pdfPath}
                   download
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
+                  className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
                 >
-                  <Download className="w-4 h-4" />
-                  Download PDF
+                  <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Download PDF</span>
+                  <span className="sm:hidden">Download</span>
                 </a>
               </div>
             </motion.div>
