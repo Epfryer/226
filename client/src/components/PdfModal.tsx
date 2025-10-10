@@ -114,10 +114,10 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden min-h-[600px] md:min-h-[700px]">
                 <iframe
                   src={viewerUrl}
-                  className="w-full h-full"
+                  className="w-full h-full border-0"
                   title={`${pub.title} PDF viewer`}
                   loading="lazy"
                   allow="fullscreen"
