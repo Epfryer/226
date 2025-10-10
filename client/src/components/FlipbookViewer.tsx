@@ -13,9 +13,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface FlipbookViewerProps {
   pdfUrl: string;
   onFullscreen?: () => void;
+  onAspectRatioDetected?: (aspectRatio: number) => void;
 }
 
-export function FlipbookViewer({ pdfUrl, onFullscreen }: FlipbookViewerProps) {
+export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageWidth, setPageWidth] = useState<number | null>(null);
@@ -105,6 +106,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen }: FlipbookViewerProps) {
                 setPageHeight(displayHeight);
                 setIsPortrait(height > width);
                 setIsLoading(false);
+                
+                if (onAspectRatioDetected) {
+                  onAspectRatioDetected(aspectRatio);
+                }
               }}
               className="opacity-0"
             />

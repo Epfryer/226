@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ExternalLink } from "lucide-react";
 import type { Publication } from "@/data/publications";
@@ -14,6 +14,11 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+
+  useEffect(() => {
+    setAspectRatio(null);
+  }, [pub]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -73,6 +78,17 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     window.open(`/pdfjs/web/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`, '_blank');
   };
 
+  const getModalStyle = () => {
+    if (!aspectRatio) return { maxWidth: "90vw", maxHeight: "90vh" };
+    
+    const isLandscape = aspectRatio > 1;
+    if (isLandscape) {
+      return { width: "min(90vw, 1200px)", height: "auto" };
+    } else {
+      return { height: "90vh", width: "auto" };
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -95,12 +111,12 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
           >
             <motion.div
               ref={modalRef}
-              layoutId={pub.slug}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-full max-w-7xl h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              style={getModalStyle()}
+              className="relative bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
@@ -121,6 +137,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 <FlipbookViewer 
                   pdfUrl={pub.pdfPath} 
                   onFullscreen={handleFullscreen}
+                  onAspectRatioDetected={setAspectRatio}
                 />
               </div>
 
