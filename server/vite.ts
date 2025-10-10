@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import { Client } from '@replit/object-storage';import express, { type Express } from "express";
 import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
