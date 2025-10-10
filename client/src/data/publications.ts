@@ -11,14 +11,14 @@ export const PUBLICATIONS: Publication[] = [
     slug: "hybrid-urbanism",
     title: "Hybrid Urbanism",
     year: "2025",
-    pdfPath: "/publications/hybrid-urbanism.pdf",
-    coverPath: "/publications/hybrid-urbanism.jpg"
+    pdfPath: "publications/hybrid-urbanism.pdf",
+    coverPath: "publications/hybrid-urbanism.jpg"
   },
   {
     slug: "5th-year-selected-works",
     title: "5th Year Selected Works",
     year: "2024",
-    pdfPath: "/publications/EthanFryer_5thYear_SelectedWorks.pdf",
-    coverPath: "/publications/EthanFryer_5thYear_SelectedWorks.jpg"
+    pdfPath: "publications/EthanFryer_5thYear_SelectedWorks.pdf",
+    coverPath: "publications/EthanFryer_5thYear_SelectedWorks.jpg"
   }
 ];
