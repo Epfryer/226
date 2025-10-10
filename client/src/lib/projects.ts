@@ -57,7 +57,7 @@ export const projects: Project[] = [
     id: "SCULPTURE OF HOME",
     title: "SCULPTURE OF HOME",
     location: "Berlin, Germany",
-    year: 2022,
+    year: 2021,
     description: "In my second-year project, I drew on George Klobe’s evocative sculptures—‘The Dancer,’ ‘Dawn,’ and ‘Crying’—to create a serene, two-tiered rural sanctuary. Concrete, wood, and glass unite in a composition that symbolizes life’s transcendence: a grounded concrete basin below and an ethereal glass pavilion tucked amid towering pines above. Visitors enter under the graceful gaze of ‘The Dancer,’ encounter the solemnity of ‘Crying,’ and ascend toward the gentle glow of ‘Dawn’—an architectural journey that transforms raw emotion into spatial poetry.",
     image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus_nsmoxh.jpg",  // Updated to Cloudinary URL
     images: [
@@ -102,11 +102,11 @@ export const projects: Project[] = [
     metadata: ["2017", "Cultural"]
   },
   {
-    id: "google-campus",
-    title: "Google Campus",
-    location: "Mountain View, USA",
+    id: "thesis",
+    title: "The 78",
+    location: "Southside, Chciago",
     year: 2022,
-    description: "A sustainable and innovative headquarters featuring a tent-like canopy roof.",
+    description: "This thesis challenges the rigidity of the Cartesian Grid by proposing a shift toward a Dynamic use of euclidean Space, allowing urban circulation to evolve beyond static corridors into a meandering, adaptive network. This model fosters organic interactions within public transportation and infrastructure, breaking the reliance on rigid zoning and fixed hierarchies.The 78 project applies this Framework of Dynamic Bridges, redistributing urban density and freeing the tower from its traditional role as the city’s sole vertical icon. By interweaving public and private realms across multiple planes, the city streets transforms into a fluid, Urban model rather than a collection of isolated structures. As architecture embraces dynamic adaptability, the city of the future may not just be built, but animated like the grand narratives once confined to Hollywood’s silver screen",
     image: "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png",  // Updated to Cloudinary URL
     images: [
       "https://res.cloudinary.com/your_cloud_name/image/upload/v1554793000/proj_google_campus.png"
