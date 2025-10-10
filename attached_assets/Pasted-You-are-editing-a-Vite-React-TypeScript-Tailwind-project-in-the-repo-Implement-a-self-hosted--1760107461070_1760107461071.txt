@@ -1,0 +1,186 @@
+You are editing a Vite + React + TypeScript + Tailwind project in the repo. Implement a self-hosted Publications page that lists PDFs as covers and, on click, animates a smooth zoom-in to a full-screen PDF viewer using PDF.js. Do everything below precisely:
+
+## Goals & UX
+
+* New route `/publications`.
+* Grid of publication cards (cover image, title, year). Covers should be derived from either a provided JPG/PNG in `/publications` or the first page of the PDF if a cover image isn’t provided (fallback thumbnail rendering can be “coming soon”).
+* Click a card → **beautiful motion** that:
+
+  * Zooms the card to a full-screen modal using Framer Motion `layoutId`.
+  * Fades in a dimmed backdrop.
+  * Inside the modal, load a **self-hosted** PDF.js **stock viewer** via `<iframe>` (not just canvas rendering), with a direct “Download PDF” link under it.
+* Modal supports:
+
+  * ESC to close, click backdrop to close.
+  * Deep linkable query `?doc=<slug>` so `/publications?doc=my-portfolio` opens directly into the viewer.
+* Fully responsive; grid uses Tailwind; modal is full-bleed on mobile.
+
+## Tech decisions
+
+* Self-host **pdfjs-dist** stock viewer files under `/public/pdfjs` so the iframe src is `/pdfjs/viewer.html?file=%2Fpublications/<file>.pdf`.
+* Use **Framer Motion** for motion (already compatible with Tailwind).
+* Use a small typed data file `src/data/publications.ts` to list your PDFs (title, year, slug, pdfPath, coverPath?).
+
+## Add dependencies
+
+1. Install:
+
+```bash
+npm i framer-motion pdfjs-dist
+```
+
+## Copy PDF.js viewer to /public
+
+Create a tiny prepare step to copy the viewer on install, and commit the copied files:
+
+* Add a Node script `scripts/copy-pdfjs.js` that copies:
+
+  * `node_modules/pdfjs-dist/web/**` → `public/pdfjs/`
+  * `node_modules/pdfjs-dist/build/pdf.worker.min.js` → `public/pdfjs/build/pdf.worker.min.js`
+
+* Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "prepare": "node scripts/copy-pdfjs.js"
+  }
+}
+```
+
+* Run `npm run prepare` so the files land in `public/pdfjs`.
+* Ensure the repo contains `public/pdfjs/**` after copying (we are committing them so hosting stays self-contained).
+
+## File structure to create
+
+```
+public/
+  publications/
+    hybrid-urbanism.pdf
+    hybrid-urbanism.jpg   // cover (optional, if present we use it)
+  pdfjs/                  // from copy step above
+
+src/data/publications.ts
+src/components/PublicationCard.tsx
+src/components/PdfModal.tsx
+src/pages/PublicationsPage.tsx
+```
+
+## Data file (create)
+
+`src/data/publications.ts`:
+
+* Export `Publication` type: `{ slug: string; title: string; year: string; pdfPath: string; coverPath?: string; }`
+* Export an array `PUBLICATIONS` with one example using your thesis PDF once you add it under `public/publications/`.
+
+## Card component
+
+`src/components/PublicationCard.tsx`:
+
+* Props: `pub: Publication`, `onOpen(pub)`.
+* Renders a rounded card with aspect-[3/4] cover, title, year.
+* Use `<motion.div layoutId={pub.slug}>` for the image container so the modal shares it.
+
+## Modal component
+
+`src/components/PdfModal.tsx`:
+
+* Props: `open: boolean; pub?: Publication; onClose(): void`
+* Uses Framer Motion:
+
+  * Backdrop: `motion.div` with fade.
+  * Content: `motion.div layoutId={pub.slug}` to match the card.
+* Inside content, render:
+
+  ```tsx
+  <iframe
+    className="w-full h-[80vh] md:h-[85vh] rounded-2xl"
+    src={`/pdfjs/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`}
+    loading="lazy"
+    allow="fullscreen"
+  />
+  ```
+* Under iframe, add a small bar with:
+
+  * “Download PDF” → `pub.pdfPath` with `download`.
+  * “Open in new tab” → the same viewer URL.
+* Keyboard handling: ESC closes.
+* Clicking backdrop closes.
+* Trap focus inside modal.
+
+## Publications Page
+
+`src/pages/PublicationsPage.tsx`:
+
+* Uses `PUBLICATIONS`.
+* Reads and writes `?doc=` via `useSearchParams` (if React Router) or with your router of choice; if there is no router installed, create a very light hash/query manager.
+* Grid of cards (Tailwind):
+
+  ```html
+  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6
+  ```
+* When a card is clicked:
+
+  * Set selected pub, open modal, push `?doc=<slug>` into the URL.
+* On mount, if `?doc` matches a slug, auto-open.
+* Page header: “Publications” and a short blurb.
+
+## Styling touches
+
+* Cards: `rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition`
+* Cover: `object-cover w-full h-full`
+* Motion:
+
+  * Card hover: subtle lift (`whileHover={{ y: -2 }}`)
+  * Modal: springy zoom using layout shared element + a slight `scale` on open.
+
+## Accessibility
+
+* Each card: `<button>` with `aria-label="Open <title>"`
+* Modal has `role="dialog"`, `aria-modal="true"`, and a labelled title.
+* Provide a plain “Download PDF” link for screen readers.
+
+## Routing integration
+
+* If the app already uses React Router, add a route:
+
+  * `path: "/publications", element: <PublicationsPage />`
+* If not, add a link in your nav and mount the page in your current router setup.
+
+## Testing checklist
+
+* `/publications` renders grid with at least one item.
+* Clicking a card animates to full-screen modal with the embedded viewer.
+* `?doc=slug` deep link opens modal immediately.
+* Mobile layout: modal fills screen; iframe scrolls; close works.
+* The PDF streams (range requests) and you can search inside the viewer, change pages, and download.
+
+## Code to write (exact)
+
+1. `scripts/copy-pdfjs.js`:
+
+   * Use `fs` and `fs-extra` (or pure `fs.cp`) to copy `pdfjs-dist/web` and `pdf.worker.min.js` as described.
+   * Ensure paths exist; create directories.
+
+2. `src/data/publications.ts`: define `Publication` + `PUBLICATIONS` array (include a sample with slug `"hybrid-urbanism"`, title `"Hybrid Urbanism"`, year `"2025"`, pdfPath `"/publications/hybrid-urbanism.pdf"`, coverPath `"/publications/hybrid-urbanism.jpg"`).
+
+3. `src/components/PublicationCard.tsx`: motion card with image, title, year.
+
+4. `src/components/PdfModal.tsx`: backdrop + content with shared `layoutId`, iframe to `/pdfjs/viewer.html?file=<pdfPath>`, close buttons (top-right “X” and footer “Close”), ESC handler.
+
+5. `src/pages/PublicationsPage.tsx`: grid + modal + URL query sync.
+
+6. Navigation: add a “Publications” link in the site header pointing to `/publications`.
+
+7. Add one sample PDF + cover under `public/publications/` for testing.
+
+8. Run `npm run prepare`, then `npm run dev` and verify.
+
+## Notes & pitfalls to handle
+
+* Vite will serve anything under `/public` at the root. Keep viewer paths relative to `/pdfjs/...`.
+* Ensure the **worker** is available to the viewer: it expects `/pdfjs/build/pdf.worker.min.js`. Place it there.
+* Some hosts require `Accept-Ranges: bytes` for partial PDF loading; this is usually on by default. If PDFs don’t stream, still ensure the viewer loads fully.
+* If you later want thumbnails from the PDF (instead of manual covers), we can add an async thumbnailer using `pdfjs-dist` in a web worker; for now, an image cover is fine.
+
+Produce all code and wire it up end-to-end.
