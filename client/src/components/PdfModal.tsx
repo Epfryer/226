@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ExternalLink } from "lucide-react";
 import type { Publication } from "@/data/publications";
+import { FlipbookViewer } from "./FlipbookViewer";
 
 interface PdfModalProps {
   open: boolean;
@@ -68,7 +69,9 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
 
   if (!pub) return null;
 
-  const viewerUrl = `/pdfjs/web/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`;
+  const handleFullscreen = () => {
+    window.open(`/pdfjs/web/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`, '_blank');
+  };
 
   return (
     <AnimatePresence>
@@ -115,12 +118,9 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               </div>
 
               <div className="flex-1 overflow-hidden">
-                <iframe
-                  src={viewerUrl}
-                  className="w-full h-full border-0"
-                  title={`${pub.title} PDF viewer`}
-                  loading="lazy"
-                  allow="fullscreen"
+                <FlipbookViewer 
+                  pdfUrl={pub.pdfPath} 
+                  onFullscreen={handleFullscreen}
                 />
               </div>
 
@@ -132,15 +132,6 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 >
                   <Download className="w-4 h-4" />
                   Download PDF
-                </a>
-                <a
-                  href={viewerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open in New Tab
                 </a>
               </div>
             </motion.div>
