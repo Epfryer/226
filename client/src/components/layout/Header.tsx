@@ -66,11 +66,11 @@ export function Header() {
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/">
               Projects
             </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
-              About
-            </Link>
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/publications">
               Publications
+            </Link>
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
+              About
             </Link>
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/contact">
               Contact
@@ -94,11 +94,11 @@ export function Header() {
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/">
                 Projects
               </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
-                About
-              </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/publications">
                 Publications
+              </Link>
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/about">
+                About
               </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide ${isAboutPage ? 'text-white' : ''}`} href="/contact">
                 Contact
