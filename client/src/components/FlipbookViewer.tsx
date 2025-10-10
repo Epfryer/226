@@ -24,6 +24,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [isLoading, setIsLoading] = useState(true);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
+  const [isFlipbookReady, setIsFlipbookReady] = useState(false);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -33,24 +34,29 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setPageWidth(null);
     setPageHeight(null);
     setIsLoading(true);
+    setIsFlipbookReady(false);
   }, [pdfUrl]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!bookRef.current?.pageFlip) return;
+      if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
       
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        bookRef.current.pageFlip().flipPrev();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        bookRef.current.pageFlip().flipNext();
+      try {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          bookRef.current.pageFlip().flipPrev();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          bookRef.current.pageFlip().flipNext();
+        }
+      } catch (error) {
+        console.warn("Error during keyboard navigation:", error);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isFlipbookReady]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -98,14 +104,22 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   const goToNextPage = () => {
-    if (bookRef.current?.pageFlip) {
-      bookRef.current.pageFlip().flipNext();
+    if (isFlipbookReady && bookRef.current?.pageFlip) {
+      try {
+        bookRef.current.pageFlip().flipNext();
+      } catch (error) {
+        console.warn("Error navigating to next page:", error);
+      }
     }
   };
 
   const goToPrevPage = () => {
-    if (bookRef.current?.pageFlip) {
-      bookRef.current.pageFlip().flipPrev();
+    if (isFlipbookReady && bookRef.current?.pageFlip) {
+      try {
+        bookRef.current.pageFlip().flipPrev();
+      } catch (error) {
+        console.warn("Error navigating to previous page:", error);
+      }
     }
   };
 
@@ -116,11 +130,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         onLoadSuccess={({ numPages }) => {
           setNumPages(numPages);
           setCurrentPage(0);
-          if (pageWidth && pageHeight) {
-            setTimeout(() => {
-              bookRef.current?.pageFlip().turnToPage(0);
-            }, 100);
-          }
         }}
         onLoadError={(error) => {
           console.error("Error loading PDF:", error);
@@ -155,7 +164,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         ) : pageWidth && pageHeight ? (
           <div className="relative flex items-center justify-center">
             <HTMLFlipBook
-              key={`${pageWidth}-${pageHeight}`}
+              key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
               width={pageWidth}
               height={pageHeight}
               size="fixed"
@@ -172,6 +181,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               className="shadow-2xl"
               ref={bookRef}
               onFlip={handleFlip}
+              onInit={() => {
+                setIsFlipbookReady(true);
+              }}
+              onChangeState={() => {
+                if (!isFlipbookReady) {
+                  setIsFlipbookReady(true);
+                }
+              }}
               mobileScrollSupport={true}
               style={{}}
               startZIndex={0}
