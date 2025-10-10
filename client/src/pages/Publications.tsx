@@ -69,7 +69,7 @@ export default function Publications() {
           </p>
         </div>
 
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+        <div className="flex flex-wrap gap-6 justify-center md:justify-start">
           {PUBLICATIONS.map((pub) => (
             <PublicationCard key={pub.slug} pub={pub} onOpen={handleOpenPub} />
           ))}
