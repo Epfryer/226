@@ -29,6 +29,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log('PDF URL:', pdfUrl);
     setCurrentPage(0);
     setNumPages(0);
     setPageWidth(null);
