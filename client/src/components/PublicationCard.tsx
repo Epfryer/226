@@ -17,19 +17,19 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       aria-label={`Open ${pub.title}`}
     >
-      {/* Natural sizing without forced aspect ratio */}
-      <div className="relative w-full bg-neutral-200 overflow-hidden">
+      {/* Fixed height container with contained images */}
+      <div className="relative w-full h-[400px] md:h-[500px] bg-neutral-200 overflow-hidden flex items-center justify-center">
         {pub.coverPath ? (
           <img
             src={pub.coverPath}
             alt={pub.title}
             loading="lazy"
-            className="w-full h-auto object-contain"
+            className="max-w-full max-h-full object-contain"
             width={1200}
             height={1600}
           />
         ) : (
-          <div className="w-full aspect-[3/4] flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
             <span className="text-4xl font-bold text-muted-foreground/30">PDF</span>
           </div>
         )}
