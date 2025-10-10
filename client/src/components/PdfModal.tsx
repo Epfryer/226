@@ -6,7 +6,7 @@ import { asset } from "@/utils/asset";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 
 // Set up PDF.js worker globally
-GlobalWorkerOptions.workerSrc = asset("pdfjs/build/pdf.worker.min.js");
+GlobalWorkerOptions.workerSrc = asset("pdfjs/build/pdf.worker.min.mjs");
 
 interface PdfModalProps {
   open: boolean;
