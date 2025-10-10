@@ -1,0 +1,117 @@
+Prompt (fix PDF 500s on published site)
+
+We have a Vite + React + TS + Tailwind app. PDFs open in Preview but fail with 500 after deploy. Please make these minimal changes so the PDF.js viewer, worker, and PDFs load in production.
+
+1) Ensure PDFs are shipped with the app
+
+Move/commit PDFs under:
+
+public/publications/hybrid-urbanism.pdf
+public/publications/EthanFryer_5thYear_SelectedWorks.pdf
+
+
+In code, refer to them without a leading slash (e.g., "publications/hybrid-urbanism.pdf").
+
+2) Add a base-safe asset helper
+
+Create src/utils/asset.ts:
+
+export function asset(p: string) {
+  const base = import.meta.env.BASE_URL || "/";
+  const clean = p.replace(/^\/+/, "");
+  return base.endsWith("/") ? base + clean : base + "/" + clean;
+}
+
+3) Use the helper for viewer, worker, and file URL
+
+In the component that renders the PDF iframe (e.g., PdfModal.tsx):
+
+import { asset } from "@/utils/asset";
+import { GlobalWorkerOptions } from "pdfjs-dist";
+
+GlobalWorkerOptions.workerSrc = asset("pdfjs/build/pdf.worker.min.js");
+
+const viewerUrl = asset("pdfjs/web/viewer.html");
+// pub.pdfPath must look like "publications/hybrid-urbanism.pdf"
+const fileUrl = asset(pub.pdfPath.replace(/^\/+/, ""));
+
+// Be resilient to hosts that dislike Range requests in prod
+const hash = import.meta.env.DEV
+  ? "#zoom=page-fit"
+  : "#zoom=page-fit&disableRange=true";
+
+<iframe
+  className="w-full h-full"
+  src={`${viewerUrl}?file=${encodeURIComponent(fileUrl)}${hash}`}
+  loading="lazy"
+/>
+
+4) Ship the PDF.js viewer + worker with the build
+
+Add scripts/copy-pdfjs.js:
+
+import fs from "fs";
+import path from "path";
+
+const root = process.cwd();
+const fromWeb = path.join(root, "node_modules", "pdfjs-dist", "web");
+const fromWorker = path.join(root, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.js");
+const toWeb = path.join(root, "public", "pdfjs", "web");
+const toBuild = path.join(root, "public", "pdfjs", "build");
+
+fs.mkdirSync(toWeb, { recursive: true });
+fs.mkdirSync(toBuild, { recursive: true });
+
+fs.cpSync(fromWeb, toWeb, { recursive: true });
+fs.copyFileSync(fromWorker, path.join(toBuild, "pdf.worker.min.js"));
+
+console.log("Copied pdfjs viewer + worker into /public/pdfjs");
+
+
+Update package.json scripts:
+
+{
+  "scripts": {
+    "prepare": "node scripts/copy-pdfjs.js",
+    "build": "vite build",
+    "verify:pdfs": "ls -lh dist/publications || echo 'NO dist/publications'"
+  }
+}
+
+
+Run once:
+
+npm run prepare
+git add public/pdfjs -A && git commit -m "bundle pdfjs viewer+worker"
+
+5) Keep Vite base simple
+
+vite.config.ts:
+
+export default defineConfig({
+  base: "/"
+});
+
+6) Verify after build
+npm run build && npm run verify:pdfs
+
+
+Confirm these exist in dist/:
+
+dist/publications/*.pdf
+
+dist/pdfjs/web/viewer.html
+
+dist/pdfjs/build/pdf.worker.min.js
+
+Done criteria
+
+On the published site, these URLs return 200 and the viewer loads:
+
+[BASE]/publications/hybrid-urbanism.pdf
+
+[BASE]/publications/EthanFryer_5thYear_SelectedWorks.pdf
+
+[BASE]/pdfjs/web/viewer.html
+
+[BASE]/pdfjs/build/pdf.worker.min.js
