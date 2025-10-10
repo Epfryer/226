@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const projectRoot = join(__dirname, '..');
-const publicPdfjsDir = join(projectRoot, 'public', 'pdfjs');
+const publicPdfjsDir = join(projectRoot, 'client', 'public', 'pdfjs');
 const pdfjsDistPath = join(projectRoot, 'node_modules', 'pdfjs-dist');
 
 // Create public/pdfjs directory if it doesn't exist
