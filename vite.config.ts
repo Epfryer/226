@@ -22,6 +22,6 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['.replit.dev'],
+    allowedHosts: ['4e84567e-f433-40d2-9875-dbd7df02e98e-00-3fadk9b20ez33.kirk.replit.dev'],
   },
 });
