@@ -97,10 +97,10 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-full max-w-7xl bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+              className="relative w-full max-w-7xl h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                 <h2 id="modal-title" className="text-xl font-semibold">
                   {pub.title} ({pub.year})
                 </h2>
@@ -114,7 +114,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden min-h-[600px] md:min-h-[700px]">
+              <div className="flex-1 overflow-hidden">
                 <iframe
                   src={viewerUrl}
                   className="w-full h-full border-0"
@@ -124,7 +124,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-center gap-4 p-4 border-t bg-muted/50">
+              <div className="flex items-center justify-center gap-4 p-4 border-t bg-muted/50 flex-shrink-0">
                 <a
                   href={pub.pdfPath}
                   download
