@@ -27,13 +27,19 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
             <span className="text-4xl font-bold text-muted-foreground/30">PDF</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        
+        {/* Title and date overlay at bottom left */}
+        <div className="absolute bottom-0 left-0 p-6 text-white z-10">
+          <h3 className="font-semibold text-xl mb-1 line-clamp-2">{pub.title}</h3>
+          <p className="text-sm text-white/80">{pub.year}</p>
+        </div>
+        
+        {/* Hover effect */}
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </motion.div>
-      
-      <div className="p-4 bg-card">
-        <h3 className="font-semibold text-lg mb-1 line-clamp-2">{pub.title}</h3>
-        <p className="text-sm text-muted-foreground">{pub.year}</p>
-      </div>
     </motion.button>
   );
 }
