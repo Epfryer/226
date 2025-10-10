@@ -15,15 +15,15 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       aria-label={`Open ${pub.title}`}
     >
-      <motion.div layoutId={pub.slug} className="aspect-[3/4] bg-muted relative">
+      <motion.div layoutId={pub.slug} className="bg-muted relative">
         {pub.coverPath ? (
           <img
             src={pub.coverPath}
             alt={pub.title}
-            className="w-full h-full object-cover"
+            className="w-full h-auto object-contain"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
+          <div className="w-full aspect-[3/4] flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
             <span className="text-4xl font-bold text-muted-foreground/30">PDF</span>
           </div>
         )}
