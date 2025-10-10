@@ -2,12 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Set worker source using base URL for proper path resolution
-const base = import.meta.env.BASE_URL || '/';
-pdfjs.GlobalWorkerOptions.workerSrc = `${base}pdfjs/build/pdf.worker.mjs`.replace(/\/+/g, '/').replace(/^\//,'/');
+pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
 
 interface FlipbookViewerProps {
   pdfUrl: string;

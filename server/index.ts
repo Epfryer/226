@@ -50,7 +50,7 @@ app.use((req, res, next) => {
   // Serve static files from public directory in development
   // This needs to be before Vite's catch-all route
   if (app.get("env") === "development") {
-    app.use(express.static("client/public"));
+    app.use(express.static("public"));
   }
 
   // importantly only setup vite in development and after
