@@ -9,7 +9,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/publications/:filename", async (req, res) => {
     try {
       const filename = req.params.filename;
-      const objectName = filename;
+      const objectName = `publications/${filename}`;
       
       const result = await client.downloadAsBytes(objectName);
       
