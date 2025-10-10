@@ -18,14 +18,18 @@ interface FlipbookViewerProps {
 export function FlipbookViewer({ pdfUrl, onFullscreen }: FlipbookViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageWidth, setPageWidth] = useState<number | null>(null);
+  const [pageHeight, setPageHeight] = useState<number | null>(null);
+  const [isPortrait, setIsPortrait] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const bookRef = useRef<any>(null);
-
-  const pageWidth = 450;
-  const pageHeight = 600;
 
   useEffect(() => {
     setCurrentPage(0);
     setNumPages(0);
+    setPageWidth(null);
+    setPageHeight(null);
+    setIsLoading(true);
   }, [pdfUrl]);
 
   useEffect(() => {
@@ -62,9 +66,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen }: FlipbookViewerProps) {
         onLoadSuccess={({ numPages }) => {
           setNumPages(numPages);
           setCurrentPage(0);
-          setTimeout(() => {
-            bookRef.current?.pageFlip().turnToPage(0);
-          }, 100);
+          if (pageWidth && pageHeight) {
+            setTimeout(() => {
+              bookRef.current?.pageFlip().turnToPage(0);
+            }, 100);
+          }
         }}
         onLoadError={(error) => {
           console.error("Error loading PDF:", error);
@@ -75,46 +81,76 @@ export function FlipbookViewer({ pdfUrl, onFullscreen }: FlipbookViewerProps) {
           </div>
         }
       >
-        <div className="relative">
-          <HTMLFlipBook
-            width={pageWidth}
-            height={pageHeight}
-            size="stretch"
-            minWidth={300}
-            maxWidth={600}
-            minHeight={400}
-            maxHeight={800}
-            showCover={true}
-            flippingTime={800}
-            usePortrait={true}
-            startPage={0}
-            drawShadow={true}
-            className="shadow-2xl"
-            ref={bookRef}
-            onFlip={handleFlip}
-            mobileScrollSupport={true}
-            style={{}}
-            startZIndex={0}
-            autoSize={true}
-            maxShadowOpacity={0.5}
-            showPageCorners={true}
-            disableFlipByClick={false}
-            clickEventForward={true}
-            useMouseEvents={true}
-            swipeDistance={30}
-          >
-            {Array.from(new Array(numPages), (_, index) => (
-              <div key={`page_${index + 1}`} className="bg-white shadow-lg">
-                <Page
-                  pageNumber={index + 1}
-                  width={pageWidth}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                />
-              </div>
-            ))}
-          </HTMLFlipBook>
-        </div>
+        {isLoading && pageWidth === null ? (
+          <div className="flex items-center justify-center h-96">
+            <Page
+              pageNumber={1}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              onLoadSuccess={(page) => {
+                const { width, height } = page;
+                const maxWidth = 600;
+                const maxHeight = 800;
+                const aspectRatio = width / height;
+                
+                let displayWidth = maxWidth;
+                let displayHeight = maxWidth / aspectRatio;
+                
+                if (displayHeight > maxHeight) {
+                  displayHeight = maxHeight;
+                  displayWidth = maxHeight * aspectRatio;
+                }
+                
+                setPageWidth(displayWidth);
+                setPageHeight(displayHeight);
+                setIsPortrait(height > width);
+                setIsLoading(false);
+              }}
+              className="opacity-0"
+            />
+          </div>
+        ) : pageWidth && pageHeight ? (
+          <div className="relative">
+            <HTMLFlipBook
+              width={pageWidth}
+              height={pageHeight}
+              size="stretch"
+              minWidth={300}
+              maxWidth={600}
+              minHeight={400}
+              maxHeight={800}
+              showCover={true}
+              flippingTime={800}
+              usePortrait={isPortrait}
+              startPage={0}
+              drawShadow={true}
+              className="shadow-2xl"
+              ref={bookRef}
+              onFlip={handleFlip}
+              mobileScrollSupport={true}
+              style={{}}
+              startZIndex={0}
+              autoSize={true}
+              maxShadowOpacity={0.5}
+              showPageCorners={true}
+              disableFlipByClick={false}
+              clickEventForward={true}
+              useMouseEvents={true}
+              swipeDistance={30}
+            >
+              {Array.from(new Array(numPages), (_, index) => (
+                <div key={`page_${index + 1}`} className="bg-white shadow-lg">
+                  <Page
+                    pageNumber={index + 1}
+                    width={pageWidth}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </div>
+              ))}
+            </HTMLFlipBook>
+          </div>
+        ) : null}
       </Document>
 
       <div className="flex items-center gap-6 mt-8">
