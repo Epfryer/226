@@ -87,7 +87,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [containerSize, pdfAspectRatio]);
 
   const handleFlip = (e: any) => {
-    console.log('Flipbook currentPage:', e.data);
     setCurrentPage(e.data);
   };
 
