@@ -8,7 +8,7 @@ import { TypingAnimation } from "@/components/ui/typing-animation";
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isProjectExpanded, shouldRevealHeader } = useProject();
-  const location = useLocation();
+  const [location] = useLocation();
   const isAboutPage = location === "/about";
 
   const headerStyle = {

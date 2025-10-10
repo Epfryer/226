@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, ExternalLink } from "lucide-react";
 import type { Publication } from "@/data/publications";
@@ -10,6 +10,10 @@ interface PdfModalProps {
 }
 
 export function PdfModal({ open, pub, onClose }: PdfModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -17,14 +21,48 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
       }
     };
 
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement?.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement?.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
     if (open) {
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+      
+      setTimeout(() => {
+        closeButtonRef.current?.focus();
+      }, 100);
+
       document.addEventListener("keydown", handleEscape);
+      document.addEventListener("keydown", handleTab);
       document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleTab);
       document.body.style.overflow = "unset";
+      
+      if (previousActiveElementRef.current) {
+        previousActiveElementRef.current.focus();
+      }
     };
   }, [open, onClose]);
 
@@ -53,6 +91,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
             aria-labelledby="modal-title"
           >
             <motion.div
+              ref={modalRef}
               layoutId={pub.slug}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -66,6 +105,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                   {pub.title} ({pub.year})
                 </h2>
                 <button
+                  ref={closeButtonRef}
                   onClick={onClose}
                   className="p-2 hover:bg-muted rounded-lg transition-colors"
                   aria-label="Close modal"
