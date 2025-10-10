@@ -24,7 +24,7 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
             src={pub.coverPath}
             alt={pub.title}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            className="absolute inset-0 h-full w-full object-contain object-center"
             width={1200}
             height={1600}
           />
