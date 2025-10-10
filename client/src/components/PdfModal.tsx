@@ -78,15 +78,8 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     window.open(`/pdfjs/web/viewer.html?file=${encodeURIComponent(pub.pdfPath)}`, '_blank');
   };
 
-  const getModalStyle = () => {
-    if (!aspectRatio) return { maxWidth: "90vw", maxHeight: "90vh" };
-    
-    const isLandscape = aspectRatio > 1;
-    if (isLandscape) {
-      return { width: "min(90vw, 1200px)", height: "auto" };
-    } else {
-      return { height: "90vh", width: "auto" };
-    }
+  const getModalClass = () => {
+    return "relative w-full max-w-7xl max-h-[90vh] bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col";
   };
 
   return (
@@ -115,8 +108,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              style={getModalStyle()}
-              className="relative bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className={getModalClass()}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b flex-shrink-0">

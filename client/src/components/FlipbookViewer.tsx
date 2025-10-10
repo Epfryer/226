@@ -35,12 +35,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!bookRef.current?.pageFlip) return;
+      
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        bookRef.current?.pageFlip().flipPrev();
+        bookRef.current.pageFlip().flipPrev();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        bookRef.current?.pageFlip().flipNext();
+        bookRef.current.pageFlip().flipNext();
       }
     };
 
@@ -53,11 +55,15 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   const goToNextPage = () => {
-    bookRef.current?.pageFlip().flipNext();
+    if (bookRef.current?.pageFlip) {
+      bookRef.current.pageFlip().flipNext();
+    }
   };
 
   const goToPrevPage = () => {
-    bookRef.current?.pageFlip().flipPrev();
+    if (bookRef.current?.pageFlip) {
+      bookRef.current.pageFlip().flipPrev();
+    }
   };
 
   return (
@@ -90,16 +96,16 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               renderAnnotationLayer={false}
               onLoadSuccess={(page) => {
                 const { width, height } = page;
-                const maxWidth = 600;
-                const maxHeight = 800;
                 const aspectRatio = width / height;
+                const maxSpreadWidth = 1000;
+                const maxHeight = 700;
                 
-                let displayWidth = maxWidth;
-                let displayHeight = maxWidth / aspectRatio;
+                let displayWidth = maxSpreadWidth / 2;
+                let displayHeight = displayWidth / aspectRatio;
                 
                 if (displayHeight > maxHeight) {
                   displayHeight = maxHeight;
-                  displayWidth = maxHeight * aspectRatio;
+                  displayWidth = displayHeight * aspectRatio;
                 }
                 
                 setPageWidth(displayWidth);
@@ -121,12 +127,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               height={pageHeight}
               size="stretch"
               minWidth={300}
-              maxWidth={600}
+              maxWidth={1200}
               minHeight={400}
               maxHeight={800}
               showCover={true}
               flippingTime={800}
-              usePortrait={isPortrait}
+              usePortrait={false}
               startPage={0}
               drawShadow={true}
               className="shadow-2xl"
@@ -169,12 +175,15 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         </button>
 
         <div className="text-sm font-medium px-4 py-2 bg-background/80 backdrop-blur-sm rounded-full shadow-md">
-          Page {currentPage + 1} of {numPages}
+          {currentPage === 0 
+            ? `Page 1 of ${numPages}` 
+            : `Pages ${currentPage * 2}-${Math.min(currentPage * 2 + 1, numPages)} of ${numPages}`
+          }
         </div>
 
         <button
           onClick={goToNextPage}
-          disabled={currentPage >= numPages - 1}
+          disabled={currentPage * 2 + 1 >= numPages}
           className="p-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           aria-label="Next page"
         >
