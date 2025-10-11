@@ -1,0 +1,99 @@
+The 500 is coming from your Replit **file proxy route**, not from PDF.js. Make these 4 changes—this fixes the common pitfalls (Node version, streaming, headers, and key mismatches) and gives you actionable error text instead of silent 500s.
+
+1. **Use Axios stream (works on Node 16/18) instead of Web-streams**
+
+```bash
+npm i axios @replit/object-storage cors
+```
+
+```ts
+// routes/publications.ts
+import express from "express";
+import cors from "cors";
+import axios from "axios";
+import { Client } from "@replit/object-storage";
+
+const router = express.Router();
+const storage = new Client();
+
+router.use(cors({ origin: ["https://ethanfryer.com", "http://localhost:5173"] }));
+
+router.get("/:filename", async (req, res) => {
+  try {
+    const nameRaw = decodeURIComponent(req.params.filename || "");
+    if (!nameRaw) return res.status(400).json({ error: "Missing filename param" });
+
+    const name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
+    const key = `publications/${name}`;
+
+    // 1) Verify exact key exists (avoids mysterious 500 on typos/case)
+    const hit = await storage.list({ prefix: key, limit: 1 });
+    if (!hit.length || hit[0].name !== key) {
+      return res.status(404).json({ error: "Not found", key });
+    }
+
+    // 2) Get signed URL and stream with Axios (handles Node 16/18 reliably)
+    const url = await storage.getSignedDownloadUrl(key, { expiresInSeconds: 600 });
+    const upstream = await axios.get(url, {
+      headers: req.headers.range ? { Range: String(req.headers.range) } : {},
+      responseType: "stream",
+      validateStatus: (s) => (s >= 200 && s < 300) || s === 206,
+    });
+
+    // 3) Pass through critical headers for PDF.js
+    res.status(upstream.status);
+    const H = upstream.headers;
+    const pass = (h: string, alias = h) => H[h] && res.setHeader(alias, H[h]);
+    pass("content-type", "Content-Type");          // application/pdf
+    pass("content-length", "Content-Length");
+    pass("accept-ranges", "Accept-Ranges");        // bytes
+    pass("content-range", "Content-Range");        // for partials
+    pass("last-modified", "Last-Modified");
+    pass("etag", "ETag");
+    pass("cache-control", "Cache-Control");
+    res.setHeader("Content-Disposition", `inline; filename="${name}"`);
+
+    // 4) Pipe to client
+    upstream.data.on("error", (e: any) => {
+      console.error("Upstream stream error:", e?.message || e);
+      if (!res.headersSent) res.status(502);
+      res.end();
+    });
+    upstream.data.pipe(res);
+  } catch (e: any) {
+    console.error("PDF proxy failed:", e?.message || e);
+    res
+      .status(500)
+      .json({ error: "PDF proxy failed", message: e?.message || String(e) });
+  }
+});
+
+export default router;
+```
+
+2. **Mount order matters**
+
+```ts
+// server/index.ts
+import publications from "./routes/publications";
+app.use("/api/publications", publications); // mount BEFORE any static/catch-all
+```
+
+3. **Call the implemented route exactly**
+
+* Your frontend should request:
+  `/api/publications/hybrid-urbanism.pdf`
+  `/api/publications/EthanFryer_5thYear_SelectedWorks.pdf`
+* Manually test on Replit:
+  `https://ethanfryer.replit.app/api/publications/hybrid-urbanism.pdf`
+  (Open in a new tab—should render/download; no 500.)
+
+4. **If you still see 500, you’ll now get JSON explaining it**
+
+* Common fixes from that JSON:
+
+  * `Not found` → the key casing/path is wrong. Confirm the exact object names in App Storage.
+  * `PDF proxy failed` with `fetch is not defined` → you’re using old code; the Axios version above removes that issue.
+  * `Upstream stream error` or `403` → your App Storage credentials/bucket path aren’t right; verify the `publications/` prefix.
+
+Once this works on `*.replit.app`, point your production frontend at that origin (or CNAME `api.ethanfryer.com` to Replit) instead of relative `/api/...` from GitHub Pages—unless you’ve actually set up a reverse proxy on ethanfryer.com.
