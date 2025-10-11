@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { Client } from '@replit/object-storage';
 import multer from 'multer';
 import { uploadPdf, listPdfs, deletePdf, getPdfMetadata } from './storage';
+import pdfRoutes from './pdf-routes';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -28,20 +29,20 @@ export function registerRoutes(app: Express): Server {
       'http://localhost:5000',
       'http://localhost:5173'
     ];
-    
+
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }
-    
+
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    
+
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
     }
-    
+
     next();
   });
 
@@ -50,29 +51,29 @@ export function registerRoutes(app: Express): Server {
     try {
       const filename = req.params.filename;
       const objectName = filename;
-      
+
       console.log(`Attempting to fetch PDF: ${objectName}`);
-      
+
       const result = await client.downloadAsBytes(objectName);
-      
+
       if (!result.ok) {
         console.error('Object Storage error:', result.error);
         console.error('Error details:', JSON.stringify(result.error, null, 2));
-        return res.status(404).json({ 
+        return res.status(404).json({
           message: 'PDF not found in Object Storage',
-          error: result.error.message 
+          error: result.error.message
         });
       }
-      
+
       const pdfBuffer = result.value[0];
       console.log(`Successfully fetched PDF: ${objectName}, size: ${pdfBuffer.length} bytes`);
-      
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error('Error fetching PDF from Object Storage:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Internal server error',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -109,8 +110,8 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error) {
       console.error('Upload error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : 'Upload failed' 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : 'Upload failed'
       });
     }
   });
@@ -119,7 +120,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/publications", async (_req, res) => {
     try {
       const pdfs = await listPdfs();
-      
+
       // Create publication objects with download URLs
       const publications = await Promise.all(
         pdfs.map(async (filename) => {
@@ -134,7 +135,7 @@ export function registerRoutes(app: Express): Server {
           };
         })
       );
-      
+
       res.json({ publications });
     } catch (error) {
       console.error('Error listing PDFs:', error);
@@ -169,6 +170,10 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ message: 'Failed to delete PDF' });
     }
   });
+
+  // PDF proxy routes
+  app.use("/api/publications", pdfRoutes);
+
 
   const httpServer = createServer(app);
   return httpServer;
