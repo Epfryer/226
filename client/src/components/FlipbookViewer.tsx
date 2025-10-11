@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, Smartphone } from "lucide-react";
 import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -46,9 +46,30 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [retryCount, setRetryCount] = useState<number>(0);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [documentKey, setDocumentKey] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Detect mobile device and orientation
+  useEffect(() => {
+    const checkMobileAndOrientation = () => {
+      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const portrait = window.innerHeight > window.innerWidth;
+      setIsMobile(mobile);
+      setIsDevicePortrait(portrait);
+    };
+
+    checkMobileAndOrientation();
+    window.addEventListener('resize', checkMobileAndOrientation);
+    window.addEventListener('orientationchange', checkMobileAndOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkMobileAndOrientation);
+      window.removeEventListener('orientationchange', checkMobileAndOrientation);
+    };
+  }, []);
 
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
@@ -123,7 +144,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     const availableWidth = containerSize.width - (padding * 2);
 
     const containerAspectRatio = availableWidth / availableHeight;
-    const scaleFactor = 0.85;
+    // Use smaller scale factor for mobile devices to prevent cutoff
+    const scaleFactor = isMobile ? 0.65 : 0.85;
 
     let displayWidth: number;
     let displayHeight: number;
@@ -138,7 +160,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
     setPageWidth(Math.floor(displayWidth));
     setPageHeight(Math.floor(displayHeight));
-  }, [containerSize, pdfAspectRatio]);
+  }, [containerSize, pdfAspectRatio, isMobile]);
 
   const handleFlip = (e: any) => {
     // e.data is the 0-based index of the LEFT page in the current spread
@@ -262,6 +284,37 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   // Show error state if there's an error and we've exceeded retries
   if (error && retryCount >= MAX_RETRIES) {
     return renderErrorState();
+  }
+
+  // Show rotation prompt on mobile in portrait mode
+  if (isMobile && isDevicePortrait) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full px-6">
+        <div className="relative mb-6">
+          <Smartphone className="w-20 h-20 text-white/80 animate-pulse" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4m0 12v4m8-10h-4M8 12H4m15.071-7.071l-2.828 2.828M8.757 15.243l-2.828 2.828m12.142 0l-2.828-2.828M8.757 8.757L5.929 5.93"/>
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-white text-xl font-semibold mb-3 text-center">
+          Rotate Your Device
+        </h3>
+        <p className="text-white/70 text-center max-w-sm">
+          For the best viewing experience, please rotate your device to landscape mode.
+        </p>
+        <div className="mt-8 flex items-center gap-3 text-white/50 text-sm">
+          <div className="w-12 h-8 border-2 border-white/50 rounded-md flex items-center justify-center transform -rotate-90">
+            <Smartphone className="w-6 h-6" />
+          </div>
+          <span>→</span>
+          <div className="w-12 h-8 border-2 border-blue-400 rounded-md flex items-center justify-center">
+            <Smartphone className="w-6 h-6 text-blue-400" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
