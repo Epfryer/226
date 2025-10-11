@@ -47,6 +47,7 @@ Preferred communication style: Simple, everyday language.
 - Express.js with TypeScript
 - Node.js runtime with ES modules
 - HTTP server creation via `createServer`
+- **Reverse proxy configuration:** `app.set('trust proxy', 1)` enables proxy header trust for Cloud Run deployments
 
 **Development Environment:**
 - Vite middleware integration for HMR in development
@@ -57,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 **API Structure:**
 - RESTful API prefix convention (`/api/*`)
 - Routes registered through `registerRoutes` function
-- Currently minimal backend - primarily serves as static file server
+- `/api/publications/:filename` - Streams PDF files from App Storage
 
 ### Data Storage
 
@@ -87,6 +88,13 @@ Preferred communication style: Simple, everyday language.
 - Configuration includes cloud name, API key, and API secret
 - Helper functions for upload and delete operations in `client/src/lib/cloudinary.ts`
 - All project images served via Cloudinary URLs
+
+**File Storage:**
+- Replit App Storage (formerly Object Storage) for hosting large PDF files
+- Bucket ID: `replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02` (configured in `.replit`)
+- `@replit/object-storage` SDK for programmatic access
+- Publications PDFs (84MB and 91MB) stored in `publications/` folder in bucket
+- Served via API endpoint `/api/publications/:filename` to work in both dev and production
 
 **UI Component Libraries:**
 - Radix UI for accessible, unstyled component primitives
