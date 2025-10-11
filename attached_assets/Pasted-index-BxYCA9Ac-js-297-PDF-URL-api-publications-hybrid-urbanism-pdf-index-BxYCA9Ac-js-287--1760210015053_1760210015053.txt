@@ -1,0 +1,67 @@
+index-BxYCA9Ac.js:297 PDF URL: /api/publications/hybrid-urbanism.pdf
+index-BxYCA9Ac.js:287 
+            
+            
+           GET https://ethanfryer.replit.app/api/publications/hybrid-urbanism.pdf 500 (Internal Server Error)
+d6 @ index-BxYCA9Ac.js:287
+getFullReader @ index-BxYCA9Ac.js:287
+(anonymous) @ index-BxYCA9Ac.js:287
+hO @ index-BxYCA9Ac.js:287
+dO @ index-BxYCA9Ac.js:287
+index-BxYCA9Ac.js:297 Error loading PDF: Sg {message: 'Unexpected server response (500) while retrieving …replit.app/api/publications/hybrid-urbanism.pdf".', name: 'ResponseException', status: 500, missing: false, stack: 'Error\n    at https://ethanfryer.replit.app/assets/…ryer.replit.app/assets/index-BxYCA9Ac.js:286:8679'}
+onLoadError @ index-BxYCA9Ac.js:297
+he @ index-BxYCA9Ac.js:297
+(anonymous) @ index-BxYCA9Ac.js:297
+bv @ index-BxYCA9Ac.js:40
+yd @ index-BxYCA9Ac.js:40
+(anonymous) @ index-BxYCA9Ac.js:40
+b @ index-BxYCA9Ac.js:25
+H @ index-BxYCA9Ac.js:25
+index-BxYCA9Ac.js:297 Auto-retrying PDF load (attempt 1/3)...
+index-BxYCA9Ac.js:287 
+            
+            
+           GET https://ethanfryer.replit.app/api/publications/hybrid-urbanism.pdf 500 (Internal Server Error)
+d6 @ index-BxYCA9Ac.js:287
+getFullReader @ index-BxYCA9Ac.js:287
+(anonymous) @ index-BxYCA9Ac.js:287
+hO @ index-BxYCA9Ac.js:287
+dO @ index-BxYCA9Ac.js:287
+index-BxYCA9Ac.js:297 Error loading PDF: Sg {message: 'Unexpected server response (500) while retrieving …replit.app/api/publications/hybrid-urbanism.pdf".', name: 'ResponseException', status: 500, missing: false, stack: 'Error\n    at https://ethanfryer.replit.app/assets/…ryer.replit.app/assets/index-BxYCA9Ac.js:286:8679'}
+onLoadError @ index-BxYCA9Ac.js:297
+he @ index-BxYCA9Ac.js:297
+(anonymous) @ index-BxYCA9Ac.js:297
+bv @ index-BxYCA9Ac.js:40
+yd @ index-BxYCA9Ac.js:40
+(anonymous) @ index-BxYCA9Ac.js:40
+b @ index-BxYCA9Ac.js:25
+H @ index-BxYCA9Ac.js:25
+index-BxYCA9Ac.js:297 Auto-retrying PDF load (attempt 2/3)...
+index-BxYCA9Ac.js:287 
+            
+            
+           GET https://ethanfryer.replit.app/api/publications/hybrid-urbanism.pdf 500 (Internal Server Error)
+d6 @ index-BxYCA9Ac.js:287
+getFullReader @ index-BxYCA9Ac.js:287
+(anonymous) @ index-BxYCA9Ac.js:287
+hO @ index-BxYCA9Ac.js:287
+dO @ index-BxYCA9Ac.js:287
+index-BxYCA9Ac.js:297 Error loading PDF: Sg {message: 'Unexpected server response (500) while retrieving …replit.app/api/publications/hybrid-urbanism.pdf".', name: 'ResponseException', status: 500, missing: false, stack: 'Error\n    at https://ethanfryer.replit.app/assets/…ryer.replit.app/assets/index-BxYCA9Ac.js:286:8679'}
+onLoadError @ index-BxYCA9Ac.js:297
+he @ index-BxYCA9Ac.js:297
+(anonymous) @ index-BxYCA9Ac.js:297
+bv @ index-BxYCA9Ac.js:40
+yd @ index-BxYCA9Ac.js:40
+(anonymous) @ index-BxYCA9Ac.js:40
+b @ index-BxYCA9Ac.js:25
+H @ index-BxYCA9Ac.js:25
+index-BxYCA9Ac.js:297 Auto-retrying PDF load (attempt 3/3)...
+index-BxYCA9Ac.js:287 
+            
+            
+           GET https://ethanfryer.replit.app/api/publications/hybrid-urbanism.pdf 500 (Internal Server Error)
+d6 @ index-BxYCA9Ac.js:287
+getFullReader @ index-BxYCA9Ac.js:287
+(anonymous) @ index-BxYCA9Ac.js:287
+hO @ index-BxYCA9Ac.js:287
+dO @ index-BxYCA9Ac.js:287

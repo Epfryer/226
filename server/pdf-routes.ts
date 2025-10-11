@@ -5,7 +5,20 @@ import { Client } from "@replit/object-storage";
 const router = express.Router();
 // Use the bucket ID from environment or config
 const BUCKET_ID = process.env.REPL_OBJSTORE_BUCKET_ID || 'replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02';
-const storage = new Client({ bucketId: BUCKET_ID });
+
+console.log('[PDF Routes] Initializing Object Storage client');
+console.log('[PDF Routes] Bucket ID:', BUCKET_ID);
+console.log('[PDF Routes] NODE_ENV:', process.env.NODE_ENV);
+
+let storage: Client;
+try {
+  storage = new Client({ bucketId: BUCKET_ID });
+  console.log('[PDF Routes] Object Storage client initialized successfully');
+} catch (error: any) {
+  console.error('[PDF Routes] Failed to initialize Object Storage client:', error);
+  console.error('[PDF Routes] Error details:', error?.message, error?.stack);
+  throw error;
+}
 
 // Allow CORS from all origins for development and deployment
 router.use(cors({ 
@@ -40,16 +53,51 @@ function cleanupCache() {
   }
 }
 
+// Health check endpoint to verify storage connection
+router.get("/health", async (req, res) => {
+  try {
+    console.log('[PDF Health] Testing Object Storage connection...');
+    const listResult = await storage.list();
+    
+    if (!listResult.ok) {
+      console.error('[PDF Health] Storage list failed:', listResult.error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Object Storage connection failed',
+        error: listResult.error?.message
+      });
+    }
+    
+    console.log('[PDF Health] Storage connection OK, found', listResult.value?.length || 0, 'objects');
+    res.json({
+      status: 'ok',
+      bucketId: BUCKET_ID,
+      objectCount: listResult.value?.length || 0,
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error: any) {
+    console.error('[PDF Health] Exception:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Exception during health check',
+      error: error?.message || String(error)
+    });
+  }
+});
+
 router.get("/:filename", async (req, res) => {
   try {
     const nameRaw = decodeURIComponent(req.params.filename || "");
     if (!nameRaw) {
+      console.error("[PDF] Missing filename param");
       return res.status(400).json({ error: "Missing filename param" });
     }
 
     const name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
 
-    console.log(`Attempting to fetch PDF: ${name}`);
+    console.log(`[PDF] Attempting to fetch: ${name}`);
+    console.log(`[PDF] Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[PDF] Bucket ID: ${BUCKET_ID}`);
 
     // Clean up expired entries periodically
     cleanupCache();
@@ -59,28 +107,44 @@ router.get("/:filename", async (req, res) => {
     const cached = pdfCache.get(name);
     
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`Using cached PDF: ${name}`);
+      console.log(`[PDF] Using cached: ${name}`);
       pdfBuffer = cached.buffer;
     } else {
       // Download the PDF as bytes
-      console.log(`Downloading PDF from storage: ${name}`);
-      console.log(`Using bucket ID: ${BUCKET_ID}`);
-      const downloadResult = await storage.downloadAsBytes(name);
-      if (!downloadResult.ok) {
-        console.error("Failed to download PDF:", downloadResult.error);
-        console.error("Error details:", JSON.stringify(downloadResult.error, null, 2));
-        return res.status(404).json({ 
-          error: "PDF not found",
-          details: downloadResult.error.message 
+      console.log(`[PDF] Downloading from storage: ${name}`);
+      
+      try {
+        const downloadResult = await storage.downloadAsBytes(name);
+        
+        if (!downloadResult.ok) {
+          console.error("[PDF] Download failed:", downloadResult.error);
+          console.error("[PDF] Error type:", downloadResult.error?.constructor?.name);
+          console.error("[PDF] Error message:", downloadResult.error?.message);
+          console.error("[PDF] Full error:", JSON.stringify(downloadResult.error, null, 2));
+          
+          return res.status(500).json({ 
+            error: "Failed to download PDF from storage",
+            details: downloadResult.error?.message || "Unknown error",
+            filename: name
+          });
+        }
+
+        // downloadAsBytes returns Result<[Buffer], Error> - the Buffer is in an array
+        pdfBuffer = downloadResult.value[0];
+        
+        // Cache the PDF
+        pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
+        console.log(`[PDF] Cached: ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+      } catch (downloadError: any) {
+        console.error("[PDF] Exception during download:", downloadError);
+        console.error("[PDF] Exception stack:", downloadError?.stack);
+        
+        return res.status(500).json({
+          error: "Exception while downloading PDF",
+          details: downloadError?.message || String(downloadError),
+          filename: name
         });
       }
-
-      // downloadAsBytes returns Result<[Buffer], Error> - the Buffer is in an array
-      pdfBuffer = downloadResult.value[0];
-      
-      // Cache the PDF
-      pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
-      console.log(`PDF cached: ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
     }
 
     const fileSize = pdfBuffer.length;
