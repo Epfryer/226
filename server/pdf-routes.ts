@@ -21,36 +21,21 @@ router.get("/:filename", async (req, res) => {
 
     console.log(`Attempting to fetch PDF: ${name}`);
 
-    // Check if file exists
-    const existsResult = await storage.exists(name);
-    if (!existsResult.ok || !existsResult.value) {
+    // Verify exact key exists
+    const hit = await storage.list({ prefix: name, limit: 1 });
+    if (!hit.ok || !hit.value.length || hit.value[0].name !== name) {
       console.error(`PDF not found: ${name}`);
       return res.status(404).json({ error: "Not found", key: name });
     }
-    
-    console.log(`PDF exists, proceeding with download: ${name}`);
 
-    // Download the PDF as bytes with timeout
-    console.log(`Starting download for: ${name}`);
-    
-    const downloadPromise = storage.downloadAsBytes(name);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Download timeout after 30s')), 30000)
-    );
-    
-    const downloadResult = await Promise.race([downloadPromise, timeoutPromise])
-      .catch(err => {
-        console.error("Download error:", err);
-        throw err;
-      });
-    
+    // Download the PDF as bytes
+    const downloadResult = await storage.downloadAsBytes(name);
     if (!downloadResult.ok) {
       console.error("Failed to download PDF:", downloadResult.error);
-      return res.status(500).json({ error: "Failed to download PDF", details: downloadResult.error });
+      return res.status(500).json({ error: "Failed to download PDF" });
     }
 
     const pdfBuffer = downloadResult.value;
-    console.log(`Successfully downloaded ${name}, size: ${pdfBuffer.length} bytes`);
 
     // Set headers for PDF display
     res.setHeader("Content-Type", "application/pdf");
@@ -64,11 +49,9 @@ router.get("/:filename", async (req, res) => {
 
   } catch (err: any) {
     console.error("PDF proxy error:", err?.message || err);
-    console.error("Full error details:", err);
     res.status(500).json({ 
       error: "PDF proxy failed", 
-      message: err?.message || String(err),
-      stack: err?.stack
+      message: err?.message || String(err) 
     });
   }
 });
