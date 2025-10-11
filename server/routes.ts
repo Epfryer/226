@@ -20,7 +20,8 @@ const upload = multer({
 });
 
 export function registerRoutes(app: Express): Server {
-  const client = new Client();
+  const BUCKET_ID = 'replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02';
+  const client = new Client({ bucketId: BUCKET_ID });
 
   // CORS middleware for API routes
   app.use('/api', (req, res, next) => {
