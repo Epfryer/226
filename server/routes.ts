@@ -46,40 +46,6 @@ export function registerRoutes(app: Express): Server {
     next();
   });
 
-  // API route to serve PDF from Object Storage
-  app.get("/api/publications/:filename", async (req, res) => {
-    try {
-      const filename = req.params.filename;
-      const objectName = filename;
-
-      console.log(`Attempting to fetch PDF: ${objectName}`);
-
-      const result = await client.downloadAsBytes(objectName);
-
-      if (!result.ok) {
-        console.error('Object Storage error:', result.error);
-        console.error('Error details:', JSON.stringify(result.error, null, 2));
-        return res.status(404).json({
-          message: 'PDF not found in Object Storage',
-          error: result.error.message
-        });
-      }
-
-      const pdfBuffer = result.value[0];
-      console.log(`Successfully fetched PDF: ${objectName}, size: ${pdfBuffer.length} bytes`);
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      res.send(pdfBuffer);
-    } catch (error) {
-      console.error('Error fetching PDF from Object Storage:', error);
-      res.status(500).json({
-        message: 'Internal server error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
   // Upload PDF endpoint
   app.post("/api/publications/upload", upload.single('pdf'), async (req, res) => {
     try {
@@ -171,10 +137,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // PDF proxy routes
-  app.use("/api/publications", pdfRoutes);
-
-
   const httpServer = createServer(app);
+
+  // PDF proxy routes (must be last to not interfere with other routes)
+  app.use("/api/publications", pdfRoutes);
   return httpServer;
 }
