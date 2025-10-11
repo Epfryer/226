@@ -25,7 +25,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/publications/:filename", async (req, res) => {
     try {
       const filename = req.params.filename;
-      const objectName = `publications/${filename}`;
+      const objectName = filename;
       
       console.log(`Attempting to fetch PDF: ${objectName}`);
       

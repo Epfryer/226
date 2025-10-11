@@ -6,7 +6,8 @@ async function listPdfs() {
   
   try {
     console.log('Listing all objects in Object Storage...');
-    const objects = await client.list({ prefix: 'publications/' });
+    const result = await client.list();
+    const objects = result || [];
     
     console.log(`\nFound ${objects.length} objects:`);
     objects.forEach(obj => {

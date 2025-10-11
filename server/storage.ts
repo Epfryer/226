@@ -18,7 +18,7 @@ export async function uploadPdf(
   try {
     // Sanitize filename
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const objectName = `publications/${sanitizedFilename}`;
+    const objectName = sanitizedFilename;
     
     // Upload to Object Storage
     const result = await client.uploadFromBytes(objectName, file, {
@@ -51,8 +51,8 @@ export async function uploadPdf(
 
 export async function listPdfs(): Promise<string[]> {
   try {
-    const objects = await client.list({ prefix: 'publications/' });
-    return objects.map(obj => obj.name.replace('publications/', ''));
+    const objects = await client.list();
+    return objects.map(obj => obj.name);
   } catch (error) {
     console.error('Error listing PDFs:', error);
     return [];
@@ -61,7 +61,7 @@ export async function listPdfs(): Promise<string[]> {
 
 export async function deletePdf(filename: string): Promise<boolean> {
   try {
-    const objectName = `publications/${filename}`;
+    const objectName = filename;
     const result = await client.delete(objectName);
     return result.ok;
   } catch (error) {
@@ -72,7 +72,7 @@ export async function deletePdf(filename: string): Promise<boolean> {
 
 export async function getPdfMetadata(filename: string) {
   try {
-    const objectName = `publications/${filename}`;
+    const objectName = filename;
     const result = await client.getMetadata(objectName);
     
     if (!result.ok) {
