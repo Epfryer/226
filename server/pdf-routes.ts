@@ -10,6 +10,33 @@ router.use(cors({
   credentials: true
 }));
 
+// Simple in-memory cache for PDF buffers (helps with range requests)
+const pdfCache = new Map<string, { buffer: Buffer; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 5; // Maximum number of PDFs to cache
+
+// Clean up expired cache entries
+function cleanupCache() {
+  const now = Date.now();
+  for (const [key, value] of pdfCache.entries()) {
+    if (now - value.timestamp >= CACHE_TTL) {
+      pdfCache.delete(key);
+      console.log(`Removed expired cache entry: ${key}`);
+    }
+  }
+  
+  // If still over size limit, remove oldest entries
+  if (pdfCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(pdfCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.slice(0, pdfCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => {
+      pdfCache.delete(key);
+      console.log(`Removed old cache entry due to size limit: ${key}`);
+    });
+  }
+}
+
 router.get("/:filename", async (req, res) => {
   try {
     const nameRaw = decodeURIComponent(req.params.filename || "");
@@ -21,30 +48,70 @@ router.get("/:filename", async (req, res) => {
 
     console.log(`Attempting to fetch PDF: ${name}`);
 
-    // Verify exact key exists
-    const hit = await storage.list({ prefix: name, limit: 1 });
-    if (!hit.ok || !hit.value.length || hit.value[0].name !== name) {
-      console.error(`PDF not found: ${name}`);
-      return res.status(404).json({ error: "Not found", key: name });
+    // Clean up expired entries periodically
+    cleanupCache();
+
+    // Check cache first
+    let pdfBuffer: Buffer;
+    const cached = pdfCache.get(name);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`Using cached PDF: ${name}`);
+      pdfBuffer = cached.buffer;
+    } else {
+      // Download the PDF as bytes
+      console.log(`Downloading PDF from storage: ${name}`);
+      const downloadResult = await storage.downloadAsBytes(name);
+      if (!downloadResult.ok) {
+        console.error("Failed to download PDF:", downloadResult.error);
+        return res.status(404).json({ error: "PDF not found" });
+      }
+
+      pdfBuffer = downloadResult.value as Buffer;
+      
+      // Cache the PDF
+      pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
+      console.log(`PDF cached: ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
     }
 
-    // Download the PDF as bytes
-    const downloadResult = await storage.downloadAsBytes(name);
-    if (!downloadResult.ok) {
-      console.error("Failed to download PDF:", downloadResult.error);
-      return res.status(500).json({ error: "Failed to download PDF" });
+    const fileSize = pdfBuffer.length;
+
+    // Handle Range requests for streaming/chunked delivery
+    const range = req.headers.range;
+    
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      if (start >= fileSize || end >= fileSize) {
+        res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
+        return res.send("Range Not Satisfiable");
+      }
+
+      const chunk = pdfBuffer.slice(start, end + 1);
+
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("Content-Length", chunkSize.toString());
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${name}"`);
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      
+      console.log(`Serving range: ${start}-${end}/${fileSize} for ${name}`);
+      return res.send(chunk);
     }
 
-    const pdfBuffer = downloadResult.value;
-
-    // Set headers for PDF display
+    // Send full file if no range requested
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${name}"`);
-    res.setHeader("Content-Length", pdfBuffer.length.toString());
+    res.setHeader("Content-Length", fileSize.toString());
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Cache-Control", "public, max-age=3600");
 
-    // Send the buffer
+    console.log(`Serving full PDF: ${name} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
     res.send(pdfBuffer);
 
   } catch (err: any) {

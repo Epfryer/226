@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle } from "lucide-react";
 import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -9,7 +9,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 // Use asset helper to ensure correct path in production
 pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
 
-// PDF.js configuration for unlimited loading time
+// PDF.js configuration with range support for streaming
 const pdfOptions = {
   cMapUrl: asset('pdfjs/web/cmaps/'),
   cMapPacked: true,
@@ -17,6 +17,8 @@ const pdfOptions = {
   disableStream: false,
   disableRange: false,
   httpHeaders: {},
+  isEvalSupported: false,
+  withCredentials: true,
 };
 
 interface FlipbookViewerProps {
@@ -24,6 +26,9 @@ interface FlipbookViewerProps {
   onFullscreen?: () => void;
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
 
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
@@ -36,8 +41,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [isFlipbookReady, setIsFlipbookReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
+  const [documentKey, setDocumentKey] = useState<number>(0);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
@@ -48,7 +58,25 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setIsLoading(true);
     setIsFlipbookReady(false);
     setLoadingProgress(0);
+    setError(null);
+    setRetryCount(0);
+    setIsRetrying(false);
+    
+    // Clear any pending retry timeouts
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
   }, [pdfUrl]);
+
+  // Cleanup retry timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,7 +164,50 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     }
   };
 
+  const handleRetry = () => {
+    setIsRetrying(false);
+    setError(null);
+    setLoadingProgress(0);
+    setRetryCount(0);
+    setIsLoading(true);
+    setPageWidth(null);
+    setPageHeight(null);
+    setPdfAspectRatio(null);
+    setIsFlipbookReady(false);
+    // Force React-PDF to make a new request by changing the key
+    setDocumentKey(prev => prev + 1);
+  };
+
+  const autoRetry = () => {
+    if (retryCount < MAX_RETRIES) {
+      setIsRetrying(true);
+      const nextRetry = retryCount + 1;
+      setRetryCount(nextRetry);
+      
+      console.log(`Auto-retrying PDF load (attempt ${nextRetry}/${MAX_RETRIES})...`);
+      
+      retryTimeoutRef.current = setTimeout(() => {
+        setIsRetrying(false);
+        setError(null);
+        setLoadingProgress(0);
+        // Increment documentKey to force React-PDF to retry the request
+        setDocumentKey(prev => prev + 1);
+      }, RETRY_DELAY);
+    }
+  };
+
   const renderLoadingState = () => {
+    if (isRetrying) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+          <p className="text-white text-sm font-medium">
+            Retrying... (Attempt {retryCount}/{MAX_RETRIES})
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
@@ -148,19 +219,63 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         <p className="text-white text-sm font-medium">
           Loading PDF... {loadingProgress}%
         </p>
+        {loadingProgress > 0 && (
+          <p className="text-white/60 text-xs">
+            Large files may take a moment to load
+          </p>
+        )}
       </div>
     );
   };
 
+  const renderErrorState = () => {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 px-4">
+        <AlertCircle className="w-12 h-12 text-red-400" />
+        <div className="text-center">
+          <h3 className="text-white text-lg font-semibold mb-2">Failed to Load PDF</h3>
+          <p className="text-white/70 text-sm mb-4">
+            {error || "The PDF could not be loaded. This might be due to a network issue or the file being too large."}
+          </p>
+          {retryCount >= MAX_RETRIES ? (
+            <p className="text-white/60 text-xs mb-4">
+              Maximum retry attempts reached. Please try again later.
+            </p>
+          ) : (
+            <p className="text-white/60 text-xs mb-4">
+              {retryCount > 0 && `Retry attempt ${retryCount}/${MAX_RETRIES} failed.`}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={handleRetry}
+          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Try Again
+        </button>
+      </div>
+    );
+  };
+
+  // Show error state if there's an error and we've exceeded retries
+  if (error && retryCount >= MAX_RETRIES) {
+    return renderErrorState();
+  }
+
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
       <Document
+        key={`pdf-${documentKey}`}
         file={pdfUrl}
         options={pdfOptions}
         onLoadSuccess={({ numPages }) => {
+          console.log(`PDF loaded successfully: ${numPages} pages`);
           setNumPages(numPages);
           setCurrentPage(0);
           setLoadingProgress(100);
+          setError(null);
+          setRetryCount(0);
         }}
         onLoadProgress={({ loaded, total }) => {
           const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
@@ -168,7 +283,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         }}
         onLoadError={(error) => {
           console.error("Error loading PDF:", error);
+          const errorMessage = error?.message || "Unknown error occurred";
+          setError(errorMessage);
           setLoadingProgress(0);
+          
+          // Auto-retry if we haven't exceeded max retries
+          if (retryCount < MAX_RETRIES) {
+            autoRetry();
+          }
         }}
         loading={renderLoadingState()}
       >
