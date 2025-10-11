@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Upload, X, FileText, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -55,7 +54,7 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
       setSuccess(true);
       setFile(null);
       setTitle("");
-      
+
       if (onUploadComplete) {
         onUploadComplete();
       }
