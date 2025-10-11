@@ -27,21 +27,31 @@ export function registerRoutes(app: Express): Server {
       const filename = req.params.filename;
       const objectName = `publications/${filename}`;
       
+      console.log(`Attempting to fetch PDF: ${objectName}`);
+      
       const result = await client.downloadAsBytes(objectName);
       
       if (!result.ok) {
-        console.error('Error fetching PDF:', result.error);
-        return res.status(404).json({ message: 'PDF not found' });
+        console.error('Object Storage error:', result.error);
+        console.error('Error details:', JSON.stringify(result.error, null, 2));
+        return res.status(404).json({ 
+          message: 'PDF not found in Object Storage',
+          error: result.error.message 
+        });
       }
       
       const pdfBuffer = result.value[0];
+      console.log(`Successfully fetched PDF: ${objectName}, size: ${pdfBuffer.length} bytes`);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.send(pdfBuffer);
     } catch (error) {
-      console.error('Error fetching PDF:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error fetching PDF from Object Storage:', error);
+      res.status(500).json({ 
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
