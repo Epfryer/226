@@ -1,28 +1,30 @@
 
-import { Client } from '@replit/object-storage';
+import { uploadPdf } from '../server/storage';
 import fs from 'fs';
 import path from 'path';
 
-async function uploadPdf() {
-  const client = new Client();
-  
+async function uploadPdfFile() {
   const pdfPath = path.join(process.cwd(), 'client/public/publications/hybrid-urbanism.pdf');
-  const objectName = 'publications/hybrid-urbanism.pdf';
   
   try {
     // Read the PDF file
     const fileBuffer = fs.readFileSync(pdfPath);
     
-    // Upload to Object Storage
-    await client.uploadFromBytes(objectName, fileBuffer);
+    // Upload using the storage utility
+    const result = await uploadPdf(fileBuffer, 'hybrid-urbanism.pdf', {
+      title: 'Hybrid Urbanism',
+      year: '2024',
+      author: 'Ethan Fryer'
+    });
     
-    console.log(`✅ Successfully uploaded ${objectName} to Object Storage`);
-    console.log(`📦 Object name: ${objectName}`);
-    
-    // List objects to verify
-    const objects = await client.list();
-    console.log('\n📋 All objects in bucket:');
-    objects.forEach(obj => console.log(`  - ${obj.name}`));
+    if (result.success) {
+      console.log('✅ Successfully uploaded PDF to Object Storage');
+      console.log(`📦 Object name: ${result.objectName}`);
+      console.log(`🔗 URL: ${result.url}`);
+    } else {
+      console.error('❌ Upload failed:', result.error);
+      process.exit(1);
+    }
     
   } catch (error) {
     console.error('❌ Upload failed:', error);
@@ -30,4 +32,4 @@ async function uploadPdf() {
   }
 }
 
-uploadPdf();
+uploadPdfFile();

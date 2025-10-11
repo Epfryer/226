@@ -1,6 +1,22 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Client } from '@replit/object-storage';
+import multer from 'multer';
+import { uploadPdf, listPdfs, deletePdf, getPdfMetadata } from './storage';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  }
+});
 
 export function registerRoutes(app: Express): Server {
   const client = new Client();
@@ -26,6 +42,81 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching PDF:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Upload PDF endpoint
+  app.post("/api/publications/upload", upload.single('pdf'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const metadata = {
+        originalName: req.file.originalname,
+        uploadedBy: req.body.uploadedBy || 'anonymous',
+        title: req.body.title || req.file.originalname,
+        year: req.body.year || new Date().getFullYear().toString()
+      };
+
+      const result = await uploadPdf(
+        req.file.buffer,
+        req.file.originalname,
+        metadata
+      );
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error });
+      }
+
+      res.json({
+        message: 'PDF uploaded successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Upload failed' 
+      });
+    }
+  });
+
+  // List all PDFs
+  app.get("/api/publications", async (_req, res) => {
+    try {
+      const pdfs = await listPdfs();
+      res.json({ pdfs });
+    } catch (error) {
+      console.error('Error listing PDFs:', error);
+      res.status(500).json({ message: 'Failed to list PDFs' });
+    }
+  });
+
+  // Get PDF metadata
+  app.get("/api/publications/:filename/metadata", async (req, res) => {
+    try {
+      const metadata = await getPdfMetadata(req.params.filename);
+      if (!metadata) {
+        return res.status(404).json({ message: 'PDF not found' });
+      }
+      res.json({ metadata });
+    } catch (error) {
+      console.error('Error getting metadata:', error);
+      res.status(500).json({ message: 'Failed to get metadata' });
+    }
+  });
+
+  // Delete PDF endpoint
+  app.delete("/api/publications/:filename", async (req, res) => {
+    try {
+      const success = await deletePdf(req.params.filename);
+      if (!success) {
+        return res.status(404).json({ message: 'PDF not found or could not be deleted' });
+      }
+      res.json({ message: 'PDF deleted successfully' });
+    } catch (error) {
+      console.error('Delete error:', error);
+      res.status(500).json({ message: 'Failed to delete PDF' });
     }
   });
 
