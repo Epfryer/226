@@ -51,8 +51,15 @@ export async function uploadPdf(
 
 export async function listPdfs(): Promise<string[]> {
   try {
-    const objects = await client.list();
-    return objects.map(obj => obj.name);
+    const result = await client.list();
+    
+    // Handle the result properly - it returns an array directly
+    if (!result || !Array.isArray(result)) {
+      console.log('No objects found or invalid result from client.list()');
+      return [];
+    }
+    
+    return result.map(obj => obj.name);
   } catch (error) {
     console.error('Error listing PDFs:', error);
     return [];
