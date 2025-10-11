@@ -9,6 +9,15 @@ import 'react-pdf/dist/Page/TextLayer.css';
 // Use asset helper to ensure correct path in production
 pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
 
+// PDF.js configuration for unlimited loading time
+const pdfOptions = {
+  cMapUrl: asset('pdfjs/web/cmaps/'),
+  cMapPacked: true,
+  disableAutoFetch: false,
+  disableStream: false,
+  disableRange: false,
+};
+
 interface FlipbookViewerProps {
   pdfUrl: string;
   onFullscreen?: () => void;
@@ -25,6 +34,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [isFlipbookReady, setIsFlipbookReady] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +46,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setPageHeight(null);
     setIsLoading(true);
     setIsFlipbookReady(false);
+    setLoadingProgress(0);
   }, [pdfUrl]);
 
   useEffect(() => {
@@ -128,16 +139,31 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
       <Document
         file={pdfUrl}
+        options={pdfOptions}
         onLoadSuccess={({ numPages }) => {
           setNumPages(numPages);
           setCurrentPage(0);
+          setLoadingProgress(100);
+        }}
+        onLoadProgress={({ loaded, total }) => {
+          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          setLoadingProgress(progress);
         }}
         onLoadError={(error) => {
           console.error("Error loading PDF:", error);
+          setLoadingProgress(0);
         }}
         loading={
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="flex flex-col items-center justify-center h-full gap-4">
+            <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+            <p className="text-white text-sm font-medium">
+              Loading PDF... {loadingProgress}%
+            </p>
           </div>
         }
       >
