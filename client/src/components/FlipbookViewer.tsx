@@ -50,30 +50,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // State to hold pdfjs instance after dynamic import
-  const [pdfJs, setPdfJs] = useState<any>(null);
-
-  // Dynamically import PDF.js and set the worker source
-  useEffect(() => {
-    const loadPdfJs = async () => {
-      try {
-        const pdfjsLib = await import('pdfjs-dist');
-
-        // Use CDN for worker - more reliable in production
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
-
-        setPdfJs(pdfjsLib);
-      } catch (error) {
-        console.error('Failed to load PDF.js:', error);
-        setError('Failed to initialize PDF viewer. Please try again later.');
-      }
-    };
-
-    loadPdfJs();
-  }, []);
-
-
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
     setCurrentPage(0);
@@ -286,15 +262,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   // Show error state if there's an error and we've exceeded retries
   if (error && retryCount >= MAX_RETRIES) {
     return renderErrorState();
-  }
-
-  // Render loading state if PDF.js is not yet loaded or if the document is loading
-  if (!pdfJs || isLoading) {
-    return (
-      <div ref={containerRef} className="flex items-center justify-center h-full w-full">
-        {renderLoadingState()}
-      </div>
-    );
   }
 
   return (
