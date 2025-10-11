@@ -2,24 +2,33 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { PublicationCard } from "@/components/PublicationCard";
 import { PdfModal } from "@/components/PdfModal";
-import { PUBLICATIONS, type Publication } from "@/data/publications";
+import { fetchPublications, type Publication } from "@/data/publications";
 
 export default function Publications() {
   const [location, setLocation] = useLocation();
   const [selectedPub, setSelectedPub] = useState<Publication | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [publications, setPublications] = useState<Publication[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const docSlug = params.get("doc");
-    
-    if (docSlug) {
-      const pub = PUBLICATIONS.find(p => p.slug === docSlug);
-      if (pub) {
-        setSelectedPub(pub);
-        setIsModalOpen(true);
+    // Fetch publications from API
+    fetchPublications().then((pubs) => {
+      setPublications(pubs);
+      setLoading(false);
+      
+      // Check for deep link after publications are loaded
+      const params = new URLSearchParams(window.location.search);
+      const docSlug = params.get("doc");
+      
+      if (docSlug) {
+        const pub = pubs.find(p => p.slug === docSlug);
+        if (pub) {
+          setSelectedPub(pub);
+          setIsModalOpen(true);
+        }
       }
-    }
+    });
   }, []);
 
   const handleOpenPub = (pub: Publication) => {
@@ -43,7 +52,7 @@ export default function Publications() {
       const docSlug = params.get("doc");
       
       if (docSlug) {
-        const pub = PUBLICATIONS.find(p => p.slug === docSlug);
+        const pub = publications.find(p => p.slug === docSlug);
         if (pub) {
           setSelectedPub(pub);
           setIsModalOpen(true);
@@ -56,7 +65,7 @@ export default function Publications() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [publications]);
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
@@ -69,18 +78,28 @@ export default function Publications() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-6 justify-center md:justify-start">
-          {PUBLICATIONS.map((pub) => (
-            <PublicationCard key={pub.slug} pub={pub} onOpen={handleOpenPub} />
-          ))}
-        </div>
-
-        {PUBLICATIONS.length === 0 && (
+        {loading ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-lg">
-              No publications available yet. Check back soon!
+              Loading publications...
             </p>
           </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+              {publications.map((pub) => (
+                <PublicationCard key={pub.slug} pub={pub} onOpen={handleOpenPub} />
+              ))}
+            </div>
+
+            {publications.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg">
+                  No publications available yet. Check back soon!
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

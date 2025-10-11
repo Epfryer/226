@@ -21,6 +21,30 @@ const upload = multer({
 export function registerRoutes(app: Express): Server {
   const client = new Client();
 
+  // CORS middleware for API routes
+  app.use('/api', (req, res, next) => {
+    const allowedOrigins = [
+      'https://ethanfryer.com',
+      'http://localhost:5000',
+      'http://localhost:5173'
+    ];
+    
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    
+    next();
+  });
+
   // API route to serve PDF from Object Storage
   app.get("/api/publications/:filename", async (req, res) => {
     try {
@@ -91,11 +115,27 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // List all PDFs
+  // List all PDFs with download URLs
   app.get("/api/publications", async (_req, res) => {
     try {
       const pdfs = await listPdfs();
-      res.json({ pdfs });
+      
+      // Create publication objects with download URLs
+      const publications = await Promise.all(
+        pdfs.map(async (filename) => {
+          const metadata = await getPdfMetadata(filename);
+          return {
+            slug: filename.replace('.pdf', '').replace(/[^a-zA-Z0-9-]/g, '-'),
+            title: metadata?.title || filename.replace('.pdf', ''),
+            year: metadata?.year || new Date().getFullYear().toString(),
+            pdfPath: `/api/publications/${filename}`,
+            filename: filename,
+            metadata: metadata
+          };
+        })
+      );
+      
+      res.json({ publications });
     } catch (error) {
       console.error('Error listing PDFs:', error);
       res.status(500).json({ message: 'Failed to list PDFs' });
