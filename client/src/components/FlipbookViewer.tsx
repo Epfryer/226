@@ -6,13 +6,13 @@ import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Use asset helper to ensure correct path in production
-// Updated: Use a CDN fallback for PDF.js worker for better production reliability
-pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
+// Use CDN for PDF.js worker for better production reliability
+// This matches the installed pdfjs-dist version (5.4.296)
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
 // PDF.js configuration with range support for streaming
 const pdfOptions = {
-  cMapUrl: asset('pdfjs/web/cmaps/'),
+  cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
   cMapPacked: true,
   disableAutoFetch: false,
   disableStream: false,
