@@ -1,0 +1,64 @@
+You’re calling a URL that your backend doesn’t actually serve. Your frontend is hitting /api/publications/<file>.pdf, but (from your earlier setup) you only built GET /api/publications (list). Result: the server throws (500). Either use the signed URLs from the list endpoint, or add a per-file proxy route that streams the PDF.
+
+Here’s the drop-in fix (Express):
+
+// server/routes/publications.ts (append this below the list route)
+import express from "express";
+import { Client } from "@replit/object-storage";
+const router = express.Router();
+const storage = new Client();
+
+// Proxy a single file: /api/publications/<filename>.pdf
+router.get("/:filename", async (req, res) => {
+  try {
+    const file = decodeURIComponent(req.params.filename); // handle spaces etc.
+    const key = `publications/${file}`;
+    // 1) Make sure the object exists (avoid 500 on missing keys)
+    const items = await storage.list({ prefix: key, limit: 1 });
+    if (!items.length || items[0].name !== key) {
+      return res.status(404).json({ error: "Not found", key });
+    }
+
+    // 2) Get a short-lived signed URL and stream it (keeps same-origin for PDF.js)
+    const url = await storage.getSignedDownloadUrl(key, { expiresInSeconds: 600 });
+
+    // Support Range requests (PDF.js needs this for seeking)
+    const range = req.headers.range;
+    const r = await fetch(url, { headers: range ? { Range: range } : {} });
+
+    // Pass through important headers
+    res.status(r.status);
+    ["content-type","content-length","accept-ranges","content-range","last-modified","etag","cache-control"]
+      .forEach(h => { const v = r.headers.get(h); if (v) res.setHeader(h, v); });
+
+    // Inline display in browser
+    res.setHeader("Content-Disposition", `inline; filename="${file}"`);
+
+    if (!r.body) return res.status(502).end("Upstream had no body");
+    r.body.pipeTo(Writable.toWeb(res)).catch(() => res.end());
+  } catch (err:any) {
+    console.error("PDF proxy error:", err?.message || err);
+    res.status(500).json({ error: "PDF proxy failed" });
+  }
+});
+
+export default router;
+
+
+Also make sure your CORS on the router allows https://ethanfryer.com and localhost dev, and update the frontend logic:
+
+If you keep using per-file paths, point your viewer to /api/publications/<exact-key-filename>.pdf.
+
+Otherwise, stop constructing /api/publications/*.pdf and instead fetch /api/publications and use the returned items[i].url.
+
+Quick checks to kill the 500s:
+
+Exact key match & case (object storage is case-sensitive).
+
+Log the key on 404 so you see what your UI requested.
+
+Range passthrough (above) so PDF.js can seek.
+
+If you’re proxying through a CDN/worker, ensure it forwards Range and doesn’t strip headers.
+
+Do those and your console errors should switch from 500s to clean loads.

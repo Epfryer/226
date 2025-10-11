@@ -1,0 +1,100 @@
+2025-10-11 11:37:00.02
+03827def
+User
+Error getting PDF metadata: TypeError: client.getMetadata is not a function
+2025-10-11 11:37:00.02
+03827def
+User
+at getPdfMetadata (file:///home/runner/workspace/dist/index.js:74:33)
+2025-10-11 11:37:00.02
+03827def
+User
+at file:///home/runner/workspace/dist/index.js:182:34
+2025-10-11 11:37:00.02
+03827def
+User
+at Array.map ()
+2025-10-11 11:37:00.02
+03827def
+User
+at file:///home/runner/workspace/dist/index.js:181:14
+2025-10-11 11:37:00.02
+03827def
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-10-11 11:37:00.02
+03827def
+User
+Error getting PDF metadata: TypeError: client.getMetadata is not a function
+2025-10-11 11:37:00.02
+03827def
+User
+at getPdfMetadata (file:///home/runner/workspace/dist/index.js:74:33)
+2025-10-11 11:37:00.02
+03827def
+User
+at file:///home/runner/workspace/dist/index.js:182:34
+2025-10-11 11:37:00.02
+03827def
+User
+at Array.map ()
+2025-10-11 11:37:00.02
+03827def
+User
+at file:///home/runner/workspace/dist/index.js:181:14
+2025-10-11 11:37:00.02
+03827def
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-10-11 11:37:00.02
+03827def
+User
+3:37:00 PM [express] GET /api/publications 200 in 54ms :: {"publications":[{"slug":"EthanFryer-5thYe…
+2025-10-11 11:37:00.65
+03827def
+User
+Attempting to fetch PDF: hybrid-urbanism.pdf
+2025-10-11 11:37:02.56
+03827def
+User
+Successfully fetched PDF: hybrid-urbanism.pdf, size: 94919092 bytes
+2025-10-11 11:37:02.81
+03827def
+User
+3:37:02 PM [express] GET /api/publications/hybrid-urbanism.pdf 200 in 2159ms
+2025-10-11 11:37:28.73
+03827def
+User
+Attempting to fetch PDF: EthanFryer_5thYear_SelectedWorks.pdf
+2025-10-11 11:37:30.56
+03827def
+User
+Successfully fetched PDF: EthanFryer_5thYear_SelectedWorks.pdf, size: 87265036 bytes
+2025-10-11 11:37:30.81
+03827def
+User
+3:37:30 PM [express] GET /api/publications/EthanFryer_5thYear_SelectedWorks.pdf 200 in 2080ms
+2025-10-11 11:37:37.11
+65189f14
+System
+system: received signal terminated
+2025-10-11 11:37:37.14
+65189f14
+System
+command finished with error [npm run start]: signal: terminated
+2025-10-11 11:37:37.22
+65189f14
+System
+main done, exiting
+2025-10-11 11:37:36.57
+03827def
+User
+Attempting to fetch PDF: hybrid-urbanism.pdf
+2025-10-11 11:37:38.47
+03827def
+User
+Successfully fetched PDF: hybrid-urbanism.pdf, size: 94919092 bytes
+2025-10-11 11:37:38.71
+03827def
+User
+3:37:38 PM [express] GET /api/publications/hybrid-urbanism.pdf 200 in 2147ms
