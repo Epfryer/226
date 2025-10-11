@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "upload-pdf": "tsx scripts/upload-pdf.ts",
+    "list-pdfs": "tsx scripts/list-pdfs.ts",
     "dev": "tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
