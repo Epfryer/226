@@ -54,28 +54,22 @@ export async function listPdfs(): Promise<string[]> {
     const result = await client.list();
     
     console.log('Object Storage list result:', result);
-    console.log('Result type:', typeof result);
-    console.log('Is array:', Array.isArray(result));
     
-    // Handle the result - check if it's an object with an array inside
-    let objects: any[] = [];
-    
-    if (Array.isArray(result)) {
-      objects = result;
-    } else if (result && typeof result === 'object' && 'objects' in result) {
-      objects = (result as any).objects;
-    } else if (result && typeof result === 'object' && 'value' in result) {
-      objects = (result as any).value;
+    if (!result.ok) {
+      console.error('Failed to list objects:', result.error);
+      return [];
     }
     
-    console.log('Objects found:', objects);
+    const objects = result.value || [];
     
-    if (!objects || objects.length === 0) {
+    console.log(`Found ${objects.length} objects in Object Storage`);
+    
+    if (objects.length === 0) {
       console.log('No objects found in bucket');
       return [];
     }
     
-    return objects.map(obj => obj.name || obj);
+    return objects.map(obj => obj.name);
   } catch (error) {
     console.error('Error listing PDFs:', error);
     return [];
