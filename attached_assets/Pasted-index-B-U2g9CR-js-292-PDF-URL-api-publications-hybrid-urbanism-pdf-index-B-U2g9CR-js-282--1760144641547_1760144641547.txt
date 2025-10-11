@@ -1,0 +1,40 @@
+index-B_U2g9CR.js:292 PDF URL: /api/publications/hybrid-urbanism.pdf
+index-B_U2g9CR.js:282 
+            
+            
+           GET https://ethanfryer.com/api/publications/hybrid-urbanism.pdf net::ERR_ABORTED 500 (Internal Server Error)
+c6 @ index-B_U2g9CR.js:282
+getFullReader @ index-B_U2g9CR.js:282
+(anonymous) @ index-B_U2g9CR.js:282
+cO @ index-B_U2g9CR.js:282
+lO @ index-B_U2g9CR.js:282
+index-B_U2g9CR.js:292 Error loading PDF: Sg {message: 'Unexpected server response (500) while retrieving …nfryer.com/api/publications/hybrid-urbanism.pdf".', name: 'ResponseException', status: 500, missing: false, stack: 'Error\n    at https://ethanfryer.com/assets/index-B…/ethanfryer.com/assets/index-B_U2g9CR.js:281:8679'}message: "Unexpected server response (500) while retrieving PDF \"https://ethanfryer.com/api/publications/hybrid-urbanism.pdf\"."missing: falsename: "ResponseException"status: 500stack: "Error\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8650\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8679"[[Prototype]]: Errorconstructor: class Sgstack: "Error\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8650\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8679"[[Prototype]]: Error
+    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8650
+    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8679stack: "Error\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8650\n    at https://ethanfryer.com/assets/index-B_U2g9CR.js:281:8679"[[Prototype]]: Objectconstructor: ƒ Error()message: ""name: "Error"toString: ƒ toString()length: 0name: "toString"arguments: (...)caller: (...)[[Prototype]]: ƒ ()[[Scopes]]: Scopes[0][[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+onLoadError @ index-B_U2g9CR.js:292
+Ce @ index-B_U2g9CR.js:292
+(anonymous) @ index-B_U2g9CR.js:292
+bv @ index-B_U2g9CR.js:40
+md @ index-B_U2g9CR.js:40
+(anonymous) @ index-B_U2g9CR.js:40
+b @ index-B_U2g9CR.js:25
+H @ index-B_U2g9CR.js:25
+index-B_U2g9CR.js:292 PDF URL: /api/publications/hybrid-urbanism.pdf
+index-B_U2g9CR.js:282 
+            
+            
+           GET https://ethanfryer.com/api/publications/hybrid-urbanism.pdf net::ERR_ABORTED 500 (Internal Server Error)
+c6 @ index-B_U2g9CR.js:282
+getFullReader @ index-B_U2g9CR.js:282
+(anonymous) @ index-B_U2g9CR.js:282
+cO @ index-B_U2g9CR.js:282
+lO @ index-B_U2g9CR.js:282
+index-B_U2g9CR.js:292 Error loading PDF: Sg {message: 'Unexpected server response (500) while retrieving …nfryer.com/api/publications/hybrid-urbanism.pdf".', name: 'ResponseException', status: 500, missing: false, stack: 'Error\n    at https://ethanfryer.com/assets/index-B…/ethanfryer.com/assets/index-B_U2g9CR.js:281:8679'}
+onLoadError @ index-B_U2g9CR.js:292
+Ce @ index-B_U2g9CR.js:292
+(anonymous) @ index-B_U2g9CR.js:292
+bv @ index-B_U2g9CR.js:40
+md @ index-B_U2g9CR.js:40
+(anonymous) @ index-B_U2g9CR.js:40
+b @ index-B_U2g9CR.js:25
+H @ index-B_U2g9CR.js:25
