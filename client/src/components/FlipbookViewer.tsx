@@ -7,6 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 // Use asset helper to ensure correct path in production
+// Updated: Use a CDN fallback for PDF.js worker for better production reliability
 pdfjs.GlobalWorkerOptions.workerSrc = asset('pdfjs/build/pdf.worker.mjs');
 
 // PDF.js configuration with range support for streaming
@@ -49,6 +50,30 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // State to hold pdfjs instance after dynamic import
+  const [pdfJs, setPdfJs] = useState<any>(null);
+
+  // Dynamically import PDF.js and set the worker source
+  useEffect(() => {
+    const loadPdfJs = async () => {
+      try {
+        const pdfjsLib = await import('pdfjs-dist');
+
+        // Use CDN for worker - more reliable in production
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+
+        setPdfJs(pdfjsLib);
+      } catch (error) {
+        console.error('Failed to load PDF.js:', error);
+        setError('Failed to initialize PDF viewer. Please try again later.');
+      }
+    };
+
+    loadPdfJs();
+  }, []);
+
+
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
     setCurrentPage(0);
@@ -61,7 +86,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setError(null);
     setRetryCount(0);
     setIsRetrying(false);
-    
+
     // Clear any pending retry timeouts
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -183,9 +208,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       setIsRetrying(true);
       const nextRetry = retryCount + 1;
       setRetryCount(nextRetry);
-      
+
       console.log(`Auto-retrying PDF load (attempt ${nextRetry}/${MAX_RETRIES})...`);
-      
+
       retryTimeoutRef.current = setTimeout(() => {
         setIsRetrying(false);
         setError(null);
@@ -263,6 +288,15 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     return renderErrorState();
   }
 
+  // Render loading state if PDF.js is not yet loaded or if the document is loading
+  if (!pdfJs || isLoading) {
+    return (
+      <div ref={containerRef} className="flex items-center justify-center h-full w-full">
+        {renderLoadingState()}
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
       <Document
@@ -286,7 +320,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           const errorMessage = error?.message || "Unknown error occurred";
           setError(errorMessage);
           setLoadingProgress(0);
-          
+
           // Auto-retry if we haven't exceeded max retries
           if (retryCount < MAX_RETRIES) {
             autoRetry();
