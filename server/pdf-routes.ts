@@ -6,12 +6,21 @@ import { Readable } from "stream";
 const router = express.Router();
 const storage = new Client();
 
-// Proxy a single file: /api/publications/<filename>.pdf
-router.get("/:filename", async (req, res) => {
+function buildFilename(req: express.Request): string | null {
+  // Accept either: /api/publications/<name>.pdf  OR  /api/publications?doc=<name>[.pdf]
+  let name =
+    (req.params.filename as string | undefined) ??
+    (req.query.doc as string | undefined);
+
+  if (!name) return null;
+
+  name = decodeURIComponent(name.trim());
+  if (!/\.(pdf)$/i.test(name)) name += ".pdf"; // add .pdf if missing
+  return name;
+}
+
+async function streamObject(key: string, req: express.Request, res: express.Response) {
   try {
-    const file = decodeURIComponent(req.params.filename);
-    const key = file; // The key is just the filename since we store without 'publications/' prefix
-    
     console.log(`Attempting to fetch PDF: ${key}`);
     
     // Check if file exists
@@ -66,7 +75,7 @@ router.get("/:filename", async (req, res) => {
     passHeader("cache-control");
 
     // Inline display in browser
-    res.setHeader("Content-Disposition", `inline; filename="${file}"`);
+    res.setHeader("Content-Disposition", `inline; filename="${key.split("/").pop()}"`);
 
     if (upstream.body) {
       // Convert Web ReadableStream to Node stream and pipe
@@ -75,7 +84,21 @@ router.get("/:filename", async (req, res) => {
       console.error("Upstream had no body");
       res.status(502).end("Upstream had no body");
     }
-    
+  } catch (err: any) {
+    console.error("Stream error:", err?.message || err);
+    res.status(500).json({ error: "Stream failed", message: err?.message || String(err) });
+  }
+}
+
+// Primary route: supports /:filename
+router.get("/:filename", async (req, res) => {
+  try {
+    const name = buildFilename(req);
+    if (!name) {
+      return res.status(400).json({ error: "Missing filename" });
+    }
+    // The key is just the filename since we store without 'publications/' prefix
+    await streamObject(name, req, res);
   } catch (err: any) {
     console.error("PDF proxy error:", err?.message || err);
     res.status(500).json({ error: "PDF proxy failed", message: err?.message || String(err) });
