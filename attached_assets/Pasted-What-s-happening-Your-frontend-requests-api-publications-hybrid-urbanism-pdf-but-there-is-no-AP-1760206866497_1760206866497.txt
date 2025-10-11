@@ -1,0 +1,35 @@
+What’s happening
+
+Your frontend requests /api/publications/hybrid-urbanism.pdf, but there is no API route defined for publications in the server.
+In the server, routes are registered via registerRoutes, but server/routes.ts is effectively empty and defines no /api endpoints.
+If you deployed the site to static hosting (e.g., GitHub Pages/Netlify without a Node server), any call to /api/publications/... will hit a non-existent backend and fail. Some hosts return 404, others a 500 depending on their fallback.
+The global error handler responds with JSON and then throws, which can crash the process and surface as 500s.
+See server/index.ts (error handler): it does res.status(...).json(...) and then throw err;.
+Static file serving path is mismatched:
+Vite builds to dist/public at the repo root (vite.config.ts).
+Production static server serves from server/public (server/vite.ts). If that directory doesn’t contain your built assets or PDFs, those requests won’t be found.
+PDFs are set to Git LFS in .gitattributes. If the deployment environment doesn’t fetch LFS objects, the files won’t actually exist at runtime, causing file-serving routes to fail.
+Why your publications URL returns 500
+
+There’s no code in the repo that serves /api/publications/*.pdf. With no route and potentially no Node server (if deployed statically), the request fails and bubbles up as a 500 on your host.
+Even if you add a route, the error handler’s throw after responding can crash the server on any error, which would also present as 500s.
+How to make it work Pick one of these patterns:
+
+Static asset approach (simplest)
+Put PDFs in client/public/publications/hybrid-urbanism.pdf.
+In the frontend, request /publications/hybrid-urbanism.pdf (remove the /api prefix).
+Vite will copy client/public into dist/public and the static server can serve them directly.
+Express route approach (if you must keep /api/publications)
+Add a static files route in server/routes.ts similar to: app.use('/api/publications', express.static(path.resolve(__dirname, '../publications')));
+Or add a specific handler: app.get('/api/publications/:slug.pdf', (req, res, next) => { const filePath = path.resolve(__dirname, '../publications', ${req.params.slug}.pdf); res.sendFile(filePath, err => err && next(err)); });
+Ensure the target directory actually contains the PDFs at deploy time, and if you rely on Git LFS, make sure your build/deploy fetches LFS objects. Additional fixes that will prevent 500s/crashes
+Remove the throw err; after responding in the error handler: server/index.ts.
+Make the static server point at the actual build directory (dist/public) instead of server/public, or copy the build output into server/public as part of your deploy.
+Bind the server to process.env.PORT in production; many hosts require it.
+Rotate and remove the Cloudinary credentials from the client. The file is also syntactically invalid and uses a Node SDK in the browser: client/src/lib/cloudinary.ts.
+Notes about search coverage
+
+Code search results may be incomplete. You can browse for “publications” across your repo here: code search: publications in Epfryer/226.
+Bottom line
+
+The 500s come from requesting an API endpoint that isn’t implemented and/or isn’t running on your published host. Serve the PDFs as static assets at /publications/... or add a real /api/publications route on a Node host, fix the error handler, and ensure the PDF files are present (and not just LFS pointers) in the deployed environment.
