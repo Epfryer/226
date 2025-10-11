@@ -3,8 +3,8 @@ import cors from "cors";
 import { Client } from "@replit/object-storage";
 
 const router = express.Router();
-const BUCKET_ID = 'replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02';
-const storage = new Client({ bucketId: BUCKET_ID });
+// Initialize client without hardcoded bucketId for better compatibility with published apps
+const storage = new Client();
 
 router.use(cors({ 
   origin: ["https://ethanfryer.com", "http://localhost:5173", "http://localhost:5000"],
