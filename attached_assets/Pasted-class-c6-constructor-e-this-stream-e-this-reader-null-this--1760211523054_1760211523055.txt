@@ -1,0 +1,77 @@
+class c6 {
+    constructor(e) {
+        this._stream = e,
+        this._reader = null,
+        this._loaded = 0,
+        this._filename = null;
+        const t = e.source;
+        this._withCredentials = t.withCredentials || !1,
+        this._contentLength = t.length,
+        this._headersCapability = Promise.withResolvers(),
+        this._disableRange = t.disableRange || !1,
+        this._rangeChunkSize = t.rangeChunkSize,
+        !this._rangeChunkSize && !this._disableRange && (this._disableRange = !0),
+        this._abortController = new AbortController,
+        this._isStreamingSupported = !t.disableStream,
+        this._isRangeSupported = !t.disableRange;
+        const n = new Headers(e.headers)
+          , s = t.url;
+        fetch(s, bO(n, this._withCredentials, this._abortController)).then(r => {
+            if (e._responseOrigin = cx(r.url),
+            !xO(r.status))
+                throw Ay(r.status, s);
+            this._reader = r.body.getReader(),
+            this._headersCapability.resolve();
+            const a = r.headers
+              , {allowRangeRequests: l, suggestedLength: d} = vO({
+                responseHeaders: a,
+                isHttp: e.isHttp,
+                rangeChunkSize: this._rangeChunkSize,
+                disableRange: this._disableRange
+            });
+            this._isRangeSupported = l,
+            this._contentLength = d || this._contentLength,
+            this._filename = wO(a),
+            !this._isStreamingSupported && this._isRangeSupported && this.cancel(new ra("Streaming is disabled."))
+        }
+        ).catch(this._headersCapability.reject),
+        this.onProgress = null
+    }
+    get headersReady() {
+        return this._headersCapability.promise
+    }
+    get filename() {
+        return this._filename
+    }
+    get contentLength() {
+        return this._contentLength
+    }
+    get isRangeSupported() {
+        return this._isRangeSupported
+    }
+    get isStreamingSupported() {
+        return this._isStreamingSupported
+    }
+    async read() {
+        var n;
+        await this._headersCapability.promise;
+        const {value: e, done: t} = await this._reader.read();
+        return t ? {
+            value: e,
+            done: t
+        } : (this._loaded += e.byteLength,
+        (n = this.onProgress) == null || n.call(this, {
+            loaded: this._loaded,
+            total: this._contentLength
+        }),
+        {
+            value: SO(e),
+            done: !1
+        })
+    }
+    cancel(e) {
+        var t;
+        (t = this._reader) == null || t.cancel(e),
+        this._abortController.abort()
+    }
+}
