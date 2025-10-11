@@ -22,13 +22,7 @@ export async function uploadPdf(
     const objectName = sanitizedFilename;
     
     // Upload to Object Storage
-    const result = await client.uploadFromBytes(objectName, file, {
-      metadata: {
-        contentType: 'application/pdf',
-        uploadedAt: new Date().toISOString(),
-        ...metadata
-      }
-    });
+    const result = await client.uploadFromBytes(objectName, file);
 
     if (!result.ok) {
       return {

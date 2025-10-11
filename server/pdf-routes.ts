@@ -19,7 +19,7 @@ const MAX_CACHE_SIZE = 5; // Maximum number of PDFs to cache
 // Clean up expired cache entries
 function cleanupCache() {
   const now = Date.now();
-  for (const [key, value] of pdfCache.entries()) {
+  for (const [key, value] of Array.from(pdfCache.entries())) {
     if (now - value.timestamp >= CACHE_TTL) {
       pdfCache.delete(key);
       console.log(`Removed expired cache entry: ${key}`);

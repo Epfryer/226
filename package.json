@@ -47,6 +47,7 @@
     "@replit/object-storage": "^1.0.0",
     "@replit/vite-plugin-shadcn-theme-json": "^0.0.4",
     "@tanstack/react-query": "^5.62.13",
+    "@types/cors": "^2.8.19",
     "@types/multer": "^2.0.0",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
