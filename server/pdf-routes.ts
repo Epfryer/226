@@ -3,11 +3,13 @@ import cors from "cors";
 import { Client } from "@replit/object-storage";
 
 const router = express.Router();
-// Initialize client without hardcoded bucketId for better compatibility with published apps
-const storage = new Client();
+// Use the bucket ID from environment or config
+const BUCKET_ID = process.env.REPL_OBJSTORE_BUCKET_ID || 'replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02';
+const storage = new Client({ bucketId: BUCKET_ID });
 
+// Allow CORS from all origins for development and deployment
 router.use(cors({ 
-  origin: ["https://ethanfryer.com", "http://localhost:5173", "http://localhost:5000"],
+  origin: true,  // Allow all origins
   credentials: true
 }));
 
@@ -62,10 +64,15 @@ router.get("/:filename", async (req, res) => {
     } else {
       // Download the PDF as bytes
       console.log(`Downloading PDF from storage: ${name}`);
+      console.log(`Using bucket ID: ${BUCKET_ID}`);
       const downloadResult = await storage.downloadAsBytes(name);
       if (!downloadResult.ok) {
         console.error("Failed to download PDF:", downloadResult.error);
-        return res.status(404).json({ error: "PDF not found" });
+        console.error("Error details:", JSON.stringify(downloadResult.error, null, 2));
+        return res.status(404).json({ 
+          error: "PDF not found",
+          details: downloadResult.error.message 
+        });
       }
 
       // downloadAsBytes returns Result<[Buffer], Error> - the Buffer is in an array

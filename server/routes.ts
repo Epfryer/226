@@ -20,16 +20,10 @@ const upload = multer({
 });
 
 export function registerRoutes(app: Express): Server {
-  // CORS middleware for API routes
+  // CORS middleware for API routes - allow all origins
   app.use('/api', (req, res, next) => {
-    const allowedOrigins = [
-      'https://ethanfryer.com',
-      'http://localhost:5000',
-      'http://localhost:5173'
-    ];
-
     const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
+    if (origin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }
 

@@ -1,9 +1,12 @@
 
 import { Client } from '@replit/object-storage';
 
-// Initialize client without hardcoded bucketId for better compatibility with published apps
-// The client will automatically use the bucket associated with this Replit app
-const client = new Client();
+// Use the bucket ID from environment or config
+// In production, Replit sets REPL_OBJSTORE_BUCKET_ID automatically
+const BUCKET_ID = process.env.REPL_OBJSTORE_BUCKET_ID || 'replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02';
+console.log(`[Storage] Initializing Object Storage client with bucket: ${BUCKET_ID}`);
+console.log(`[Storage] Environment: ${process.env.NODE_ENV || 'development'}`);
+const client = new Client({ bucketId: BUCKET_ID });
 
 export interface UploadResult {
   success: boolean;
