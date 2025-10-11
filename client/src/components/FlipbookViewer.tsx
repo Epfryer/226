@@ -41,7 +41,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
-      
+
       try {
         if (e.key === "ArrowLeft") {
           e.preventDefault();
@@ -150,11 +150,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               onLoadSuccess={(page) => {
                 const { width, height } = page;
                 const aspectRatio = width / height;
-                
+
                 setPdfAspectRatio(aspectRatio);
                 setIsPortrait(height > width);
                 setIsLoading(false);
-                
+
                 if (onAspectRatioDetected) {
                   onAspectRatioDetected(aspectRatio);
                 }
@@ -227,9 +227,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           </button>
 
           <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
-            {currentPage === 0 
-              ? `Page 1 of ${numPages}` 
-              : numPages === 1 
+            {currentPage === 0
+              ? `Page 1 of ${numPages}`
+              : numPages === 1
                 ? `Page 1 of 1`
                 : currentPage + 1 >= numPages
                   ? `Page ${numPages} of ${numPages}`
