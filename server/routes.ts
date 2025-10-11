@@ -138,9 +138,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Register PDF routes for publications
+  app.use("/api/publications", pdfRoutes);
+
   const httpServer = createServer(app);
 
-  // PDF proxy routes (must be last to not interfere with other routes)
-  app.use("/api/publications", pdfRoutes);
   return httpServer;
 }
