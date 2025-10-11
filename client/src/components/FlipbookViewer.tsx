@@ -16,6 +16,7 @@ const pdfOptions = {
   disableAutoFetch: false,
   disableStream: false,
   disableRange: false,
+  httpHeaders: {},
 };
 
 interface FlipbookViewerProps {
@@ -26,7 +27,7 @@ interface FlipbookViewerProps {
 
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageWidth, setPageWidth] = useState<number | null>(null);
   const [pageHeight, setPageHeight] = useState<number | null>(null);
   const [isPortrait, setIsPortrait] = useState(true);
@@ -35,8 +36,48 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [isFlipbookReady, setIsFlipbookReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(true);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track download progress
+  useEffect(() => {
+    setIsDownloading(true);
+    setDownloadProgress(0);
+
+    fetch(pdfUrl)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Failed to fetch PDF');
+
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+        if (!total || !response.body) {
+          setIsDownloading(false);
+          return;
+        }
+
+        const reader = response.body.getReader();
+        let receivedLength = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          receivedLength += value.length;
+          const progress = Math.round((receivedLength / total) * 100);
+          setDownloadProgress(progress);
+        }
+
+        setIsDownloading(false);
+      })
+      .catch((error) => {
+        console.error('Download tracking error:', error);
+        setIsDownloading(false);
+      });
+  }, [pdfUrl]);
 
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
@@ -135,6 +176,39 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     }
   };
 
+  const renderLoadingState = () => {
+    if (isDownloading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+              style={{ width: `${downloadProgress}%` }}
+            />
+          </div>
+          <p className="text-white text-sm font-medium">
+            Downloading PDF... {downloadProgress}%
+          </p>
+        </div>
+      );
+    } else if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+              style={{ width: `${loadingProgress}%` }}
+            />
+          </div>
+          <p className="text-white text-sm font-medium">
+            Loading PDF... {loadingProgress}%
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
       <Document
@@ -153,19 +227,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           console.error("Error loading PDF:", error);
           setLoadingProgress(0);
         }}
-        loading={
-          <div className="flex flex-col items-center justify-center h-full gap-4">
-            <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
-                style={{ width: `${loadingProgress}%` }}
-              />
-            </div>
-            <p className="text-white text-sm font-medium">
-              Loading PDF... {loadingProgress}%
-            </p>
-          </div>
-        }
+        loading={renderLoadingState()}
       >
         {isLoading && pageWidth === null ? (
           <div className="flex items-center justify-center h-96">
