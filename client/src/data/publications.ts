@@ -14,9 +14,9 @@ export let PUBLICATIONS: Publication[] = [];
 // Function to fetch publications from the API
 export async function fetchPublications(): Promise<Publication[]> {
   try {
-    const apiUrl = import.meta.env.PROD 
-      ? 'https://your-replit-app.replit.dev/api/publications'
-      : '/api/publications';
+    // In production, the API is served from the same origin
+    // In development, Vite proxies /api requests to the backend
+    const apiUrl = '/api/publications';
     
     const response = await fetch(apiUrl, {
       credentials: 'include'
