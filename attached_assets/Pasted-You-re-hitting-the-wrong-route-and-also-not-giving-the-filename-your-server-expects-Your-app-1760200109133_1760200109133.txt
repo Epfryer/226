@@ -1,0 +1,148 @@
+You’re hitting the wrong route and (also) not giving the filename your server expects.
+
+* Your app likely mounted the API at **`/api/publications`**, but you’re visiting **`/publications?doc=hybrid-urbanism`**. That misses the router and returns a 500 from whatever catch-all handler you have.
+* Even if it reached your handler, most of our examples expect **a filename with extension** (e.g. `hybrid-urbanism.pdf`), not just `hybrid-urbanism`.
+
+## One-and-done fix (support both styles)
+
+Drop this in your publications router and make sure it’s mounted at **`/api/publications`** *before* any static/catch-all:
+
+```ts
+// routes/publications.ts
+import express from "express";
+import { Client } from "@replit/object-storage"; // or "object-storage"
+import { Readable } from "stream";
+
+const router = express.Router();
+const storage = new Client();
+
+function buildFilename(req: express.Request) {
+  // Accept either: /api/publications/file/<name>.pdf  OR  /api/publications?doc=<name>[.pdf]
+  let name =
+    (req.params.filename as string | undefined) ??
+    (req.query.doc as string | undefined);
+
+  if (!name) return null;
+
+  name = decodeURIComponent(name.trim());
+  if (!/\.(pdf)$/i.test(name)) name += ".pdf"; // add .pdf if missing
+  return name;
+}
+
+async function streamObject(key: string, req: express.Request, res: express.Response) {
+  // (A) verify it exists
+  const hit = await storage.list({ prefix: key, limit: 1 });
+  if (!hit.length || hit[0].name !== key) {
+    return res.status(404).json({ error: "Not found", key });
+  }
+
+  // (B) short-lived signed URL and Range passthrough (needed by PDF.js)
+  const url = await storage.getSignedDownloadUrl(key, { expiresInSeconds: 600 });
+  const headers: Record<string, string> = {};
+  if (req.headers.range) headers["Range"] = String(req.headers.range);
+
+  const upstream = await fetch(url, { headers });
+  if (!(upstream.ok || upstream.status === 206)) {
+    const text = await upstream.text().catch(() => "");
+    console.error("Upstream error", upstream.status, text);
+    return res.status(upstream.status).send(text || "Upstream error");
+  }
+
+  res.status(upstream.status);
+  for (const h of [
+    "content-type",
+    "content-length",
+    "accept-ranges",
+    "content-range",
+    "last-modified",
+    "etag",
+    "cache-control",
+  ]) {
+    const v = upstream.headers.get(h);
+    if (v) res.setHeader(h, v);
+  }
+  res.setHeader("Content-Disposition", `inline; filename="${key.split("/").pop()}"`);
+
+  if (upstream.body) Readable.fromWeb(upstream.body).pipe(res);
+  else res.end();
+}
+
+// LIST endpoint (optional, returns signed URLs)
+router.get("/", async (_req, res) => {
+  try {
+    const objects = await storage.list({ prefix: "publications/" });
+    const items = await Promise.all(
+      objects.map(async (o: any) => ({
+        key: o.name,
+        size: o.size,
+        updated: o.updated,
+        url: await storage.getSignedDownloadUrl(o.name, { expiresInSeconds: 3600 }),
+      }))
+    );
+    res.json({ items });
+  } catch (e: any) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to list publications" });
+  }
+});
+
+// FILE endpoint (path style): /api/publications/file/<name>[.pdf]
+router.get("/file/:filename", async (req, res) => {
+  try {
+    const name = buildFilename(req);
+    if (!name) return res.status(400).json({ error: "Missing filename" });
+    const key = `publications/${name}`;
+    await streamObject(key, req, res);
+  } catch (e: any) {
+    console.error("PDF proxy failed:", e?.message || e);
+    res.status(500).json({ error: "PDF proxy failed", message: e?.message || String(e) });
+  }
+});
+
+// FILE endpoint (query style): /api/publications?doc=<name>[.pdf]
+router.get("/by-query", async (req, res) => {
+  try {
+    const name = buildFilename(req);
+    if (!name) return res.status(400).json({ error: "Missing ?doc param" });
+    const key = `publications/${name}`;
+    await streamObject(key, req, res);
+  } catch (e: any) {
+    console.error("PDF proxy failed:", e?.message || e);
+    res.status(500).json({ error: "PDF proxy failed", message: e?.message || String(e) });
+  }
+});
+
+export default router;
+```
+
+**Mount it**:
+
+```ts
+// server/index.ts (or main app file)
+import publicationsRouter from "./routes/publications";
+app.use("/api/publications", publicationsRouter); // mount BEFORE static/catch-all
+```
+
+## How to call it (works on Replit right now)
+
+* Path style:
+  `https://<your-replit-app>.replit.app/api/publications/file/hybrid-urbanism.pdf`
+* Query style (explicit):
+  `https://<your-replit-app>.replit.app/api/publications/by-query?doc=hybrid-urbanism`
+* List:
+  `https://<your-replit-app>.replit.app/api/publications`
+
+Then in your frontend:
+
+```ts
+// example: point PDF.js at the path-style URL
+const pdfUrl = `${API_BASE}/api/publications/file/hybrid-urbanism.pdf`;
+```
+
+### Quick sanity checks
+
+* Open the LIST URL in the browser—should return JSON.
+* Open the FILE URL—should render the PDF inline (status 200 or 206).
+* If you still see a 500, the route will now return a **JSON error body** (404 Not found vs. Upstream error) so you’ll know exactly what to fix (usually filename case/spacing).
+
+Once this works on Replit, wire your production site to use the same **`/api/publications/...`** pattern via the Replit domain (or a CNAME like `api.ethanfryer.com`).
