@@ -94,26 +94,84 @@ router.get("/:filename", async (req, res) => {
     }
 
     const name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
+    const range = req.headers.range;
 
-    console.log(`[PDF] Streaming: ${name}`);
+    console.log(`[PDF] Request for: ${name} ${range ? `(range: ${range})` : '(full file)'}`);
     console.log(`[PDF] Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`[PDF] Bucket ID: ${BUCKET_ID}`);
 
-    // Use streaming to avoid loading large PDFs into memory
+    // For range requests (mobile browsers), we need to download the specific range
+    if (range) {
+      console.log(`[PDF] Handling range request for ${name}`);
+      
+      // First, get the file size by downloading metadata
+      const existsResult = await storage.exists(name);
+      if (!existsResult.ok || !existsResult.value) {
+        console.error("[PDF] File not found:", name);
+        return res.status(404).json({ error: "PDF not found", filename: name });
+      }
+
+      // For range requests, we need to download the full file to get the size
+      // This is a limitation - we'll cache it for subsequent range requests
+      let pdfBuffer: Buffer;
+      const cached = pdfCache.get(name);
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`[PDF] Using cached for range request: ${name}`);
+        pdfBuffer = cached.buffer;
+      } else {
+        console.log(`[PDF] Downloading for range request: ${name}`);
+        const downloadResult = await storage.downloadAsBytes(name);
+        
+        if (!downloadResult.ok) {
+          console.error("[PDF] Download failed:", downloadResult.error);
+          return res.status(500).json({ 
+            error: "Failed to download PDF",
+            details: downloadResult.error?.message,
+            filename: name
+          });
+        }
+        
+        pdfBuffer = downloadResult.value[0];
+        pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
+        console.log(`[PDF] Cached for ranges: ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+      }
+
+      const fileSize = pdfBuffer.length;
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      if (start >= fileSize || end >= fileSize) {
+        res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
+        return res.send("Range Not Satisfiable");
+      }
+
+      const chunk = pdfBuffer.slice(start, end + 1);
+      const chunkSize = end - start + 1;
+
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("Content-Length", chunkSize.toString());
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${name}"`);
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      
+      console.log(`[PDF] Serving range: ${start}-${end}/${fileSize} for ${name}`);
+      return res.send(chunk);
+    }
+
+    // For full file requests (desktop), use streaming
+    console.log(`[PDF] Streaming full file: ${name}`);
     const stream = storage.downloadAsStream(name);
     
-    // Set response headers for PDF streaming
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${name}"`);
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Cache-Control", "public, max-age=3600");
 
-    console.log(`[PDF] Streaming ${name} to client`);
-
-    // Pipe the stream directly to the response (memory-efficient)
     stream.pipe(res);
     
-    // Handle stream errors
     stream.on('error', (err: any) => {
       console.error("[PDF] Stream error:", err);
       if (!res.headersSent) {
@@ -124,17 +182,18 @@ router.get("/:filename", async (req, res) => {
       }
     });
 
-    // Log when streaming completes
     stream.on('end', () => {
       console.log(`[PDF] Completed streaming: ${name}`);
     });
 
   } catch (err: any) {
-    console.error("PDF proxy error:", err?.message || err);
-    res.status(500).json({ 
-      error: "PDF proxy failed", 
-      message: err?.message || String(err) 
-    });
+    console.error("[PDF] Error:", err?.message || err);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: "PDF proxy failed", 
+        message: err?.message || String(err) 
+      });
+    }
   }
 });
 
