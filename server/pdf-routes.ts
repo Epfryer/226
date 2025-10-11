@@ -67,7 +67,8 @@ router.get("/:filename", async (req, res) => {
         return res.status(404).json({ error: "PDF not found" });
       }
 
-      pdfBuffer = downloadResult.value as Buffer;
+      // downloadAsBytes returns Result<[Buffer], Error> - the Buffer is in an array
+      pdfBuffer = downloadResult.value[0];
       
       // Cache the PDF
       pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
