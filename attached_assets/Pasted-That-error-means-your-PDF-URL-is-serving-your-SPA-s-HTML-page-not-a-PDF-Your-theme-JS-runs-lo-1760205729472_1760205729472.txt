@@ -1,0 +1,74 @@
+That error means your PDF URL is **serving your SPA’s HTML page**, not a PDF. Your theme JS runs, looks for `gx_no_16`, and crashes—because you didn’t get a PDF at all. So the issue isn’t PDF.js anymore; it’s **routing/order**: your catch-all/static handler is taking `/api/publications/*.pdf` and returning `index.html`.
+
+Do these fixes:
+
+1. **Mount API before static/catch-all**
+
+```ts
+// server/index.ts
+import publications from "./routes/publications";
+
+// 1) API FIRST
+app.use("/api/publications", publications);
+
+// 2) STATIC SECOND
+app.use(express.static("dist")); // or "public" etc.
+
+// 3) CATCH-ALL LAST (for React router)
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "dist/index.html"));
+});
+```
+
+2. **If you use a history fallback (vite/serve-static/etc.)**, exclude `/api`:
+
+```ts
+app.use(history({
+  disableDotRule: true,
+  rewrites: [{ from: /^\/api\/.*$/, to: ctx => ctx.parsedUrl.path }]
+}));
+```
+
+3. **Ensure the server actually runs in production** (not the static preview):
+
+* In `.replit` or your deploy config, run your **Express** server:
+
+  ```json
+  // package.json
+  "start": "node build/server/index.js"
+  ```
+
+  (Don’t use `vite preview` or a static host for the API.)
+
+4. **Make your API set the right headers and stream the PDF**
+
+```ts
+router.get("/:filename", async (req, res) => {
+  // ...build `key` and signed URL...
+  const upstream = await axios.get(url, {
+    headers: req.headers.range ? { Range: String(req.headers.range) } : {},
+    responseType: "stream",
+    validateStatus: s => (s>=200&&s<300) || s===206
+  });
+
+  res.status(upstream.status);
+  res.setHeader("Content-Disposition", `inline; filename="${req.params.filename}"`);
+  ["content-type","content-length","accept-ranges","content-range","cache-control","etag","last-modified"]
+    .forEach(h => upstream.headers[h] && res.setHeader(h, upstream.headers[h]));
+  upstream.data.pipe(res);
+});
+```
+
+5. **Quick verification (no code changes)**
+
+* Open `https://ethanfryer.replit.app/api/publications/EthanFryer_5thYear_SelectedWorks.pdf` in a new tab.
+* In DevTools → Network → that request:
+
+  * `Content-Type` **must** be `application/pdf` (or `application/octet-stream`).
+  * If you see `text/html`, your catch-all/static still intercepts. Re-check step 1/2.
+
+6. **Frontend**
+
+* Use **absolute** API URLs (or set `API_BASE`) so your GitHub Pages site doesn’t call its own `/api/...`.
+
+Why the `gx_no_16` error? Because your SPA HTML came back on a PDF URL, so your theme booted on that response and complained. Once the route order/proxy is fixed and the URL returns a real PDF with `Content-Type: application/pdf`, that error will vanish.
