@@ -138,14 +138,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
 
-    const controlsHeight = 120;
-    const padding = 16;
-    const availableHeight = containerSize.height - controlsHeight;
+    const controlsHeight = 0; // No need for control height since they're overlaid
+    const padding = isMobile ? 8 : 16;
+    const availableHeight = containerSize.height - (padding * 2);
     const availableWidth = containerSize.width - (padding * 2);
 
     const containerAspectRatio = availableWidth / availableHeight;
-    // Use smaller scale factor for mobile devices to prevent cutoff
-    const scaleFactor = isMobile ? 0.65 : 0.85;
+    // Use larger scale factor for mobile to make book bigger
+    const scaleFactor = isMobile ? 0.90 : 0.85;
 
     let displayWidth: number;
     let displayHeight: number;
@@ -318,7 +318,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full px-2 md:px-4 overflow-hidden">
+    <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
       <Document
         key={`pdf-${documentKey}`}
         file={pdfUrl}
@@ -370,7 +370,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             />
           </div>
         ) : pageWidth && pageHeight ? (
-          <div className="relative flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             <HTMLFlipBook
               key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
               width={pageWidth}
@@ -422,7 +422,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         ) : null}
       </Document>
 
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mt-4">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={goToPrevPage}
@@ -465,7 +465,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         )}
       </div>
 
-      <p className="text-xs text-white/60 mt-2 text-center hidden sm:block">
+      <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
         Click pages to flip • Use arrow keys to navigate
       </p>
     </div>
