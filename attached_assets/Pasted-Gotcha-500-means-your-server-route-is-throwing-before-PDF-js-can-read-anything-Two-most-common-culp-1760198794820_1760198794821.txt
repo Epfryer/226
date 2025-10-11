@@ -1,0 +1,92 @@
+Gotcha—500 means your server route is throwing before PDF.js can read anything. Two most common culprits here:
+
+1. the **per-file route isn’t actually streaming** the upstream response (Node/Web stream mismatch), or
+2. the **key doesn’t exist** (case/spacing mismatch), but you return a generic 500 instead of a 404 with a message.
+
+Do this exact patch:
+
+```ts
+// routes/publications.ts
+import express from "express";
+import { Client } from "@replit/object-storage"; // or "object-storage" in some templates
+import { Readable } from "stream";
+
+const router = express.Router();
+const storage = new Client();
+
+// /api/publications/:filename  -> streams the PDF (supports Range for PDF.js)
+router.get("/:filename", async (req, res) => {
+  try {
+    const file = decodeURIComponent(req.params.filename); // e.g. "hybrid-urbanism.pdf"
+    const key = `publications/${file}`;
+
+    // OPTIONAL but helps avoid silent 500s on typos:
+    const exists = await storage.list({ prefix: key, limit: 1 });
+    if (!exists.length || exists[0].name !== key) {
+      return res.status(404).json({ error: "Not found", key });
+    }
+
+    const url = await storage.getSignedDownloadUrl(key, { expiresInSeconds: 600 });
+
+    // PDF.js needs Range support for seeking
+    const headers: Record<string,string> = {};
+    if (req.headers.range) headers["Range"] = req.headers.range;
+
+    const upstream = await fetch(url, { headers });
+
+    if (!(upstream.ok || upstream.status === 206)) {
+      const text = await upstream.text().catch(() => "");
+      console.error("Upstream error", upstream.status, text);
+      return res.status(upstream.status).send(text || "Upstream error");
+    }
+
+    // Pass through important headers
+    res.status(upstream.status);
+    const pass = (h: string) => {
+      const v = upstream.headers.get(h);
+      if (v) res.setHeader(h, v);
+    };
+    pass("content-type");      // should be application/pdf
+    pass("content-length");
+    pass("accept-ranges");     // bytes
+    pass("content-range");     // for partials
+    pass("last-modified");
+    pass("etag");
+    pass("cache-control");
+
+    res.setHeader("Content-Disposition", `inline; filename="${file}"`);
+
+    if (upstream.body) {
+      // Node 18+: convert Web ReadableStream -> Node stream, then pipe
+      Readable.fromWeb(upstream.body).pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (e: any) {
+    console.error("PDF proxy failed:", e?.message || e);
+    res.status(500).json({ error: "PDF proxy failed", message: e?.message || String(e) });
+  }
+});
+
+export default router;
+```
+
+And make sure:
+
+* You actually **mount** it correctly (order matters):
+  `app.use("/api/publications", publicationsRouter);`
+  (Mount this **before** any catch-all/static handlers.)
+* Your **filename and key match exactly** (case/underscores/spaces). From your logs you request
+  `/api/publications/hybrid-urbanism.pdf` and `/api/publications/EthanFryer_5thYear_SelectedWorks.pdf`.
+  Verify the bucket keys are exactly:
+
+  * `publications/hybrid-urbanism.pdf`
+  * `publications/EthanFryer_5thYear_SelectedWorks.pdf`
+* Test directly:
+
+  * Open `https://<your-replit-app-domain>/api/publications` → should return JSON.
+  * Open `https://<your-replit-app-domain>/api/publications/hybrid-urbanism.pdf` → should download/preview.
+  * Then the same path via `https://ethanfryer.com/...` if that host is reverse-proxying to your Replit app.
+* If `ethanfryer.com` is a **static host (GitHub Pages)**, routes like `/api/...` won’t magically hit Replit unless you’ve set up a reverse proxy. In that case, call the Replit origin directly from the frontend (e.g., `https://<your-replit-app>.replit.app/api/publications/...`) or put the API on `api.ethanfryer.com` and update your fetch URL accordingly.
+
+If you still see a 500, the JSON body from our handler will now tell you **exactly** what failed (`Not found`, `Upstream error`, or a stack message). Send me that single JSON line and the exact URL you hit, and I’ll pinpoint the next tweak.
