@@ -45,9 +45,19 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFlipbookReady, setIsFlipbookReady] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [pageWidth, setPageWidth] = useState<number | null>(null);
+  const [pageHeight, setPageHeight] = useState<number | null>(null);
+  const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
+  const [documentKey, setDocumentKey] = useState<number>(0);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const renderTasksRef = useRef<Map<number, any>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const bookRef = useRef<any>(null);
 
   // Save page position whenever it changes
   useEffect(() => {
@@ -143,10 +153,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     return () => resizeObserver.disconnect();
   }, []);
 
-  const [pageWidth, setPageWidth] = useState<number | null>(null);
-  const [pageHeight, setPageHeight] = useState<number | null>(null);
-  const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
-  const [isFlipbookReady, setIsFlipbookReady] = useState(false);
+  
   useEffect(() => {
     if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
 
@@ -426,9 +433,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     };
   }, [pdfDoc, totalPages, isMobile, containerRef]); // Added containerRef as dependency
 
-  const [documentKey, setDocumentKey] = useState<number>(0); // Used to force re-render of Document component
-  const [isRetrying, setIsRetrying] = useState<boolean>(false); // State to manage retry UI
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for retry timeout
+  
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
