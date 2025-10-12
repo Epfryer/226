@@ -1,0 +1,90 @@
+1) Add a one-page self-diagnostic (no DevTools needed)
+
+Make a /diagnostics route (or temporary page) that fetches your PDF from the phone and prints the critical headers + status codes on screen.
+
+// pages/diagnostics.tsx (Next.js Pages) or app/diagnostics/page.tsx (App Router)
+import { useEffect, useState } from "react";
+
+type Row = { label: string; value: string | null };
+
+export default function Diagnostics() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const pdfUrl =
+    // put your storage URL here for the exact file that glitches on mobile
+    "https://YOUR-STORAGE/CDN/PATH/hybrid-urbanism.pdf";
+
+  async function testOnce() {
+    const out: Row[] = [];
+
+    // 1) HEAD (origin must allow it)
+    try {
+      const headRes = await fetch(pdfUrl, { method: "HEAD", mode: "cors" });
+      out.push({ label: "HEAD status", value: String(headRes.status) });
+      out.push({ label: "HEAD Accept-Ranges", value: headRes.headers.get("accept-ranges") });
+      out.push({ label: "HEAD Content-Type", value: headRes.headers.get("content-type") });
+      out.push({ label: "HEAD Content-Length", value: headRes.headers.get("content-length") });
+      out.push({ label: "HEAD Content-Range", value: headRes.headers.get("content-range") });
+      out.push({ label: "HEAD Content-Encoding", value: headRes.headers.get("content-encoding") });
+      out.push({ label: "HEAD Access-Control-Expose-Headers", value: headRes.headers.get("access-control-expose-headers") });
+    } catch (e: any) {
+      out.push({ label: "HEAD error", value: e?.message ?? "failed" });
+    }
+
+    // 2) Range GET (the big one — must be 206 and expose headers)
+    try {
+      const rangeRes = await fetch(pdfUrl, {
+        method: "GET",
+        mode: "cors",
+        headers: { Range: "bytes=0-999" },
+      });
+      out.push({ label: "RANGE status", value: String(rangeRes.status) }); // should be 206
+      out.push({ label: "RANGE Accept-Ranges", value: rangeRes.headers.get("accept-ranges") });
+      out.push({ label: "RANGE Content-Range", value: rangeRes.headers.get("content-range") });
+      out.push({ label: "RANGE Content-Length", value: rangeRes.headers.get("content-length") });
+      out.push({ label: "RANGE Content-Type", value: rangeRes.headers.get("content-type") });
+      out.push({ label: "RANGE Content-Encoding", value: rangeRes.headers.get("content-encoding") });
+      out.push({ label: "RANGE Access-Control-Expose-Headers", value: rangeRes.headers.get("access-control-expose-headers") });
+      // drain body so some CDNs don't complain
+      await rangeRes.arrayBuffer();
+    } catch (e: any) {
+      out.push({ label: "RANGE error", value: e?.message ?? "failed" });
+    }
+
+    // 3) Worker load (same-origin check)
+    try {
+      const w = await fetch("/pdf.worker.min.js", { method: "GET" });
+      out.push({ label: "Worker status (/pdf.worker.min.js)", value: String(w.status) });
+      out.push({ label: "Worker Content-Type", value: w.headers.get("content-type") });
+    } catch (e: any) {
+      out.push({ label: "Worker error", value: e?.message ?? "failed" });
+    }
+
+    setRows(out);
+  }
+
+  useEffect(() => {
+    testOnce();
+  }, []);
+
+  return (
+    <main style={{ padding: 16, fontFamily: "ui-sans-serif, system-ui" }}>
+      <h1>Mobile PDF Diagnostics</h1>
+      <p>UserAgent: {navigator.userAgent}</p>
+      <p>PDF URL: {pdfUrl}</p>
+      <button onClick={testOnce}>Re-run tests</button>
+      <hr />
+      <ul>
+        {rows.map((r, i) => (
+          <li key={i}><strong>{r.label}:</strong> {String(r.value)}</li>
+        ))}
+      </ul>
+      <p style={{marginTop:16,opacity:.8}}>
+        Expected: RANGE status 206; Accept-Ranges: bytes; Content-Range present; Content-Type: application/pdf; no Content-Encoding.
+        Access-Control-Expose-Headers should include Content-Length, Content-Range, Accept-Ranges.
+      </p>
+    </main>
+  );
+}
+
+
+Open that page on your phone. You’ll see, in plain text, whether mobile can see 206, Accept-Ranges, Content-Range, Content-Length, and whether the worker loads same-origin. That’s everything we need to confirm the cross-origin headers problem.
