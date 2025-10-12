@@ -94,7 +94,16 @@ Preferred communication style: Simple, everyday language.
 - Bucket ID: `replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02` (configured in `.replit`)
 - `@replit/object-storage` SDK for programmatic access
 - Publications PDFs (84MB and 91MB) stored in `publications/` folder in bucket
-- Served via API endpoint `/api/publications/:filename` to work in both dev and production
+- Served via API endpoint `/api/publications/:filename` with HTTP range support (206 responses)
+
+**PDF Viewing System:**
+- PDF.js for rendering large PDF files (80-90MB)
+- React-PageFlip for interactive flipbook experience
+- Hybrid streaming: full file streaming for desktop, range requests with caching for mobile
+- **Critical configuration:** PDF.js configured WITHOUT `withCredentials: true` to prevent CORS errors on late range requests
+- Mobile optimizations: pinch-to-zoom, rotation toast, zoom controls (0.5×-3×)
+- Session storage for page position persistence across navigation
+- Manual retry mechanism (auto-retry removed to prevent crash loops)
 
 **UI Component Libraries:**
 - Radix UI for accessible, unstyled component primitives
