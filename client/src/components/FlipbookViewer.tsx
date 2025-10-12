@@ -2,11 +2,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, Smartphone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 // Use CDN for PDF.js worker for better production reliability
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
@@ -35,6 +36,7 @@ const RETRY_DELAY = 2000; // 2 seconds
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [pdfDoc, setPdfDoc] = useState<any>(null);
 
   // Restore page position from sessionStorage on mount
@@ -54,8 +56,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [documentKey, setDocumentKey] = useState<number>(0);
   const [isDevicePortrait, setIsDevicePortrait] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [hasShownPortraitToast, setHasShownPortraitToast] = useState(false);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bookRef = useRef<any>(null);
+  const pinchStartDistance = useRef<number | null>(null);
+  const pinchStartZoom = useRef<number>(1);
 
   // Save page position whenever it changes
   useEffect(() => {
@@ -81,6 +87,18 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     };
   }, []);
 
+  // Show portrait rotation suggestion toast
+  useEffect(() => {
+    if (isMobile && isDevicePortrait && !hasShownPortraitToast) {
+      toast({
+        title: "Rotate for Better View",
+        description: "For the best viewing experience, rotate your device to landscape mode.",
+        duration: 5000,
+      });
+      setHasShownPortraitToast(true);
+    }
+  }, [isMobile, isDevicePortrait, hasShownPortraitToast, toast]);
+
   // Reset state when PDF URL changes
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
@@ -95,6 +113,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setRetryCount(0);
     setIsRetrying(false);
     setCurrentPage(1);
+    setZoomLevel(1);
+    setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
 
     if (retryTimeoutRef.current) {
@@ -169,9 +189,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       displayWidth = displayHeight * pdfAspectRatio;
     }
 
-    setPageWidth(Math.floor(displayWidth));
-    setPageHeight(Math.floor(displayHeight));
-  }, [containerSize, pdfAspectRatio, isMobile]);
+    // Apply zoom level
+    setPageWidth(Math.floor(displayWidth * zoomLevel));
+    setPageHeight(Math.floor(displayHeight * zoomLevel));
+  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel]);
 
   const handleFlip = (e: any) => {
     setCurrentPage(e.data + 1);
@@ -228,6 +249,68 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       }, RETRY_DELAY);
     }
   };
+
+  // Zoom functions
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+  };
+
+  // Pinch-to-zoom handlers
+  useEffect(() => {
+    if (!isMobile || !containerRef.current) return;
+
+    const container = containerRef.current;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        pinchStartDistance.current = distance;
+        pinchStartZoom.current = zoomLevel;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchStartDistance.current) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        const scale = distance / pinchStartDistance.current;
+        const newZoom = pinchStartZoom.current * scale;
+        setZoomLevel(Math.max(0.5, Math.min(3, newZoom)));
+      }
+    };
+
+    const handleTouchEnd = () => {
+      pinchStartDistance.current = null;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, zoomLevel]);
 
   const renderLoadingState = () => {
     if (isRetrying) {
@@ -291,38 +374,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   };
 
-  const showPortraitPrompt = isMobile && isDevicePortrait;
   const showErrorState = error && retryCount >= MAX_RETRIES;
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
-      {showPortraitPrompt ? (
-        <div className="flex flex-col items-center justify-center h-full w-full px-6">
-          <div className="relative mb-6">
-            <Smartphone className="w-20 h-20 text-white/80 animate-pulse" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2v4m0 12v4m8-10h-4M8 12H4m15.071-7.071l-2.828 2.828M8.757 15.243l-2.828 2.828m12.142 0l-2.828-2.828M8.757 8.757L5.929 5.93"/>
-              </svg>
-            </div>
-          </div>
-          <h3 className="text-white text-xl font-semibold mb-3 text-center">
-            Rotate Your Device
-          </h3>
-          <p className="text-white/70 text-center max-w-sm">
-            For the best viewing experience, please rotate your device to landscape mode.
-          </p>
-          <div className="mt-8 flex items-center gap-3 text-white/50 text-sm">
-            <div className="w-12 h-8 border-2 border-white/50 rounded-md flex items-center justify-center transform -rotate-90">
-              <Smartphone className="w-6 h-6" />
-            </div>
-            <span>→</span>
-            <div className="w-12 h-8 border-2 border-blue-400 rounded-md flex items-center justify-center">
-              <Smartphone className="w-6 h-6 text-blue-400" />
-            </div>
-          </div>
-        </div>
-      ) : showErrorState ? (
+      {showErrorState ? (
         renderErrorState()
       ) : (
         <Document
@@ -441,55 +497,87 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         </Document>
       )}
 
-      {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-4">
+      {!loading && !error && totalPages > 0 && (
+        <>
+          {/* Zoom controls - top right */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
             <button
-              onClick={goToPrevPage}
-              disabled={currentPage === 1}
-              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-              aria-label="Previous page"
+              onClick={zoomIn}
+              disabled={zoomLevel >= 3}
+              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+              aria-label="Zoom in"
+              title="Zoom in"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ZoomIn className="w-4 h-4" />
             </button>
-
-            <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
-              {currentPage === 1
-                ? `Page 1 of ${totalPages}`
-                : totalPages === 1
-                  ? `Page 1 of 1`
-                  : currentPage >= totalPages
-                    ? `Page ${totalPages} of ${totalPages}`
-                    : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`
-              }
-            </div>
-
             <button
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-              aria-label="Next page"
+              onClick={resetZoom}
+              disabled={zoomLevel === 1}
+              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+              aria-label="Reset zoom"
+              title="Reset zoom"
             >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={zoomOut}
+              disabled={zoomLevel <= 0.5}
+              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+              aria-label="Zoom out"
+              title="Zoom out"
+            >
+              <ZoomOut className="w-4 h-4" />
             </button>
           </div>
 
-          {onFullscreen && (
-            <button
-              onClick={onFullscreen}
-              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
-              aria-label="Fullscreen"
-            >
-              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          )}
-        </div>
-      )}
+          {/* Navigation controls - bottom center */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button
+                onClick={goToPrevPage}
+                disabled={currentPage === 1}
+                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
 
-      {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
-        <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
-          Click pages to flip • Use arrow keys to navigate
-        </p>
+              <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
+                {currentPage === 1
+                  ? `Page 1 of ${totalPages}`
+                  : totalPages === 1
+                    ? `Page 1 of 1`
+                    : currentPage >= totalPages
+                      ? `Page ${totalPages} of ${totalPages}`
+                      : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`
+                }
+              </div>
+
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+
+            {onFullscreen && (
+              <button
+                onClick={onFullscreen}
+                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
+                aria-label="Fullscreen"
+              >
+                <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
+          </div>
+
+          <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
+            Click pages to flip • Use arrow keys to navigate
+          </p>
+        </>
       )}
     </div>
   );
