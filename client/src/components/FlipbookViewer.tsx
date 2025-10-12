@@ -53,6 +53,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [pageHeight, setPageHeight] = useState<number | null>(null);
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [documentKey, setDocumentKey] = useState<number>(0);
+  const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const renderTasksRef = useRef<Map<number, any>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -67,7 +68,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [currentPage, pdfUrl]);
 
   // Detect mobile device and orientation
-  const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   useEffect(() => {
     const checkOrientation = () => {
       const portrait = window.innerHeight > window.innerWidth;
@@ -302,41 +302,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   };
 
-  // Show error state if there's an error and we've exceeded retries
-  if (error && retryCount >= MAX_RETRIES) {
-    return renderErrorState();
-  }
-
   // Show rotation prompt on mobile in portrait mode
-  if (isMobile && isDevicePortrait) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full px-6">
-        <div className="relative mb-6">
-          <Smartphone className="w-20 h-20 text-white/80 animate-pulse" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v4m0 12v4m8-10h-4M8 12H4m15.071-7.071l-2.828 2.828M8.757 15.243l-2.828 2.828m12.142 0l-2.828-2.828M8.757 8.757L5.929 5.93"/>
-            </svg>
-          </div>
-        </div>
-        <h3 className="text-white text-xl font-semibold mb-3 text-center">
-          Rotate Your Device
-        </h3>
-        <p className="text-white/70 text-center max-w-sm">
-          For the best viewing experience, please rotate your device to landscape mode.
-        </p>
-        <div className="mt-8 flex items-center gap-3 text-white/50 text-sm">
-          <div className="w-12 h-8 border-2 border-white/50 rounded-md flex items-center justify-center transform -rotate-90">
-            <Smartphone className="w-6 h-6" />
-          </div>
-          <span>→</span>
-          <div className="w-12 h-8 border-2 border-blue-400 rounded-md flex items-center justify-center">
-            <Smartphone className="w-6 h-6 text-blue-400" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const showPortraitPrompt = isMobile && isDevicePortrait;
+  
+  // Show error state if there's an error and we've exceeded retries
+  const showErrorState = error && retryCount >= MAX_RETRIES;
 
   const renderPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
     if (!pdfDoc || renderTasksRef.current.has(pageNum)) return;
@@ -437,7 +407,36 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
-      <Document
+      {showPortraitPrompt ? (
+        <div className="flex flex-col items-center justify-center h-full w-full px-6">
+          <div className="relative mb-6">
+            <Smartphone className="w-20 h-20 text-white/80 animate-pulse" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v4m0 12v4m8-10h-4M8 12H4m15.071-7.071l-2.828 2.828M8.757 15.243l-2.828 2.828m12.142 0l-2.828-2.828M8.757 8.757L5.929 5.93"/>
+              </svg>
+            </div>
+          </div>
+          <h3 className="text-white text-xl font-semibold mb-3 text-center">
+            Rotate Your Device
+          </h3>
+          <p className="text-white/70 text-center max-w-sm">
+            For the best viewing experience, please rotate your device to landscape mode.
+          </p>
+          <div className="mt-8 flex items-center gap-3 text-white/50 text-sm">
+            <div className="w-12 h-8 border-2 border-white/50 rounded-md flex items-center justify-center transform -rotate-90">
+              <Smartphone className="w-6 h-6" />
+            </div>
+            <span>→</span>
+            <div className="w-12 h-8 border-2 border-blue-400 rounded-md flex items-center justify-center">
+              <Smartphone className="w-6 h-6 text-blue-400" />
+            </div>
+          </div>
+        </div>
+      ) : showErrorState ? (
+        renderErrorState()
+      ) : (
+        <Document
         key={`pdf-${documentKey}`}
         file={pdfUrl}
         options={pdfOptions}
@@ -566,9 +565,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           )
         )}
       </Document>
+      )}
 
       {/* Controls are only shown if not in error state and PDF is loaded */}
-      {!loading && !error && totalPages > 0 && (
+      {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <button
@@ -614,7 +614,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       )}
 
       {/* Instructions are only shown if not in error state and PDF is loaded */}
-      {!loading && !error && totalPages > 0 && (
+      {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
         <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
           Click pages to flip • Use arrow keys to navigate
         </p>
