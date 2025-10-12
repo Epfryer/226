@@ -30,9 +30,6 @@ interface FlipbookViewerProps {
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // 2 seconds
-
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -49,8 +46,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [error, setError] = useState<string | null>(null);
   const [isFlipbookReady, setIsFlipbookReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [pageWidth, setPageWidth] = useState<number | null>(null);
   const [pageHeight, setPageHeight] = useState<number | null>(null);
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
@@ -58,7 +53,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [hasShownPortraitToast, setHasShownPortraitToast] = useState(false);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bookRef = useRef<any>(null);
   const pinchStartDistance = useRef<number | null>(null);
   const pinchStartZoom = useRef<number>(1);
@@ -110,27 +104,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setIsFlipbookReady(false);
     setLoadingProgress(0);
     setError(null);
-    setRetryCount(0);
-    setIsRetrying(false);
     setCurrentPage(1);
     setZoomLevel(1);
     setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
-
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
   }, [pdfUrl]);
-
-  // Cleanup retry timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -219,10 +197,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   const handleRetry = () => {
-    setIsRetrying(false);
     setError(null);
     setLoadingProgress(0);
-    setRetryCount(0);
     setLoading(true);
     setPageWidth(null);
     setPageHeight(null);
@@ -231,23 +207,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setCurrentPage(1);
     sessionStorage.removeItem(getStorageKey());
     setDocumentKey(prev => prev + 1);
-  };
-
-  const autoRetry = () => {
-    if (retryCount < MAX_RETRIES) {
-      setIsRetrying(true);
-      const nextRetry = retryCount + 1;
-      setRetryCount(nextRetry);
-
-      console.log(`Auto-retrying PDF load (attempt ${nextRetry}/${MAX_RETRIES})...`);
-
-      retryTimeoutRef.current = setTimeout(() => {
-        setIsRetrying(false);
-        setError(null);
-        setLoadingProgress(0);
-        setDocumentKey(prev => prev + 1);
-      }, RETRY_DELAY);
-    }
   };
 
   // Zoom functions
@@ -317,17 +276,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [isMobile]);
 
   const renderLoadingState = () => {
-    if (isRetrying) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full gap-4">
-          <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
-          <p className="text-white text-sm font-medium">
-            Retrying... (Attempt {retryCount}/{MAX_RETRIES})
-          </p>
-        </div>
-      );
-    }
-
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden">
@@ -357,15 +305,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           <p className="text-white/70 text-sm mb-4">
             {error || "The PDF could not be loaded. This might be due to a network issue or the file being too large."}
           </p>
-          {retryCount >= MAX_RETRIES ? (
-            <p className="text-white/60 text-xs mb-4">
-              Maximum retry attempts reached. Please try again later.
-            </p>
-          ) : (
-            <p className="text-white/60 text-xs mb-4">
-              {retryCount > 0 && `Retry attempt ${retryCount}/${MAX_RETRIES} failed.`}
-            </p>
-          )}
         </div>
         <button
           onClick={handleRetry}
@@ -378,11 +317,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   };
 
-  const showErrorState = error && retryCount >= MAX_RETRIES;
-
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
-      {showErrorState ? (
+      {error ? (
         renderErrorState()
       ) : (
         <Document
@@ -394,8 +331,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             setTotalPages(loadedNumPages);
             setLoading(false);
             setError(null);
-            setRetryCount(0);
-            setIsRetrying(false);
 
             if (currentPage > loadedNumPages) {
               setCurrentPage(loadedNumPages);
@@ -411,12 +346,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             const errorMessage = error?.message || "Unknown error occurred";
             setError(errorMessage);
             setLoading(false);
-
-            if (retryCount < MAX_RETRIES) {
-              autoRetry();
-            } else {
-              setError(errorMessage);
-            }
           }}
           loading={renderLoadingState()}
           error={renderErrorState()}
