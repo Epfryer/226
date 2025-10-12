@@ -21,7 +21,6 @@ const pdfOptions = {
   disableRange: false,
   httpHeaders: {},
   isEvalSupported: false,
-  withCredentials: true,
 };
 
 interface FlipbookViewerProps {

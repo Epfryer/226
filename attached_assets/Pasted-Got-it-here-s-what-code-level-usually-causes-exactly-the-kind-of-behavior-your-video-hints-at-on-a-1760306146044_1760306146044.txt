@@ -1,0 +1,241 @@
+Got it—here’s what (code-level) usually causes exactly the kind of behavior your video hints at on a publications/PDF page, plus how to confirm and fix each one. I wrote these to match your stack (Next.js + Replit API at `/api/publications`, PDF.js, animated zoom-in transition).
+
+# 1) Your PDF endpoint isn’t serving like a “real” file server
+
+**Symptom:** viewer half-loads, page index/preview glitches, or “Unexpected server response (500)” when requesting the `.../hybrid-urbanism.pdf`.
+
+**Why:** PDF viewers (PDF.js, native browser viewer) **require byte-range** support (HTTP 206) and correct headers. If your API route streams PDFs without handling the `Range` header, or returns `200` to a ranged request, you’ll see flaky renders and weird page jumps.
+
+**Fix:** handle `Range`, set `Accept-Ranges`, `Content-Type`, and `Content-Length`. In a Next.js route:
+
+```ts
+// app/api/publications/[filename]/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import fs from "node:fs";
+import path from "node:path";
+
+export const GET = async (req: NextRequest, { params }: { params: { filename: string } }) => {
+  const filePath = path.join(process.cwd(), "public", "publications", params.filename);
+  if (!fs.existsSync(filePath)) return new NextResponse("Not found", { status: 404 });
+
+  const stat = fs.statSync(filePath);
+  const range = req.headers.get("range");
+  const mime = "application/pdf";
+
+  if (range) {
+    // bytes=START-END
+    const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : stat.size - 1;
+    const chunkSize = end - start + 1;
+
+    const stream = fs.createReadStream(filePath, { start, end });
+    return new NextResponse(stream as any, {
+      status: 206,
+      headers: {
+        "Content-Type": mime,
+        "Accept-Ranges": "bytes",
+        "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+        "Content-Length": String(chunkSize),
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  }
+
+  // Full download
+  const stream = fs.createReadStream(filePath);
+  return new NextResponse(stream as any, {
+    headers: {
+      "Content-Type": mime,
+      "Content-Length": String(stat.size),
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+};
+```
+
+**What to check in DevTools → Network:**
+
+* Request for `...pdf` should return **206 Partial Content** with `Accept-Ranges: bytes`.
+* No 500s on the PDF URL.
+* `Content-Type: application/pdf`.
+
+---
+
+# 2) Off-by-one page numbering (labels vs indices)
+
+**Symptom:** UI shows pairs like *2–3 → 6–7 → 10–11*, but the actual PDF pages aren’t missing.
+
+**Why:** PDF.js exposes **page indices (0-based)** and **page labels** (sometimes Roman numerals or custom). If your UI mixes them—e.g., displays `(index+index+1)` across a “spread” component—you’ll skip numbers visually.
+
+**Fix:**
+
+* Always map: `displayNumber = labels?.[i] ?? (i + 1).toString()`.
+* If you render spreads, compute from the **document order**, not from whatever visible list you’ve filtered.
+
+```ts
+const pdf = await pdfjsLib.getDocument(url).promise;
+const labels = await pdf.getPageLabels(); // can be null
+function pageLabel(i:number){ return labels?.[i] ?? String(i+1); }
+
+// Example spread label:
+function spreadLabel(leftIdx:number, rightIdx:number){
+  return `${pageLabel(leftIdx)}–${pageLabel(rightIdx)}`;
+}
+```
+
+Also verify you aren’t accidentally **filtering out** the cover or front-matter in your array before labeling (common when skipping images or blank pages). That makes numbers jump.
+
+---
+
+# 3) Viewer re-mount / state reset during animation
+
+**Symptom:** On click, nice zoom-in animation—but the viewer reloads, scroll jumps, page index resets, or numbers “flicker”.
+
+**Why:** Route transition + animation often **unmounts** and remounts the viewer (especially if you’re using a different route or conditionally rendering). If the key changes, React treats it as a new tree; PDF.js reinitializes and the current page math desyncs.
+
+**Fix:**
+
+* Keep the **same component instance**; don’t change the `key`.
+* For Framer Motion: prefer `layoutId` transitions and keep the viewer mounted behind a modal so state persists.
+* Persist viewer state in a **store** (e.g., Zustand) keyed by the PDF URL:
+
+  * `currentPage`, `scale`, `scrollTop`, `labels`.
+
+---
+
+# 4) Case-sensitive file names and path mapping
+
+**Symptom:** Works locally, 404/500 on prod.
+
+**Why:** Linux file systems are case-sensitive. If metadata says `/api/publications/hybrid-urbanism.pdf` but the file is `Hybrid-Urbanism.pdf`, you’ll get server errors; the UI then “recovers” to an odd state.
+
+**Fix:** Ensure your `publications.json` and the actual filenames **match exactly** (case and extension). Also validate the JSON before rendering.
+
+---
+
+# 5) Content Security Policy or CORS blocks embedded viewer
+
+**Symptom:** Viewer container renders but the PDF never paints; numbers or thumbnails act weird.
+
+**Why:** If you embed with `<iframe src="...pdf">` or a worker for PDF.js, CSP/CORS can block the worker or cross-origin range requests.
+
+**Fix:**
+
+* Add headers to allow the **worker** and **font blob**:
+
+  * `Cross-Origin-Resource-Policy: cross-origin`
+  * `Cross-Origin-Embedder-Policy: require-corp`
+  * `Cross-Origin-Opener-Policy: same-origin`
+  * Or host PDF.js viewer and worker files on the **same origin**.
+* For Next.js, consider serving worker at `/pdf.worker.min.js` and set `pdfjsLib.GlobalWorkerOptions.workerSrc` to a same-origin path.
+
+---
+
+# 6) “staticLoadtimePalette” / token errors breaking hydration
+
+**Symptom:** Console shows something like `gx_no_16 is not present in staticLoadtimePalette`. After that, UI math (including page numbers) can go sideways.
+
+**Why:** That’s typically a **design system / token hydration** error (CSS vars or palette not available at first render). If page numbers derive from client state while styles/tokens throw, your component tree may be partially hydrated.
+
+**Fix:**
+
+* Ensure your theme or token provider wraps the viewer page at both **server and client**.
+* Avoid accessing theme tokens during SSR if they are client-only.
+* Remove any conditional imports that change between SSR and client (causing “hydration mismatch”).
+
+---
+
+# 7) Wrong PDF.js viewport scaling on resize
+
+**Symptom:** After the zoom-in/open animation, rendered canvas dimensions don’t match container; page index math seems to skip when you scroll.
+
+**Why:** If you compute `scale` from container width **before** the zoom animation finishes, you paint at the wrong size; re-paint on resize can jump the internal page index.
+
+**Fix:**
+
+* Use a `ResizeObserver` on the final container and **debounce** re-render:
+
+```ts
+const ro = new ResizeObserver(([entry]) => {
+  const { width } = entry.contentRect;
+  setScale(Math.max(0.5, Math.min(3, width / BASE_WIDTH)));
+});
+ro.observe(containerRef.current!);
+```
+
+* Only call `page.render` after the animation `onAnimationComplete`.
+
+---
+
+# 8) Missing `object-fit`/auto-scale for cover thumbnails
+
+**Symptom:** Cover image stretches/crops weirdly when grid changes.
+
+**Fix (CSS):**
+
+```css
+.cover {
+  width: 100%;
+  height: auto;        /* keep aspect */
+  aspect-ratio: 3 / 4; /* optional: reserve space */
+  object-fit: cover;   /* or 'contain' if you prefer letterboxing */
+}
+```
+
+---
+
+## Quick “prove it” checklist in DevTools
+
+1. Open **Network** tab, click a PDF:
+
+   * The main `.pdf` request → **206 Partial Content**? (If not, fix #1.)
+   * Any **500** responses? (Map to a missing file or path case mismatch.)
+2. **Console** tab:
+
+   * Hydration warnings? Palette/token errors? (Fix #6.)
+3. **Elements** tab:
+
+   * Does the viewer DOM unmount/remount on open? (If yes, fix #3.)
+4. **Sources** tab:
+
+   * Is `pdf.worker.min.js` loaded from **same origin**? (If not, fix #5.)
+5. Scroll the viewer:
+
+   * Does the page label match `i+1` vs `labels[i]`? (Fix #2.)
+
+---
+
+## Minimal PDF.js wiring (robust defaults)
+
+```ts
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.min.js"; // serve locally, same origin
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
+const loadingTask = pdfjsLib.getDocument({
+  url: pdfUrl,
+  withCredentials: false,
+  rangeChunkSize: 65536, // smoother seeks
+});
+
+const pdf = await loadingTask.promise;
+const labels = await pdf.getPageLabels();
+
+for (let i = 0; i < pdf.numPages; i++) {
+  const page = await pdf.getPage(i + 1);
+  const viewport = page.getViewport({ scale });
+  const canvas = canvases[i];
+  const ctx = canvas.getContext("2d")!;
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  uiSetLabel(i, labels?.[i] ?? String(i + 1));
+}
+```
+
+---
+
+If you want, drop me the exact route file that serves `/api/publications/...pdf` and the viewer component, and I’ll mark up the changes inline (especially for the Range handling and the page-label logic).
