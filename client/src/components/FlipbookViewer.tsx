@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -8,7 +9,6 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Use CDN for PDF.js worker for better production reliability
-// This matches the installed pdfjs-dist version (5.4.296)
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
 // PDF.js configuration with range support for streaming
@@ -54,9 +54,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
   const [documentKey, setDocumentKey] = useState<number>(0);
   const [isDevicePortrait, setIsDevicePortrait] = useState(false);
-  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
-  const renderTasksRef = useRef<Map<number, any>>(new Map());
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bookRef = useRef<any>(null);
 
@@ -84,7 +81,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     };
   }, []);
 
-
   // Reset state when PDF URL changes
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
@@ -98,10 +94,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setError(null);
     setRetryCount(0);
     setIsRetrying(false);
-    setCurrentPage(1); // Reset to first page
-    sessionStorage.removeItem(getStorageKey()); // Clear storage for new PDF
+    setCurrentPage(1);
+    sessionStorage.removeItem(getStorageKey());
 
-    // Clear any pending retry timeouts
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
@@ -153,17 +148,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     return () => resizeObserver.disconnect();
   }, []);
 
-  
   useEffect(() => {
     if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
 
-    const controlsHeight = 0; // No need for control height since they're overlaid
     const padding = isMobile ? 8 : 16;
     const availableHeight = containerSize.height - (padding * 2);
     const availableWidth = containerSize.width - (padding * 2);
 
     const containerAspectRatio = availableWidth / availableHeight;
-    // Use larger scale factor for mobile to make book bigger
     const scaleFactor = isMobile ? 0.90 : 0.85;
 
     let displayWidth: number;
@@ -182,8 +174,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [containerSize, pdfAspectRatio, isMobile]);
 
   const handleFlip = (e: any) => {
-    // e.data is the 0-based index of the LEFT page in the current spread
-    setCurrentPage(e.data + 1); // +1 to make it 1-based
+    setCurrentPage(e.data + 1);
   };
 
   const goToNextPage = () => {
@@ -216,9 +207,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setPageHeight(null);
     setPdfAspectRatio(null);
     setIsFlipbookReady(false);
-    setCurrentPage(1); // Reset to first page
-    sessionStorage.removeItem(getStorageKey()); // Clear storage for new PDF
-    // Force React-PDF to make a new request by changing the key
+    setCurrentPage(1);
+    sessionStorage.removeItem(getStorageKey());
     setDocumentKey(prev => prev + 1);
   };
 
@@ -234,7 +224,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         setIsRetrying(false);
         setError(null);
         setLoadingProgress(0);
-        // Increment documentKey to force React-PDF to retry the request
         setDocumentKey(prev => prev + 1);
       }, RETRY_DELAY);
     }
@@ -302,108 +291,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   };
 
-  // Show rotation prompt on mobile in portrait mode
   const showPortraitPrompt = isMobile && isDevicePortrait;
-  
-  // Show error state if there's an error and we've exceeded retries
   const showErrorState = error && retryCount >= MAX_RETRIES;
-
-  const renderPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
-    if (!pdfDoc || renderTasksRef.current.has(pageNum)) return;
-
-    try {
-      const page = await pdfDoc.getPage(pageNum);
-
-      // Use lower scale on mobile to reduce memory usage
-      const scale = isMobile ? 1.2 : 1.5;
-      const viewport = page.getViewport({ scale });
-
-      const context = canvas.getContext('2d', {
-        willReadFrequently: false,
-        // Reduce memory on mobile
-        alpha: false
-      });
-      if (!context) return;
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport,
-      };
-
-      const renderTask = page.render(renderContext);
-      renderTasksRef.current.set(pageNum, renderTask);
-
-      await renderTask.promise;
-      renderTasksRef.current.delete(pageNum);
-
-      // Clean up page object on mobile to free memory
-      if (isMobile) {
-        page.cleanup();
-      }
-    } catch (err: any) {
-      if (err?.name !== 'RenderingCancelledException') {
-        console.error(`Error rendering page ${pageNum}:`, err);
-      }
-      renderTasksRef.current.delete(pageNum);
-    }
-  };
-
-  useEffect(() => {
-    if (!pdfDoc || totalPages === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const pageNum = parseInt(entry.target.getAttribute('data-page') || '0');
-          const canvas = canvasRefs.current.get(pageNum);
-
-          if (entry.isIntersecting && canvas) {
-            renderPage(pageNum, canvas);
-            setCurrentPage(pageNum);
-          }
-        });
-      },
-      {
-        root: containerRef.current,
-        // Reduce preload distance on mobile to save memory
-        rootMargin: isMobile ? '50px' : '100px',
-        threshold: 0.1,
-      }
-    );
-
-    observerRef.current = observer;
-
-    // Scroll to saved page position after a brief delay
-    setTimeout(() => {
-      const savedPage = parseInt(sessionStorage.getItem(getStorageKey()) || "1");
-      if (savedPage > 1 && savedPage <= totalPages) {
-        const pageElement = document.querySelector(`[data-page="${savedPage}"]`);
-        if (pageElement) {
-          pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-        } else {
-          // If element not found, try to render the page and then scroll
-          // This might happen if the DOM is not fully ready yet
-          // For simplicity, we'll just reset to page 1 if not found
-          setCurrentPage(1);
-          sessionStorage.removeItem(getStorageKey());
-        }
-      }
-    }, 100);
-
-    // Clean up observer on component unmount or when dependencies change
-    return () => {
-      observer.disconnect();
-      observerRef.current = null;
-      // Cancel any ongoing render tasks when the component unmounts or PDF changes
-      renderTasksRef.current.forEach(task => task.cancel());
-      renderTasksRef.current.clear();
-    };
-  }, [pdfDoc, totalPages, isMobile, containerRef]); // Added containerRef as dependency
-
-  
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
@@ -437,137 +326,121 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         renderErrorState()
       ) : (
         <Document
-        key={`pdf-${documentKey}`}
-        file={pdfUrl}
-        options={pdfOptions}
-        onLoadSuccess={({ numPages: loadedNumPages }) => {
-          console.log(`PDF loaded successfully: ${loadedNumPages} pages`);
-          setTotalPages(loadedNumPages);
-          setLoading(false);
-          setError(null);
-          setRetryCount(0);
-          setIsRetrying(false);
+          key={`pdf-${documentKey}`}
+          file={pdfUrl}
+          options={pdfOptions}
+          onLoadSuccess={({ numPages: loadedNumPages }) => {
+            console.log(`PDF loaded successfully: ${loadedNumPages} pages`);
+            setTotalPages(loadedNumPages);
+            setLoading(false);
+            setError(null);
+            setRetryCount(0);
+            setIsRetrying(false);
 
-          // Update current page if it's out of bounds
-          if (currentPage > loadedNumPages) {
-            setCurrentPage(loadedNumPages);
-            sessionStorage.setItem(getStorageKey(), loadedNumPages.toString());
-          }
-        }}
-        onLoadProgress={({ loaded, total }) => {
-          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
-          setLoadingProgress(progress);
-        }}
-        onLoadError={(error) => {
-          console.error("Error loading PDF:", error);
-          const errorMessage = error?.message || "Unknown error occurred";
-          setError(errorMessage);
-          setLoading(false); // Stop loading indicator on error
-
-          // Auto-retry if we haven't exceeded max retries
-          if (retryCount < MAX_RETRIES) {
-            autoRetry();
-          } else {
-            // If max retries reached, show the error state
+            if (currentPage > loadedNumPages) {
+              setCurrentPage(loadedNumPages);
+              sessionStorage.setItem(getStorageKey(), loadedNumPages.toString());
+            }
+          }}
+          onLoadProgress={({ loaded, total }) => {
+            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
+            setLoadingProgress(progress);
+          }}
+          onLoadError={(error) => {
+            console.error("Error loading PDF:", error);
+            const errorMessage = error?.message || "Unknown error occurred";
             setError(errorMessage);
-          }
-        }}
-        loading={renderLoadingState()}
-        error={renderErrorState()}
-      >
-        {loading ? (
-          <div className="flex items-center justify-center h-96 w-full">
-            {/* Loading state is handled by the `loading` prop of Document */}
-          </div>
-        ) : (
-          pageWidth && pageHeight && totalPages > 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <HTMLFlipBook
-                key={`${pageWidth}-${pageHeight}-${pdfUrl}-${currentPage}`} // Added currentPage to key
-                width={pageWidth}
-                height={pageHeight}
-                size="fixed"
-                minWidth={pageWidth}
-                maxWidth={pageWidth}
-                minHeight={pageHeight}
-                maxHeight={pageHeight}
-                autoSize={false}
-                showCover={true}
-                flippingTime={800}
-                usePortrait={false}
-                startPage={currentPage - 1} // Use 0-based index for startPage
-                drawShadow={true}
-                className="shadow-2xl"
-                ref={bookRef}
-                onFlip={handleFlip}
-                onInit={() => {
-                  setIsFlipbookReady(true);
-                }}
-                onChangeState={() => {
-                  if (!isFlipbookReady) {
-                    setIsFlipbookReady(true);
-                  }
-                }}
-                mobileScrollSupport={true}
-                style={{}}
-                startZIndex={0}
-                maxShadowOpacity={0.5}
-                showPageCorners={true}
-                disableFlipByClick={false}
-                clickEventForward={true}
-                useMouseEvents={true}
-                swipeDistance={30}
-              >
-                {Array.from(new Array(totalPages), (_, index) => (
-                  <div
-                    key={`page_${index + 1}`}
-                    className="bg-white shadow-lg flex items-center justify-center"
-                    data-page={index + 1} // Add data-page attribute for intersection observer
-                  >
-                    <Page
-                      pageNumber={index + 1}
-                      width={pageWidth}
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                      loading={<div>Loading Page...</div>}
-                      error={<div>Error Loading Page</div>}
-                      canvasRef={(ref) => {
-                        if (ref) {
-                          canvasRefs.current.set(index + 1, ref);
-                          // Observe the page if it's the current page or nearby
-                          if (observerRef.current) {
-                            observerRef.current.observe(ref.parentElement!);
-                          }
-                        } else {
-                          // Clean up ref when page is unmounted
-                          canvasRefs.current.delete(index + 1);
-                        }
-                      }}
-                    />
-                  </div>
-                ))}
-              </HTMLFlipBook>
+            setLoading(false);
+
+            if (retryCount < MAX_RETRIES) {
+              autoRetry();
+            } else {
+              setError(errorMessage);
+            }
+          }}
+          loading={renderLoadingState()}
+          error={renderErrorState()}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center h-96 w-full">
+              {/* Loading state is handled by the `loading` prop of Document */}
             </div>
           ) : (
-            // Render a placeholder page to get dimensions if not yet available
-            <Page
-              pageNumber={1}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              onLoadSuccess={(page) => {
-                const { width, height } = page;
-                const aspectRatio = width / height;
-                setPdfAspectRatio(aspectRatio);
-                // No need to set pageWidth/Height here, it's handled by the useEffect above
-              }}
-              className="opacity-0 absolute invisible" // Keep it offscreen
-            />
-          )
-        )}
-      </Document>
+            pageWidth && pageHeight && totalPages > 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <HTMLFlipBook
+                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
+                  width={pageWidth}
+                  height={pageHeight}
+                  size="fixed"
+                  minWidth={pageWidth}
+                  maxWidth={pageWidth}
+                  minHeight={pageHeight}
+                  maxHeight={pageHeight}
+                  autoSize={false}
+                  showCover={true}
+                  flippingTime={800}
+                  usePortrait={false}
+                  startPage={Math.min(currentPage - 1, totalPages - 1)}
+                  drawShadow={true}
+                  className="shadow-2xl"
+                  ref={bookRef}
+                  onFlip={handleFlip}
+                  onInit={() => {
+                    setIsFlipbookReady(true);
+                  }}
+                  onChangeState={() => {
+                    if (!isFlipbookReady) {
+                      setIsFlipbookReady(true);
+                    }
+                  }}
+                  mobileScrollSupport={true}
+                  style={{}}
+                  startZIndex={0}
+                  maxShadowOpacity={0.5}
+                  showPageCorners={true}
+                  disableFlipByClick={false}
+                  clickEventForward={true}
+                  useMouseEvents={true}
+                  swipeDistance={30}
+                >
+                  {Array.from(new Array(totalPages), (_, index) => (
+                    <div
+                      key={`page_${index + 1}`}
+                      className="bg-white shadow-lg flex items-center justify-center"
+                    >
+                      <Page
+                        pageNumber={index + 1}
+                        width={pageWidth}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                        loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
+                        error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
+                      />
+                    </div>
+                  ))}
+                </HTMLFlipBook>
+              </div>
+            ) : (
+              <Page
+                pageNumber={1}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                onLoadSuccess={(page) => {
+                  const { width, height } = page;
+                  const aspectRatio = width / height;
+                  setPdfAspectRatio(aspectRatio);
+                  if (onAspectRatioDetected) {
+                    onAspectRatioDetected(aspectRatio);
+                  }
+                }}
+                className="opacity-0 absolute invisible"
+              />
+            )
+          )}
+        </Document>
       )}
 
-      {/* Controls are only shown if not in error state and PDF is loaded */}
       {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-4">
@@ -613,7 +486,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         </div>
       )}
 
-      {/* Instructions are only shown if not in error state and PDF is loaded */}
       {!showPortraitPrompt && !loading && !error && totalPages > 0 && (
         <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
           Click pages to flip • Use arrow keys to navigate
