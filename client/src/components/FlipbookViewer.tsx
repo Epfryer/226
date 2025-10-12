@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, Smartphone } from "lucide-react";
 import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Use CDN for PDF.js worker for better production reliability
 // This matches the installed pdfjs-dist version (5.4.296)
@@ -32,57 +33,63 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
-  const [numPages, setNumPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [pageWidth, setPageWidth] = useState<number | null>(null);
-  const [pageHeight, setPageHeight] = useState<number | null>(null);
-  const [isPortrait, setIsPortrait] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
-  const [isFlipbookReady, setIsFlipbookReady] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState<number>(0);
-  const [isRetrying, setIsRetrying] = useState<boolean>(false);
-  const [documentKey, setDocumentKey] = useState<number>(0);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isDevicePortrait, setIsDevicePortrait] = useState(false);
-  const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMobile = useIsMobile();
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+
+  // Restore page position from sessionStorage on mount
+  const getStorageKey = () => `pdf-page-${pdfUrl}`;
+  const initialPage = parseInt(sessionStorage.getItem(getStorageKey()) || "1");
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const renderTasksRef = useRef<Map<number, any>>(new Map());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Save page position whenever it changes
+  useEffect(() => {
+    if (currentPage > 0) {
+      sessionStorage.setItem(getStorageKey(), currentPage.toString());
+    }
+  }, [currentPage, pdfUrl]);
 
   // Detect mobile device and orientation
+  const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   useEffect(() => {
-    const checkMobileAndOrientation = () => {
-      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const checkOrientation = () => {
       const portrait = window.innerHeight > window.innerWidth;
-      setIsMobile(mobile);
       setIsDevicePortrait(portrait);
     };
 
-    checkMobileAndOrientation();
-    window.addEventListener('resize', checkMobileAndOrientation);
-    window.addEventListener('orientationchange', checkMobileAndOrientation);
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
 
     return () => {
-      window.removeEventListener('resize', checkMobileAndOrientation);
-      window.removeEventListener('orientationchange', checkMobileAndOrientation);
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
     };
   }, []);
 
+
+  // Reset state when PDF URL changes
   useEffect(() => {
     console.log('PDF URL:', pdfUrl);
-    setCurrentPage(0);
-    setNumPages(0);
+    setPdfDoc(null);
+    setTotalPages(0);
     setPageWidth(null);
     setPageHeight(null);
-    setIsLoading(true);
+    setLoading(true);
     setIsFlipbookReady(false);
     setLoadingProgress(0);
     setError(null);
     setRetryCount(0);
     setIsRetrying(false);
+    setCurrentPage(1); // Reset to first page
+    sessionStorage.removeItem(getStorageKey()); // Clear storage for new PDF
 
     // Clear any pending retry timeouts
     if (retryTimeoutRef.current) {
@@ -121,6 +128,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFlipbookReady]);
 
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -135,6 +143,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     return () => resizeObserver.disconnect();
   }, []);
 
+  const [pageWidth, setPageWidth] = useState<number | null>(null);
+  const [pageHeight, setPageHeight] = useState<number | null>(null);
+  const [pdfAspectRatio, setPdfAspectRatio] = useState<number | null>(null);
+  const [isFlipbookReady, setIsFlipbookReady] = useState(false);
   useEffect(() => {
     if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
 
@@ -164,7 +176,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
   const handleFlip = (e: any) => {
     // e.data is the 0-based index of the LEFT page in the current spread
-    setCurrentPage(e.data);
+    setCurrentPage(e.data + 1); // +1 to make it 1-based
   };
 
   const goToNextPage = () => {
@@ -192,11 +204,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setError(null);
     setLoadingProgress(0);
     setRetryCount(0);
-    setIsLoading(true);
+    setLoading(true);
     setPageWidth(null);
     setPageHeight(null);
     setPdfAspectRatio(null);
     setIsFlipbookReady(false);
+    setCurrentPage(1); // Reset to first page
+    sessionStorage.removeItem(getStorageKey()); // Clear storage for new PDF
     // Force React-PDF to make a new request by changing the key
     setDocumentKey(prev => prev + 1);
   };
@@ -317,19 +331,124 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   }
 
+  const renderPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
+    if (!pdfDoc || renderTasksRef.current.has(pageNum)) return;
+
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+
+      // Use lower scale on mobile to reduce memory usage
+      const scale = isMobile ? 1.2 : 1.5;
+      const viewport = page.getViewport({ scale });
+
+      const context = canvas.getContext('2d', {
+        willReadFrequently: false,
+        // Reduce memory on mobile
+        alpha: false
+      });
+      if (!context) return;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+
+      const renderTask = page.render(renderContext);
+      renderTasksRef.current.set(pageNum, renderTask);
+
+      await renderTask.promise;
+      renderTasksRef.current.delete(pageNum);
+
+      // Clean up page object on mobile to free memory
+      if (isMobile) {
+        page.cleanup();
+      }
+    } catch (err: any) {
+      if (err?.name !== 'RenderingCancelledException') {
+        console.error(`Error rendering page ${pageNum}:`, err);
+      }
+      renderTasksRef.current.delete(pageNum);
+    }
+  };
+
+  useEffect(() => {
+    if (!pdfDoc || totalPages === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const pageNum = parseInt(entry.target.getAttribute('data-page') || '0');
+          const canvas = canvasRefs.current.get(pageNum);
+
+          if (entry.isIntersecting && canvas) {
+            renderPage(pageNum, canvas);
+            setCurrentPage(pageNum);
+          }
+        });
+      },
+      {
+        root: containerRef.current,
+        // Reduce preload distance on mobile to save memory
+        rootMargin: isMobile ? '50px' : '100px',
+        threshold: 0.1,
+      }
+    );
+
+    observerRef.current = observer;
+
+    // Scroll to saved page position after a brief delay
+    setTimeout(() => {
+      const savedPage = parseInt(sessionStorage.getItem(getStorageKey()) || "1");
+      if (savedPage > 1 && savedPage <= totalPages) {
+        const pageElement = document.querySelector(`[data-page="${savedPage}"]`);
+        if (pageElement) {
+          pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+        } else {
+          // If element not found, try to render the page and then scroll
+          // This might happen if the DOM is not fully ready yet
+          // For simplicity, we'll just reset to page 1 if not found
+          setCurrentPage(1);
+          sessionStorage.removeItem(getStorageKey());
+        }
+      }
+    }, 100);
+
+    // Clean up observer on component unmount or when dependencies change
+    return () => {
+      observer.disconnect();
+      observerRef.current = null;
+      // Cancel any ongoing render tasks when the component unmounts or PDF changes
+      renderTasksRef.current.forEach(task => task.cancel());
+      renderTasksRef.current.clear();
+    };
+  }, [pdfDoc, totalPages, isMobile, containerRef]); // Added containerRef as dependency
+
+  const [documentKey, setDocumentKey] = useState<number>(0); // Used to force re-render of Document component
+  const [isRetrying, setIsRetrying] = useState<boolean>(false); // State to manage retry UI
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for retry timeout
+
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
       <Document
         key={`pdf-${documentKey}`}
         file={pdfUrl}
         options={pdfOptions}
-        onLoadSuccess={({ numPages }) => {
-          console.log(`PDF loaded successfully: ${numPages} pages`);
-          setNumPages(numPages);
-          setCurrentPage(0);
-          setLoadingProgress(100);
+        onLoadSuccess={({ numPages: loadedNumPages }) => {
+          console.log(`PDF loaded successfully: ${loadedNumPages} pages`);
+          setTotalPages(loadedNumPages);
+          setLoading(false);
           setError(null);
           setRetryCount(0);
+          setIsRetrying(false);
+
+          // Update current page if it's out of bounds
+          if (currentPage > loadedNumPages) {
+            setCurrentPage(loadedNumPages);
+            sessionStorage.setItem(getStorageKey(), loadedNumPages.toString());
+          }
         }}
         onLoadProgress={({ loaded, total }) => {
           const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
@@ -339,17 +458,94 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           console.error("Error loading PDF:", error);
           const errorMessage = error?.message || "Unknown error occurred";
           setError(errorMessage);
-          setLoadingProgress(0);
+          setLoading(false); // Stop loading indicator on error
 
           // Auto-retry if we haven't exceeded max retries
           if (retryCount < MAX_RETRIES) {
             autoRetry();
+          } else {
+            // If max retries reached, show the error state
+            setError(errorMessage);
           }
         }}
         loading={renderLoadingState()}
+        error={renderErrorState()}
       >
-        {isLoading && pageWidth === null ? (
-          <div className="flex items-center justify-center h-96">
+        {loading ? (
+          <div className="flex items-center justify-center h-96 w-full">
+            {/* Loading state is handled by the `loading` prop of Document */}
+          </div>
+        ) : (
+          pageWidth && pageHeight && totalPages > 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <HTMLFlipBook
+                key={`${pageWidth}-${pageHeight}-${pdfUrl}-${currentPage}`} // Added currentPage to key
+                width={pageWidth}
+                height={pageHeight}
+                size="fixed"
+                minWidth={pageWidth}
+                maxWidth={pageWidth}
+                minHeight={pageHeight}
+                maxHeight={pageHeight}
+                autoSize={false}
+                showCover={true}
+                flippingTime={800}
+                usePortrait={false}
+                startPage={currentPage - 1} // Use 0-based index for startPage
+                drawShadow={true}
+                className="shadow-2xl"
+                ref={bookRef}
+                onFlip={handleFlip}
+                onInit={() => {
+                  setIsFlipbookReady(true);
+                }}
+                onChangeState={() => {
+                  if (!isFlipbookReady) {
+                    setIsFlipbookReady(true);
+                  }
+                }}
+                mobileScrollSupport={true}
+                style={{}}
+                startZIndex={0}
+                maxShadowOpacity={0.5}
+                showPageCorners={true}
+                disableFlipByClick={false}
+                clickEventForward={true}
+                useMouseEvents={true}
+                swipeDistance={30}
+              >
+                {Array.from(new Array(totalPages), (_, index) => (
+                  <div
+                    key={`page_${index + 1}`}
+                    className="bg-white shadow-lg flex items-center justify-center"
+                    data-page={index + 1} // Add data-page attribute for intersection observer
+                  >
+                    <Page
+                      pageNumber={index + 1}
+                      width={pageWidth}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      loading={<div>Loading Page...</div>}
+                      error={<div>Error Loading Page</div>}
+                      canvasRef={(ref) => {
+                        if (ref) {
+                          canvasRefs.current.set(index + 1, ref);
+                          // Observe the page if it's the current page or nearby
+                          if (observerRef.current) {
+                            observerRef.current.observe(ref.parentElement!);
+                          }
+                        } else {
+                          // Clean up ref when page is unmounted
+                          canvasRefs.current.delete(index + 1);
+                        }
+                      }}
+                    />
+                  </div>
+                ))}
+              </HTMLFlipBook>
+            </div>
+          ) : (
+            // Render a placeholder page to get dimensions if not yet available
             <Page
               pageNumber={1}
               renderTextLayer={false}
@@ -357,117 +553,67 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               onLoadSuccess={(page) => {
                 const { width, height } = page;
                 const aspectRatio = width / height;
-
                 setPdfAspectRatio(aspectRatio);
-                setIsPortrait(height > width);
-                setIsLoading(false);
-
-                if (onAspectRatioDetected) {
-                  onAspectRatioDetected(aspectRatio);
-                }
+                // No need to set pageWidth/Height here, it's handled by the useEffect above
               }}
-              className="opacity-0"
+              className="opacity-0 absolute invisible" // Keep it offscreen
             />
-          </div>
-        ) : pageWidth && pageHeight ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <HTMLFlipBook
-              key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
-              width={pageWidth}
-              height={pageHeight}
-              size="fixed"
-              minWidth={pageWidth}
-              maxWidth={pageWidth}
-              minHeight={pageHeight}
-              maxHeight={pageHeight}
-              autoSize={false}
-              showCover={true}
-              flippingTime={800}
-              usePortrait={false}
-              startPage={0}
-              drawShadow={true}
-              className="shadow-2xl"
-              ref={bookRef}
-              onFlip={handleFlip}
-              onInit={() => {
-                setIsFlipbookReady(true);
-              }}
-              onChangeState={() => {
-                if (!isFlipbookReady) {
-                  setIsFlipbookReady(true);
-                }
-              }}
-              mobileScrollSupport={true}
-              style={{}}
-              startZIndex={0}
-              maxShadowOpacity={0.5}
-              showPageCorners={true}
-              disableFlipByClick={false}
-              clickEventForward={true}
-              useMouseEvents={true}
-              swipeDistance={30}
-            >
-              {Array.from(new Array(numPages), (_, index) => (
-                <div key={`page_${index + 1}`} className="bg-white shadow-lg">
-                  <Page
-                    pageNumber={index + 1}
-                    width={pageWidth}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </div>
-              ))}
-            </HTMLFlipBook>
-          </div>
-        ) : null}
+          )
+        )}
       </Document>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button
-            onClick={goToPrevPage}
-            disabled={currentPage === 0}
-            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+      {/* Controls are only shown if not in error state and PDF is loaded */}
+      {!loading && !error && totalPages > 0 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-          <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
-            {currentPage === 0
-              ? `Page 1 of ${numPages}`
-              : numPages === 1
-                ? `Page 1 of 1`
-                : currentPage + 1 >= numPages
-                  ? `Page ${numPages} of ${numPages}`
-                  : `Pages ${currentPage + 1}-${currentPage + 2} of ${numPages}`
-            }
+            <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
+              {currentPage === 1
+                ? `Page 1 of ${totalPages}`
+                : totalPages === 1
+                  ? `Page 1 of 1`
+                  : currentPage >= totalPages
+                    ? `Page ${totalPages} of ${totalPages}`
+                    : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`
+              }
+            </div>
+
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+              aria-label="Next page"
+            >
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
           </div>
 
-          <button
-            onClick={goToNextPage}
-            disabled={currentPage === 0 ? (numPages <= 1) : (currentPage + 2 >= numPages)}
-            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-            aria-label="Next page"
-          >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          {onFullscreen && (
+            <button
+              onClick={onFullscreen}
+              className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
+              aria-label="Fullscreen"
+            >
+              <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
         </div>
+      )}
 
-        {onFullscreen && (
-          <button
-            onClick={onFullscreen}
-            className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
-            aria-label="Fullscreen"
-          >
-            <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        )}
-      </div>
-
-      <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
-        Click pages to flip • Use arrow keys to navigate
-      </p>
+      {/* Instructions are only shown if not in error state and PDF is loaded */}
+      {!loading && !error && totalPages > 0 && (
+        <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
+          Click pages to flip • Use arrow keys to navigate
+        </p>
+      )}
     </div>
   );
 }

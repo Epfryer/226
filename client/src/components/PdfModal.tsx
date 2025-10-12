@@ -52,7 +52,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
 
     if (open) {
       previousActiveElementRef.current = document.activeElement as HTMLElement;
-      
+
       setTimeout(() => {
         closeButtonRef.current?.focus();
       }, 100);
@@ -66,7 +66,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("keydown", handleTab);
       document.body.style.overflow = "unset";
-      
+
       if (previousActiveElementRef.current) {
         previousActiveElementRef.current.focus();
       }
@@ -94,7 +94,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
             onClick={onClose}
             aria-hidden="true"
           />
-          
+
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6"
             role="dialog"
@@ -130,7 +130,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                   onFullscreen={handleFullscreen}
                   onAspectRatioDetected={setAspectRatio}
                 />
-                
+
                 {/* Download button overlay */}
                 <div className="absolute top-4 right-4 z-20">
                   <a
