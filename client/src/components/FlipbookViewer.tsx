@@ -278,7 +278,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           touch2.clientY - touch1.clientY
         );
         pinchStartDistance.current = distance;
-        pinchStartZoom.current = zoomLevel;
+        // Capture current zoom level at start of pinch
+        setZoomLevel(current => {
+          pinchStartZoom.current = current;
+          return current;
+        });
       }
     };
 
@@ -310,7 +314,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, zoomLevel]);
+  }, [isMobile]);
 
   const renderLoadingState = () => {
     if (isRetrying) {
