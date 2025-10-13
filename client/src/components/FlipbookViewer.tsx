@@ -19,6 +19,7 @@ const pdfOptions = {
   disableAutoFetch: false,
   disableStream: false,
   disableRange: false,
+  withCredentials: false,
   httpHeaders: {},
   isEvalSupported: false,
 };
