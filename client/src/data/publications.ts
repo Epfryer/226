@@ -29,10 +29,25 @@ export async function fetchPublications(): Promise<Publication[]> {
     const data = await response.json();
     
     // Map the publications and add cover paths
-    PUBLICATIONS = data.publications.map((pub: Publication) => ({
-      ...pub,
-      coverPath: `/publications/${pub.filename?.replace('.pdf', '.jpg') || pub.slug + '.jpg'}`
-    }));
+    PUBLICATIONS = data.publications.map((pub: Publication) => {
+      // Extract a better title from filename if metadata title is missing or generic
+      let displayTitle = pub.title;
+      if (!displayTitle || displayTitle === 'C' || displayTitle === pub.filename) {
+        // Convert filename to readable title: "EthanFryer_Hybrid-Urbanism.pdf" -> "Hybrid Urbanism"
+        displayTitle = pub.filename
+          ?.replace('.pdf', '')
+          .split('_')
+          .slice(1) // Remove the "EthanFryer" prefix
+          .join(' ')
+          .replace(/-/g, ' ') || pub.title;
+      }
+      
+      return {
+        ...pub,
+        title: displayTitle,
+        coverPath: `/publications/${pub.filename?.replace('.pdf', '.jpg') || pub.slug + '.jpg'}`
+      };
+    });
     
     return PUBLICATIONS;
   } catch (error) {
@@ -41,7 +56,7 @@ export async function fetchPublications(): Promise<Publication[]> {
     PUBLICATIONS = [
       {
         slug: "ethan-fryer-hybrid-urbanism",
-        title: "C",
+        title: "Hybrid Urbanism",
         year: "2025",
         pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
         coverPath: "/publications/EthanFryer_Hybrid-Urbanism.jpg"
