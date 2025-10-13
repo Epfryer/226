@@ -408,8 +408,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                           <Page
                             pageNumber={pageNum}
                             width={pageWidth}
-                            renderTextLayer={true}
-                            renderAnnotationLayer={true}
+                            devicePixelRatio={isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2.0)}
+                            renderTextLayer={!isMobile}
+                            renderAnnotationLayer={false}
                             loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
                             error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
                           />
