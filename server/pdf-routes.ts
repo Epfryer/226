@@ -23,7 +23,9 @@ try {
 // Allow CORS from all origins for development and deployment
 router.use(cors({ 
   origin: true,  // Allow all origins
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Range'],
+  exposedHeaders: ['Accept-Ranges', 'Content-Range', 'Content-Length']
 }));
 
 // Simple in-memory cache for PDF buffers (helps with range requests)
