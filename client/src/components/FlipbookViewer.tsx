@@ -12,6 +12,13 @@ import { useToast } from "@/hooks/use-toast";
 // Use CDN for PDF.js worker for better production reliability
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
+// Load TextLayer utilities from PDF.js
+if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
+  import('pdfjs-dist').then((pdfjsLib) => {
+    (window as any).pdfjsLib = pdfjsLib;
+  });
+}
+
 // PDF.js configuration with range support for streaming
 const pdfOptions = {
   cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
@@ -39,12 +46,13 @@ function getOutputScale() {
   return dpr;
 }
 
-// Custom page renderer with proper DPR handling
+// Custom page renderer with proper DPR handling and text layer
 async function renderPage(
   page: any,
   baseScale: number = 1,
   rotation: number = 0,
   canvas: HTMLCanvasElement,
+  textLayerDiv?: HTMLDivElement,
   abortController?: AbortController
 ) {
   // Cancel any previous running task for this canvas
@@ -105,6 +113,32 @@ async function renderPage(
 
   (canvas as any).__renderTask = renderTask;
   await renderTask.promise;
+
+  // Render text layer if provided - use same viewport dimensions
+  if (textLayerDiv) {
+    // Clear previous text layer content
+    textLayerDiv.innerHTML = '';
+    
+    // Set text layer dimensions to match canvas CSS dimensions exactly (no transforms)
+    textLayerDiv.style.width = `${viewport.width}px`;
+    textLayerDiv.style.height = `${viewport.height}px`;
+    
+    try {
+      const textContent = await page.getTextContent({ includeMarkedContent: true });
+      
+      // Use PDF.js TextLayer if available
+      if ((window as any).pdfjsLib?.renderTextLayer) {
+        const textRenderTask = (window as any).pdfjsLib.renderTextLayer({
+          textContentSource: textContent,
+          container: textLayerDiv,
+          viewport,
+        });
+        await textRenderTask.promise;
+      }
+    } catch (err) {
+      console.warn('Text layer rendering failed:', err);
+    }
+  }
 }
 
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
@@ -134,6 +168,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const pinchStartDistance = useRef<number | null>(null);
   const pinchStartZoom = useRef<number>(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const textLayerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const abortControllers = useRef<Map<number, AbortController>>(new Map());
 
   // Save page position whenever it changes
@@ -188,8 +223,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
     
-    // Clean up canvas refs and abort controllers
+    // Clean up canvas refs, text layers and abort controllers
     canvasRefs.current.clear();
+    textLayerRefs.current.clear();
     abortControllers.current.forEach(controller => controller.abort());
     abortControllers.current.clear();
   }, [pdfUrl]);
@@ -265,6 +301,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       
       for (let i = Math.max(1, currentPage - visibleRange); i <= Math.min(totalPages, currentPage + visibleRange); i++) {
         const canvas = canvasRefs.current.get(i);
+        const textLayer = textLayerRefs.current.get(i);
         if (!canvas || (canvas as any).__rendered) continue;
 
         try {
@@ -272,7 +309,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           const controller = new AbortController();
           abortControllers.current.set(i, controller);
 
-          await renderPage(page, 1, 0, canvas, controller);
+          await renderPage(page, 1, 0, canvas, textLayer, controller);
           (canvas as any).__rendered = true;
         } catch (err: any) {
           if (err.name !== 'AbortError') {
@@ -531,18 +568,33 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                     return (
                       <div
                         key={`page_${pageNum}`}
-                        className="bg-white shadow-lg flex items-center justify-center overflow-hidden"
+                        className="bg-white shadow-lg flex items-center justify-center overflow-hidden relative"
                         style={{ width: pageWidth, height: pageHeight }}
                       >
                         {shouldRender ? (
-                          <canvas
-                            ref={(el) => {
-                              if (el) {
-                                canvasRefs.current.set(pageNum, el);
-                              }
-                            }}
-                            className="w-full h-full"
-                          />
+                          <>
+                            <canvas
+                              ref={(el) => {
+                                if (el) {
+                                  canvasRefs.current.set(pageNum, el);
+                                }
+                              }}
+                              className="w-full h-full"
+                            />
+                            <div
+                              ref={(el) => {
+                                if (el) {
+                                  textLayerRefs.current.set(pageNum, el);
+                                }
+                              }}
+                              className="textLayer absolute top-0 left-0 pointer-events-none"
+                              style={{
+                                overflow: 'clip',
+                                opacity: 0.2,
+                                lineHeight: 1,
+                              }}
+                            />
+                          </>
                         ) : (
                           <div className="flex items-center justify-center h-full text-gray-300">
                             Page {pageNum}
