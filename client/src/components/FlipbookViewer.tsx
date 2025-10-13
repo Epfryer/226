@@ -9,8 +9,13 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 
-// Use CDN for PDF.js worker for better production reliability
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
+// Use local PDF.js worker for better reliability and version consistency
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+}
 
 // Load TextLayer utilities from PDF.js
 if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
