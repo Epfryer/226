@@ -41,7 +41,7 @@ export async function fetchPublications(): Promise<Publication[]> {
     PUBLICATIONS = [
       {
         slug: "ethan-fryer-hybrid-urbanism",
-        title: "Hybrid Urbanism",
+        title: "C",
         year: "2025",
         pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
         coverPath: "/publications/EthanFryer_Hybrid-Urbanism.jpg"
