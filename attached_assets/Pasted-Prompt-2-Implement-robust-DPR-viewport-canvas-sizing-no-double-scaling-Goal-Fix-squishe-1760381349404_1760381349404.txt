@@ -1,0 +1,79 @@
+Prompt 2 — Implement robust DPR + viewport + canvas sizing (no double-scaling)
+
+Goal: Fix “squished” aspect on iOS and ensure no double scaling (PDF.js scale vs CSS transform).
+In the viewer component where a PDF page is rendered, replace the render sizing logic with the pattern below:
+
+Do not use CSS transform: scale for the canvas. Use style width/height for layout, and use DPR solely for internal canvas resolution.
+Clamp DPR to <= 2 on iOS to avoid memory blow-ups and rendering quirks.
+Insert/replace the logic in your renderPage function:
+
+ts
+// Helper to detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+// Compute DPR (clamped for iOS) and a safe max pixel budget
+function getOutputScale() {
+  const dpr = Math.min(window.devicePixelRatio || 1, isIOS ? 2 : 3);
+  return dpr;
+}
+
+async function renderPage(page, baseScale = 1, rotation = 0, canvas: HTMLCanvasElement, abortController?: AbortController) {
+  // Cancel any previous running task for this canvas
+  if ((canvas as any).__renderTask?.cancel) {
+    try { (canvas as any).__renderTask.cancel(); } catch {}
+  }
+
+  // Build viewport at "layout scale" (not multiplied by DPR)
+  const viewport = page.getViewport({ scale: baseScale, rotation });
+
+  // Internal pixel resolution uses DPR via the render transform, not viewport scale
+  const outputScale = getOutputScale();
+
+  // Set the CSS size to layout dimensions (no transform scaling)
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+
+  // Set the backing store size (pixels)
+  const pxW = Math.floor(viewport.width * outputScale);
+  const pxH = Math.floor(viewport.height * outputScale);
+
+  // Prevent exceeding iOS canvas pixel limits
+  const maxPixels = isIOS ? 5_000_000 : 16_000_000; // ~5–16 MP
+  if (pxW * pxH > maxPixels) {
+    const scaleDown = Math.sqrt(maxPixels / (pxW * pxH));
+    // reduce output scale but keep CSS layout sizes
+    const adjusted = outputScale * scaleDown;
+    // recompute pixel dims
+    const apxW = Math.max(1, Math.floor(viewport.width * adjusted));
+    const apxH = Math.max(1, Math.floor(viewport.height * adjusted));
+    canvas.width = apxW;
+    canvas.height = apxH;
+
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true, colorSpace: "srgb" as any })!;
+    const transform = [apxW / viewport.width, 0, 0, apxH / viewport.height, 0, 0];
+
+    const renderTask = page.render({ canvasContext: ctx, viewport, transform, intent: "display" as any, signal: abortController?.signal });
+    (canvas as any).__renderTask = renderTask;
+    await renderTask.promise;
+    return;
+  }
+
+  canvas.width = pxW;
+  canvas.height = pxH;
+
+  // Create a 2D context with alpha and sRGB when supported
+  const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true, colorSpace: "srgb" as any })!;
+
+  // Use transform to apply DPR — avoids duplicating scale in viewport & CSS
+  const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
+
+  // Render (cancel-safe)
+  const renderTask = page.render({ canvasContext: ctx, viewport, transform, intent: "display" as any, signal: abortController?.signal });
+  (canvas as any).__renderTask = renderTask;
+  await renderTask.promise;
+}
+Notes:
+
+The CSS size controls layout; the internal canvas size is for resolution. No CSS transform scaling.
+Passing transform to page.render is preferred over multiplying scale into the viewport when you also set CSS size.
+We clamp DPR to 2 on iOS to avoid memory limits and quirky scaling.
