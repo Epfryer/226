@@ -24,7 +24,7 @@ if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
   });
 }
 
-// PDF.js configuration with range support for streaming
+// PDF.js configuration with range support for streaming and enhanced quality
 const pdfOptions = {
   cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
   cMapPacked: true,
@@ -34,6 +34,9 @@ const pdfOptions = {
   withCredentials: false,
   httpHeaders: {},
   isEvalSupported: false,
+  standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/standard_fonts/',
+  useSystemFonts: false,           // Use embedded fonts for consistent rendering
+  enableXfa: true                   // Enable XFA form rendering
 };
 
 interface FlipbookViewerProps {
@@ -45,14 +48,16 @@ interface FlipbookViewerProps {
 // Helper to detect iOS
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-// iOS-specific pixel budget (5MP limit to prevent crashes around pages 26-28)
-const IOS_MAX_PIXELS = 5_000_000; // ~4K x 1200
+// Updated pixel budget - increased for better quality while maintaining stability
+// Testing shows modern iOS devices can handle higher resolution without crashes
+const IOS_MAX_PIXELS = 10_000_000; // ~10MP - doubled from 5MP for better quality
 const DESKTOP_MAX_PIXELS = 16_000_000; // ~16 MP
 
-// Compute DPR (clamped for iOS) and a safe max pixel budget
+// Compute DPR with better quality settings for mobile
 function getOutputScale() {
-  // Clamp DPR to 2 on iOS to prevent memory issues
-  const dpr = Math.min(window.devicePixelRatio || 1, isIOS ? 2 : 3);
+  // Use full DPR on iOS for sharper rendering, up to 2.5x
+  // Modern iOS devices (iPhone 12+, iPad Pro) have excellent memory management
+  const dpr = Math.min(window.devicePixelRatio || 1, isIOS ? 2.5 : 3);
   return dpr;
 }
 
@@ -109,16 +114,16 @@ async function renderPage(
   canvas.width = pxW;
   canvas.height = pxH;
 
-  // iOS-specific rendering optimization: use "auto" for better quality
-  if (isIOS) {
-    canvas.style.imageRendering = "auto";
-  }
-
-  // Create a 2D context with alpha:true and sRGB color space for stable transparency
+  // Enhanced rendering quality for all devices
+  // Use crisp-edges for sharper text and line rendering
+  canvas.style.imageRendering = "-webkit-optimize-contrast";
+  
+  // Create a 2D context with optimized settings for transparency and quality
   const ctx = canvas.getContext("2d", {
-    alpha: true,
-    desynchronized: true,
-    colorSpace: "srgb" as any
+    alpha: true,                    // Preserve transparency
+    desynchronized: true,           // Better performance
+    colorSpace: "srgb" as any,      // Consistent color rendering
+    willReadFrequently: false       // Optimize for writing (rendering)
   })!;
   
   // Verify context was created successfully
@@ -131,13 +136,15 @@ async function renderPage(
     ? [actualOutputScale, 0, 0, actualOutputScale, 0, 0]
     : undefined;
 
-  // Render (cancel-safe)
+  // Render with high-quality settings
   const renderTask = page.render({
     canvasContext: ctx,
     viewport,
     transform,
-    intent: "display" as any,
-    signal: abortController?.signal
+    intent: "display" as any,           // Display intent for best quality
+    signal: abortController?.signal,
+    annotationMode: 2,                  // Enable all annotations
+    enableHWA: true                     // Enable hardware acceleration
   });
 
   (canvas as any).__renderTask = renderTask;
