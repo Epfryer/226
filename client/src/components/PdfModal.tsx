@@ -131,10 +131,10 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                   onAspectRatioDetected={setAspectRatio}
                 />
 
-                {/* Download button overlay - always download original, not mobile variant */}
+                {/* Download button overlay */}
                 <div className="absolute top-4 right-4 z-20">
                   <a
-                    href={asset(pub.pdfPath.replace(/Mobile_flattened\.pdf$/i, '.pdf').replace(/_mobile_flat\.pdf$/i, '.pdf').replace(/_mobile\.pdf$/i, '.pdf'))}
+                    href={asset(pub.pdfPath)}
                     download
                     className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
                   >

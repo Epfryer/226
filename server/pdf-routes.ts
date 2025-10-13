@@ -97,26 +97,21 @@ router.get("/:filename", async (req, res) => {
 
     let name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
     
-    // Check for iOS/mobile user agent or ?mobile=1 flag to serve mobile-optimized PDF
+    // Optional: Check for iOS user agent or ?mobile=1 flag to serve mobile-optimized PDF
     const userAgent = req.headers['user-agent'] || '';
-    const isMobileRequest = req.query.mobile === '1' || /iPad|iPhone|iPod|Android/i.test(userAgent);
+    const isMobileRequest = req.query.mobile === '1' || /iPad|iPhone|iPod/i.test(userAgent);
+    const enableMobileVariant = process.env.ENABLE_MOBILE_PDF_VARIANT === 'true';
     
-    if (isMobileRequest) {
-      // Try multiple mobile variant naming patterns
-      const mobileVariants = [
-        name.replace(/\.pdf$/i, 'Mobile_flattened.pdf'),
-        name.replace(/\.pdf$/i, '_mobile_flat.pdf'),
-        name.replace(/\.pdf$/i, '_mobile.pdf')
-      ];
+    if (enableMobileVariant && isMobileRequest) {
+      // Try to serve mobile-optimized variant if it exists
+      const mobileVariantName = name.replace(/\.pdf$/i, '_mobile_flat.pdf');
+      const existsResult = await storage.exists(mobileVariantName);
       
-      for (const mobileVariantName of mobileVariants) {
-        const existsResult = await storage.exists(mobileVariantName);
-        
-        if (existsResult.ok && existsResult.value) {
-          console.log(`[PDF] Serving mobile variant: ${mobileVariantName} for mobile device`);
-          name = mobileVariantName;
-          break;
-        }
+      if (existsResult.ok && existsResult.value) {
+        console.log(`[PDF] Serving mobile variant: ${mobileVariantName} for iOS/mobile device`);
+        name = mobileVariantName;
+      } else {
+        console.log(`[PDF] Mobile variant not found: ${mobileVariantName}, serving original`);
       }
     }
     
