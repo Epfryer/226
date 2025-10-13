@@ -8,6 +8,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { MobilePdfViewer } from "./MobilePdfViewer";
 
 // Use CDN for PDF.js worker for better production reliability
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
@@ -34,6 +35,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  
+  if (isMobile) {
+    return <MobilePdfViewer pdfUrl={pdfUrl} onAspectRatioDetected={onAspectRatioDetected} />;
+  }
+  
   const [pdfDoc, setPdfDoc] = useState<any>(null);
 
   // Restore page position from sessionStorage on mount
