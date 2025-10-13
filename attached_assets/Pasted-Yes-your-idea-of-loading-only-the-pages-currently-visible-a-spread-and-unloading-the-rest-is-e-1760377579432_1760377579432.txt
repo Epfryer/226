@@ -1,0 +1,47 @@
+Yes — your idea of loading only the pages currently visible (a “spread”) and unloading the rest is exactly the approach that most PDF-viewers use to avoid crashes and distortion, especially on constrained environments like iOS. Below is a **prompt you can feed to Replit Agent** (or adapt) that addresses both the **crash around pages ~26–28** and the **text/image distortion** issues by implementing spread-based lazy rendering, canvas eviction, and sync between canvas and text layers.
+
+---
+
+## 🎯 Prompt for Replit Agent / Dev to Implement
+
+````
+We have a PDF viewer in React that currently renders many pages at once, causing iOS devices to crash around pages ~26–28 and distort overlapping text/images. We want to update it so that:
+
+1. Only the **two pages (a “spread”) currently visible** in the viewer are loaded/rendered at any time.  
+2. When the user flips to the next spread, the previous two pages are **cleanly destroyed** (canvas/textLayer canceled, memory freed).  
+3. The **canvas and text layer** must always use **exactly the same viewport, scale, rotation, and DPR** parameters so that text overlays precisely without drifting.  
+4. On iOS, enforce stricter **clamping on canvas size / DPR / total pixel buffer** to avoid texture overflow.  
+5. Cancel or interrupt any in-flight render tasks when a page is no longer needed.  
+6. Debounce or delay re-rendering until page flip animations complete (to avoid mid-flip double renders).  
+7. Optionally, apply `disableAutoFetch: true` to prevent PDF.js from prefetching too far ahead (so we control which pages are fetched) — e.g.:
+
+```js
+const loadingTask = pdfjsLib.getDocument({
+  url: pdfUrl,
+  disableAutoFetch: true,
+  disableStream: false,
+});
+````
+
+8. Use a small buffer if needed (e.g. 1 page before and after current), but never render beyond ±1 spread from current.
+
+In summary: implement a **windowed rendering approach (virtualization for PDFs)**. On page flips, unload the old pages, load the new ones, and ensure perfect alignment of canvas + text layers for each page, especially on iOS. Enforce limits for maximum canvas resolution and DPR on mobile to prevent crash.
+
+Return the changes needed in the viewer component (React hooks, cleanup, viewport sync, DPR clamping) and any configuration in PDF.js or the loader needed to support this strategy.
+
+```
+
+---
+
+### Why this helps (backed by PDF.js best practices)
+
+- The PDF.js FAQ and docs recommend **rendering only visible pages**, not everything at once. Rendering dozens of canvases simultaneously causes memory leakage and performance collapse. :contentReference[oaicite:0]{index=0}  
+- In discussions, React wrappers of PDF.js use tricks to load only the current visible page (and a small buffer) to prevent crashes with large PDFs. :contentReference[oaicite:1]{index=1}  
+- The `disableAutoFetch: true` option in PDF.js prevents it from prefetching distant chunks, giving you more control over network and memory usage. :contentReference[oaicite:2]{index=2}  
+- Canvas optimization guidelines recommend minimizing total canvas size and avoiding unnecessary redraws. :contentReference[oaicite:3]{index=3}  
+
+---
+
+If you want, I can turn that prompt into a full patch (diff) for your viewer component (just provide me with its filename or paste the code), and you can feed that to Replit Agent or directly apply it. Do you want me to write the patch now?
+::contentReference[oaicite:4]{index=4}
+```
