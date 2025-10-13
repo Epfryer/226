@@ -8,7 +8,6 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { MobilePdfViewer } from "./MobilePdfViewer";
 
 // Use CDN for PDF.js worker for better production reliability
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
@@ -35,11 +34,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  
-  if (isMobile) {
-    return <MobilePdfViewer pdfUrl={pdfUrl} onAspectRatioDetected={onAspectRatioDetected} />;
-  }
-  
   const [pdfDoc, setPdfDoc] = useState<any>(null);
 
   // Restore page position from sessionStorage on mount
@@ -161,6 +155,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
     const containerAspectRatio = availableWidth / availableHeight;
     const scaleFactor = isMobile ? 0.90 : 0.85;
+    const mobileResolutionScale = isMobile ? 0.75 : 1;
 
     let displayWidth: number;
     let displayHeight: number;
@@ -173,9 +168,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       displayWidth = displayHeight * pdfAspectRatio;
     }
 
-    // Apply zoom level
-    setPageWidth(Math.floor(displayWidth * zoomLevel));
-    setPageHeight(Math.floor(displayHeight * zoomLevel));
+    // Apply zoom level and mobile resolution scaling
+    setPageWidth(Math.floor(displayWidth * zoomLevel * mobileResolutionScale));
+    setPageHeight(Math.floor(displayHeight * zoomLevel * mobileResolutionScale));
   }, [containerSize, pdfAspectRatio, isMobile, zoomLevel]);
 
   const handleFlip = (e: any) => {
@@ -399,21 +394,34 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   useMouseEvents={true}
                   swipeDistance={30}
                 >
-                  {Array.from(new Array(totalPages), (_, index) => (
-                    <div
-                      key={`page_${index + 1}`}
-                      className="bg-white shadow-lg flex items-center justify-center"
-                    >
-                      <Page
-                        pageNumber={index + 1}
-                        width={pageWidth}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
-                        error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
-                      />
-                    </div>
-                  ))}
+                  {Array.from(new Array(totalPages), (_, index) => {
+                    const pageNum = index + 1;
+                    const shouldRender = isMobile 
+                      ? Math.abs(pageNum - currentPage) <= 3
+                      : Math.abs(pageNum - currentPage) <= 5;
+                    
+                    return (
+                      <div
+                        key={`page_${pageNum}`}
+                        className="bg-white shadow-lg flex items-center justify-center"
+                      >
+                        {shouldRender ? (
+                          <Page
+                            pageNumber={pageNum}
+                            width={pageWidth}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
+                            loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
+                            error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-300">
+                            Page {pageNum}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </HTMLFlipBook>
               </div>
             ) : (
