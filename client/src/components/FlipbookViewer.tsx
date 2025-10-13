@@ -40,10 +40,20 @@ interface FlipbookViewerProps {
 // Helper to detect iOS
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
+// iOS-specific pixel budget (5MP limit to prevent crashes around pages 26-28)
+const IOS_MAX_PIXELS = 5_000_000; // ~4K x 1200
+const DESKTOP_MAX_PIXELS = 16_000_000; // ~16 MP
+
 // Compute DPR (clamped for iOS) and a safe max pixel budget
 function getOutputScale() {
+  // Clamp DPR to 2 on iOS to prevent memory issues
   const dpr = Math.min(window.devicePixelRatio || 1, isIOS ? 2 : 3);
   return dpr;
+}
+
+// Get max pixel budget based on platform
+function getMaxPixels() {
+  return isIOS ? IOS_MAX_PIXELS : DESKTOP_MAX_PIXELS;
 }
 
 // Custom page renderer with proper DPR handling and text layer
@@ -76,8 +86,8 @@ async function renderPage(
   let pxW = Math.floor(viewport.width * outputScale);
   let pxH = Math.floor(viewport.height * outputScale);
 
-  // Prevent exceeding iOS canvas pixel limits
-  const maxPixels = isIOS ? 5_000_000 : 16_000_000; // ~5–16 MP
+  // Prevent exceeding platform-specific canvas pixel limits
+  const maxPixels = getMaxPixels();
   let actualOutputScale = outputScale;
 
   if (pxW * pxH > maxPixels) {
@@ -85,10 +95,19 @@ async function renderPage(
     actualOutputScale = outputScale * scaleDown;
     pxW = Math.max(1, Math.floor(viewport.width * actualOutputScale));
     pxH = Math.max(1, Math.floor(viewport.height * actualOutputScale));
+    
+    if (isIOS) {
+      console.log(`[iOS] Scaled down canvas from ${Math.floor(viewport.width * outputScale)}x${Math.floor(viewport.height * outputScale)} to ${pxW}x${pxH} to stay within ${maxPixels} pixel budget`);
+    }
   }
 
   canvas.width = pxW;
   canvas.height = pxH;
+
+  // iOS-specific rendering optimization: use "auto" for better quality
+  if (isIOS) {
+    canvas.style.imageRendering = "auto";
+  }
 
   // Create a 2D context with alpha:true and sRGB color space for stable transparency
   const ctx = canvas.getContext("2d", {

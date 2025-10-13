@@ -25,6 +25,8 @@
   canvas {
     transform: none !important;
     object-fit: unset !important;
+    /* Auto rendering for better quality on scaled canvases */
+    image-rendering: auto;
   }
   
   .textLayer {
