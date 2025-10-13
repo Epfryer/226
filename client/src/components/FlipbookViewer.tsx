@@ -358,7 +358,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             pageWidth && pageHeight && totalPages > 0 ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <HTMLFlipBook
-                  key={`${pageWidth}-${pageHeight}-${pdfUrl}-${isMobile ? Math.floor(currentPage / 10) : 'desktop'}`}
+                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
                   width={pageWidth}
                   height={pageHeight}
                   size="fixed"
