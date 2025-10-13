@@ -44,7 +44,7 @@ export async function fetchPublications(): Promise<Publication[]> {
         title: "Hybrid Urbanism",
         year: "2025",
         pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
-        coverPath: "/publications/EthanFryer_Hybrid-Urbanism.pdf"
+        coverPath: "/publications/EthanFryer_Hybrid-Urbanism.jpg"
       },
       {
         slug: "5th-year-selected-works",
