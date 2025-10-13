@@ -23,7 +23,7 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
           <img
             src={pub.coverPath}
             alt={pub.title}
-            loading="lazy"
+            loading="eager"
             className="h-full w-auto"
             width={1200}
             height={1600}
