@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { asset } from "@/utils/asset";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -30,6 +30,83 @@ interface FlipbookViewerProps {
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
 
+// Helper to detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
+// Compute DPR (clamped for iOS) and a safe max pixel budget
+function getOutputScale() {
+  const dpr = Math.min(window.devicePixelRatio || 1, isIOS ? 2 : 3);
+  return dpr;
+}
+
+// Custom page renderer with proper DPR handling
+async function renderPage(
+  page: any,
+  baseScale: number = 1,
+  rotation: number = 0,
+  canvas: HTMLCanvasElement,
+  abortController?: AbortController
+) {
+  // Cancel any previous running task for this canvas
+  if ((canvas as any).__renderTask?.cancel) {
+    try {
+      (canvas as any).__renderTask.cancel();
+    } catch {}
+  }
+
+  // Build viewport at "layout scale" (not multiplied by DPR)
+  const viewport = page.getViewport({ scale: baseScale, rotation });
+
+  // Internal pixel resolution uses DPR via the render transform, not viewport scale
+  const outputScale = getOutputScale();
+
+  // Set the CSS size to layout dimensions (no transform scaling)
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+
+  // Set the backing store size (pixels)
+  let pxW = Math.floor(viewport.width * outputScale);
+  let pxH = Math.floor(viewport.height * outputScale);
+
+  // Prevent exceeding iOS canvas pixel limits
+  const maxPixels = isIOS ? 5_000_000 : 16_000_000; // ~5–16 MP
+  let actualOutputScale = outputScale;
+
+  if (pxW * pxH > maxPixels) {
+    const scaleDown = Math.sqrt(maxPixels / (pxW * pxH));
+    actualOutputScale = outputScale * scaleDown;
+    pxW = Math.max(1, Math.floor(viewport.width * actualOutputScale));
+    pxH = Math.max(1, Math.floor(viewport.height * actualOutputScale));
+  }
+
+  canvas.width = pxW;
+  canvas.height = pxH;
+
+  // Create a 2D context with alpha and sRGB when supported
+  const ctx = canvas.getContext("2d", {
+    alpha: true,
+    desynchronized: true,
+    colorSpace: "srgb" as any
+  })!;
+
+  // Use transform to apply DPR — avoids duplicating scale in viewport & CSS
+  const transform = actualOutputScale !== 1
+    ? [actualOutputScale, 0, 0, actualOutputScale, 0, 0]
+    : undefined;
+
+  // Render (cancel-safe)
+  const renderTask = page.render({
+    canvasContext: ctx,
+    viewport,
+    transform,
+    intent: "display" as any,
+    signal: abortController?.signal
+  });
+
+  (canvas as any).__renderTask = renderTask;
+  await renderTask.promise;
+}
+
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -56,6 +133,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const bookRef = useRef<any>(null);
   const pinchStartDistance = useRef<number | null>(null);
   const pinchStartZoom = useRef<number>(1);
+  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const abortControllers = useRef<Map<number, AbortController>>(new Map());
 
   // Save page position whenever it changes
   useEffect(() => {
@@ -108,6 +187,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setZoomLevel(1);
     setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
+    
+    // Clean up canvas refs and abort controllers
+    canvasRefs.current.clear();
+    abortControllers.current.forEach(controller => controller.abort());
+    abortControllers.current.clear();
   }, [pdfUrl]);
 
   useEffect(() => {
@@ -172,6 +256,35 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setPageHeight(Math.floor(displayHeight * zoomLevel));
   }, [containerSize, pdfAspectRatio, isMobile, zoomLevel]);
 
+  // Render pages when they become visible
+  useEffect(() => {
+    if (!pdfDoc || !pageWidth || !pageHeight) return;
+
+    const renderVisiblePages = async () => {
+      const visibleRange = 3; // Render current page +/- 3 pages
+      
+      for (let i = Math.max(1, currentPage - visibleRange); i <= Math.min(totalPages, currentPage + visibleRange); i++) {
+        const canvas = canvasRefs.current.get(i);
+        if (!canvas || (canvas as any).__rendered) continue;
+
+        try {
+          const page = await pdfDoc.getPage(i);
+          const controller = new AbortController();
+          abortControllers.current.set(i, controller);
+
+          await renderPage(page, 1, 0, canvas, controller);
+          (canvas as any).__rendered = true;
+        } catch (err: any) {
+          if (err.name !== 'AbortError') {
+            console.error(`Error rendering page ${i}:`, err);
+          }
+        }
+      }
+    };
+
+    renderVisiblePages();
+  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight]);
+
   const handleFlip = (e: any) => {
     setCurrentPage(e.data + 1);
   };
@@ -207,6 +320,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setCurrentPage(1);
     sessionStorage.removeItem(getStorageKey());
     setDocumentKey(prev => prev + 1);
+    canvasRefs.current.clear();
+    abortControllers.current.forEach(controller => controller.abort());
+    abortControllers.current.clear();
   };
 
   // Zoom functions
@@ -237,7 +353,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           touch2.clientY - touch1.clientY
         );
         pinchStartDistance.current = distance;
-        // Capture current zoom level at start of pinch
         setZoomLevel(current => {
           pinchStartZoom.current = current;
           return current;
@@ -317,6 +432,32 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     );
   };
 
+  const handleDocumentLoad = async (doc: any) => {
+    console.log(`PDF loaded successfully: ${doc.numPages} pages`);
+    setPdfDoc(doc);
+    setTotalPages(doc.numPages);
+    setLoading(false);
+    setError(null);
+
+    if (currentPage > doc.numPages) {
+      setCurrentPage(doc.numPages);
+      sessionStorage.setItem(getStorageKey(), doc.numPages.toString());
+    }
+
+    // Get first page to detect aspect ratio
+    try {
+      const firstPage = await doc.getPage(1);
+      const { width, height } = firstPage.getViewport({ scale: 1 });
+      const aspectRatio = width / height;
+      setPdfAspectRatio(aspectRatio);
+      if (onAspectRatioDetected) {
+        onAspectRatioDetected(aspectRatio);
+      }
+    } catch (err) {
+      console.error("Error getting first page:", err);
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative flex items-center justify-center h-full w-full overflow-hidden">
       {error ? (
@@ -326,17 +467,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           key={`pdf-${documentKey}`}
           file={pdfUrl}
           options={pdfOptions}
-          onLoadSuccess={({ numPages: loadedNumPages }) => {
-            console.log(`PDF loaded successfully: ${loadedNumPages} pages`);
-            setTotalPages(loadedNumPages);
-            setLoading(false);
-            setError(null);
-
-            if (currentPage > loadedNumPages) {
-              setCurrentPage(loadedNumPages);
-              sessionStorage.setItem(getStorageKey(), loadedNumPages.toString());
-            }
-          }}
+          onLoadSuccess={handleDocumentLoad}
           onLoadProgress={({ loaded, total }) => {
             const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
             setLoadingProgress(progress);
@@ -355,7 +486,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               {/* Loading state is handled by the `loading` prop of Document */}
             </div>
           ) : (
-            pageWidth && pageHeight && totalPages > 0 ? (
+            pageWidth && pageHeight && totalPages > 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <HTMLFlipBook
                   key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
@@ -404,15 +535,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                         style={{ width: pageWidth, height: pageHeight }}
                       >
                         {shouldRender ? (
-                          <Page
-                            pageNumber={pageNum}
-                            width={pageWidth}
-                            height={pageHeight}
-                            devicePixelRatio={Math.min(window.devicePixelRatio, 2.0)}
-                            renderTextLayer={true}
-                            renderAnnotationLayer={false}
-                            loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
-                            error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
+                          <canvas
+                            ref={(el) => {
+                              if (el) {
+                                canvasRefs.current.set(pageNum, el);
+                              }
+                            }}
+                            className="w-full h-full"
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-gray-300">
@@ -424,21 +553,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   })}
                 </HTMLFlipBook>
               </div>
-            ) : (
-              <Page
-                pageNumber={1}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                onLoadSuccess={(page) => {
-                  const { width, height } = page;
-                  const aspectRatio = width / height;
-                  setPdfAspectRatio(aspectRatio);
-                  if (onAspectRatioDetected) {
-                    onAspectRatioDetected(aspectRatio);
-                  }
-                }}
-                className="opacity-0 absolute invisible"
-              />
             )
           )}
         </Document>
@@ -503,7 +617,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
+                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-disabled border border-white/20"
                 aria-label="Next page"
               >
                 <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
