@@ -592,7 +592,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             </div>
           ) : (
             pageWidth && pageHeight && totalPages > 0 && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div 
+                className="absolute inset-0"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
                 <HTMLFlipBook
                   key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
                   width={pageWidth}
@@ -620,7 +627,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                     }
                   }}
                   mobileScrollSupport={true}
-                  style={{}}
+                  style={{
+                    transform: 'none'
+                  }}
                   startZIndex={0}
                   maxShadowOpacity={0.5}
                   showPageCorners={true}
@@ -636,8 +645,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                     return (
                       <div
                         key={`page_${pageNum}`}
-                        className="bg-white shadow-lg flex items-center justify-center overflow-hidden relative"
-                        style={{ width: pageWidth, height: pageHeight }}
+                        className="bg-white shadow-lg overflow-hidden relative"
+                        style={{ 
+                          width: pageWidth, 
+                          height: pageHeight,
+                          display: 'block'
+                        }}
                       >
                         {shouldRender ? (
                           <>
@@ -647,7 +660,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                                   canvasRefs.current.set(pageNum, el);
                                 }
                               }}
-                              className="w-full h-full"
+                              style={{
+                                display: 'block',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0
+                              }}
                             />
                             <div
                               ref={(el) => {
@@ -655,16 +673,29 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                                   textLayerRefs.current.set(pageNum, el);
                                 }
                               }}
-                              className="textLayer absolute top-0 left-0 pointer-events-none"
+                              className="textLayer"
                               style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
                                 overflow: 'clip',
                                 opacity: 0.2,
                                 lineHeight: 1,
+                                pointerEvents: 'none'
                               }}
                             />
                           </>
                         ) : (
-                          <div className="flex items-center justify-center h-full text-gray-300">
+                          <div 
+                            className="text-gray-300"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '100%',
+                              height: '100%'
+                            }}
+                          >
                             Page {pageNum}
                           </div>
                         )}

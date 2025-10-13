@@ -20,6 +20,16 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
+
+  /* Prevent aspect ratio distortion on PDF canvases */
+  canvas {
+    transform: none !important;
+    object-fit: unset !important;
+  }
+  
+  .textLayer {
+    transform: none !important;
+  }
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
