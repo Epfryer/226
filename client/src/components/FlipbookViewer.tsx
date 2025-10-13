@@ -90,12 +90,17 @@ async function renderPage(
   canvas.width = pxW;
   canvas.height = pxH;
 
-  // Create a 2D context with alpha and sRGB when supported
+  // Create a 2D context with alpha:true and sRGB color space for stable transparency
   const ctx = canvas.getContext("2d", {
     alpha: true,
     desynchronized: true,
     colorSpace: "srgb" as any
   })!;
+  
+  // Verify context was created successfully
+  if (!ctx) {
+    throw new Error("Failed to get 2D context from canvas");
+  }
 
   // Use transform to apply DPR — avoids duplicating scale in viewport & CSS
   const transform = actualOutputScale !== 1
