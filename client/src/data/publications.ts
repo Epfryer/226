@@ -50,7 +50,7 @@ export async function fetchPublications(): Promise<Publication[]> {
         slug: "5th-year-selected-works",
         title: "5th Year Selected Works",
         year: "2024",
-        pdfPath: "/api/publications/EthanFryer_5thYear_SelectedWorksMobile_flattened",
+        pdfPath: "/api/publications/EthanFryer_5thYear_SelectedWorks.pdf",
         coverPath: "/publications/EthanFryer_5thYear_SelectedWorks.jpg"
       }
     ];
