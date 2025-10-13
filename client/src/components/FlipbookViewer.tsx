@@ -395,21 +395,21 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                 >
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
-                    const shouldRender = isMobile 
-                      ? Math.abs(pageNum - currentPage) <= 2
-                      : Math.abs(pageNum - currentPage) <= 5;
+                    const shouldRender = Math.abs(pageNum - currentPage) <= 3;
                     
                     return (
                       <div
                         key={`page_${pageNum}`}
-                        className="bg-white shadow-lg flex items-center justify-center"
+                        className="bg-white shadow-lg flex items-center justify-center overflow-hidden"
+                        style={{ width: pageWidth, height: pageHeight }}
                       >
                         {shouldRender ? (
                           <Page
                             pageNumber={pageNum}
                             width={pageWidth}
-                            devicePixelRatio={isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2.0)}
-                            renderTextLayer={!isMobile}
+                            height={pageHeight}
+                            devicePixelRatio={Math.min(window.devicePixelRatio, 2.0)}
+                            renderTextLayer={true}
                             renderAnnotationLayer={false}
                             loading={<div className="flex items-center justify-center h-full text-gray-400">Loading...</div>}
                             error={<div className="flex items-center justify-center h-full text-red-400">Error</div>}
