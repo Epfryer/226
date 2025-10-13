@@ -155,7 +155,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
     const containerAspectRatio = availableWidth / availableHeight;
     const scaleFactor = isMobile ? 0.90 : 0.85;
-    const mobileResolutionScale = isMobile ? 0.75 : 1;
 
     let displayWidth: number;
     let displayHeight: number;
@@ -168,9 +167,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       displayWidth = displayHeight * pdfAspectRatio;
     }
 
-    // Apply zoom level and mobile resolution scaling
-    setPageWidth(Math.floor(displayWidth * zoomLevel * mobileResolutionScale));
-    setPageHeight(Math.floor(displayHeight * zoomLevel * mobileResolutionScale));
+    // Apply zoom level
+    setPageWidth(Math.floor(displayWidth * zoomLevel));
+    setPageHeight(Math.floor(displayHeight * zoomLevel));
   }, [containerSize, pdfAspectRatio, isMobile, zoomLevel]);
 
   const handleFlip = (e: any) => {
@@ -359,7 +358,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             pageWidth && pageHeight && totalPages > 0 ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <HTMLFlipBook
-                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
+                  key={`${pageWidth}-${pageHeight}-${pdfUrl}-${isMobile ? Math.floor(currentPage / 10) : 'desktop'}`}
                   width={pageWidth}
                   height={pageHeight}
                   size="fixed"
@@ -397,7 +396,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
                     const shouldRender = isMobile 
-                      ? Math.abs(pageNum - currentPage) <= 3
+                      ? Math.abs(pageNum - currentPage) <= 2
                       : Math.abs(pageNum - currentPage) <= 5;
                     
                     return (
