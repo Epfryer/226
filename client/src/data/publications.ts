@@ -40,11 +40,11 @@ export async function fetchPublications(): Promise<Publication[]> {
     // Fallback to static data if API fails
     PUBLICATIONS = [
       {
-        slug: "hybrid-urbanism",
+        slug: "ethan-fryer-hybrid-urbanism",
         title: "Hybrid Urbanism",
         year: "2025",
         pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
-        coverPath: "/publications/hybrid-urbanism.jpg"
+        coverPath: "/publications/EthanFryer_Hybrid-Urbanism.pdf"
       },
       {
         slug: "5th-year-selected-works",
