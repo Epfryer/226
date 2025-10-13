@@ -21,11 +21,33 @@
     display: none; /* Chrome, Safari and Opera */
   }
 
-  /* Prevent aspect ratio distortion on PDF canvases */
+  /* PDF Viewer - prevent aspect ratio distortion and ensure proper containment */
+  .pdf-viewer-container {
+    contain: size layout paint;
+  }
+  
+  .pdf-page canvas {
+    width: auto !important;
+    height: 100% !important;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform: none !important;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  
+  .pdf-page .textLayer {
+    /* PDF.js requirement for selectable text alignment */
+    mix-blend-mode: normal;
+    opacity: 1;
+    will-change: auto;
+    transform: none !important;
+  }
+  
+  /* Generic canvas and textLayer rules for other uses */
   canvas {
     transform: none !important;
     object-fit: unset !important;
-    /* Auto rendering for better quality on scaled canvases */
     image-rendering: auto;
   }
   

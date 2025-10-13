@@ -95,7 +95,26 @@ router.get("/:filename", async (req, res) => {
       return res.status(400).json({ error: "Missing filename param" });
     }
 
-    const name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
+    let name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
+    
+    // Optional: Check for iOS user agent or ?mobile=1 flag to serve mobile-optimized PDF
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobileRequest = req.query.mobile === '1' || /iPad|iPhone|iPod/i.test(userAgent);
+    const enableMobileVariant = process.env.ENABLE_MOBILE_PDF_VARIANT === 'true';
+    
+    if (enableMobileVariant && isMobileRequest) {
+      // Try to serve mobile-optimized variant if it exists
+      const mobileVariantName = name.replace(/\.pdf$/i, '_mobile_flat.pdf');
+      const existsResult = await storage.exists(mobileVariantName);
+      
+      if (existsResult.ok && existsResult.value) {
+        console.log(`[PDF] Serving mobile variant: ${mobileVariantName} for iOS/mobile device`);
+        name = mobileVariantName;
+      } else {
+        console.log(`[PDF] Mobile variant not found: ${mobileVariantName}, serving original`);
+      }
+    }
+    
     const range = req.headers.range;
 
     console.log(`[PDF] Request for: ${name} ${range ? `(range: ${range})` : '(full file)'}`);
