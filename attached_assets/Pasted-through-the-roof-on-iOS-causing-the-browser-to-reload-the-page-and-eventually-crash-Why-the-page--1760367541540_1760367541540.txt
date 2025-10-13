@@ -1,0 +1,31 @@
+through the roof on iOS, causing the browser to reload the page and eventually crash.
+
+Why the page keeps reloading/crashing on iOS
+
+Missing byte‑range support. HTTP range requests allow the client to fetch only portions of a PDF, which is vital for PDF.js. MDN notes that a server must send an Accept‑Ranges: bytes header to signal that range requests are allowed
+developer.mozilla.org
+. If this header is absent or the server doesn’t actually honor partial requests, Safari will download the entire PDF each time you flip a page.
+
+Response headers aren’t exposed. By default, browsers only make a few “safe‑listed” response headers (like Content‑Type and Content‑Length) available to JavaScript. MDN explains that other headers (e.g., Accept‑Ranges and Content‑Range) are hidden unless they are explicitly listed in the Access‑Control‑Expose‑Headers response
+developer.mozilla.org
+. PDF.js relies on those hidden headers to do byte‑range streaming; when they are not exposed, it retries the request, causing multiple reloads.
+
+CORS settings don’t allow the Range header. When the PDF is hosted on a different domain, the browser sends a CORS preflight request. If the server doesn’t allow the Range header in Access‑Control‑Allow-Headers, the preflight fails and the browser reloads the page after a short delay. The DearFlip support page confirms that cross‑origin PDFs require the server to allow the Range header and to expose Accept‑Ranges, Content‑Range and Content‑Length
+wordpress.dearflip.com
+.
+
+Mobile Safari has lower memory limits. Even if the PDF loads once, the 3‑D page‑flip animation and repeated full downloads quickly exceed iOS’s memory threshold. Safari then displays “This webpage was reloaded because it was using significant memory” before crashing on the next refresh.
+
+How to fix it
+
+Serve PDFs with proper range support. Ensure your storage/CDN returns Accept‑Ranges: bytes and correctly handles Range requests, returning 206 Partial Content with a valid Content‑Range header for partial downloads
+developer.mozilla.org
+.
+
+Configure CORS correctly. Set Access‑Control‑Allow-Origin: * (or your domain), Access‑Control‑Allow-Methods: GET, HEAD and Access‑Control‑Allow-Headers: Range. Also expose the necessary headers: Access‑Control‑Expose‑Headers: Accept‑Ranges, Content‑Length, Content‑Range
+wordpress.dearflip.com
+. Without these, Safari hides the headers PDF.js needs, causing repeated reloads.
+
+Avoid compressing PDFs at the CDN layer. If the PDF is served with Content‑Encoding: gzip or brotli, partial requests won’t work and the entire file is sent for each page turn.
+
+Proxy the PDF through your own domain if you can’t modify the storage. A simple Next.js API route can forward the Range header to the storage and return the PDF response along with the proper CORS and range headers.
