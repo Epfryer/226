@@ -318,6 +318,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Immediately get initial size to prevent loading delay
+    const initialRect = containerRef.current.getBoundingClientRect();
+    if (initialRect.width > 0 && initialRect.height > 0) {
+      setContainerSize({ width: initialRect.width, height: initialRect.height });
+    }
+
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -359,11 +365,18 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, []);
 
   useEffect(() => {
-    if (!pdfAspectRatio || containerSize.width === 0 || containerSize.height === 0) return;
+    if (!pdfAspectRatio) return;
+
+    // Use fallback dimensions if container size not detected yet
+    const fallbackWidth = isMobile ? 375 : 1200;
+    const fallbackHeight = isMobile ? 667 : 800;
+    
+    const actualWidth = containerSize.width > 0 ? containerSize.width : fallbackWidth;
+    const actualHeight = containerSize.height > 0 ? containerSize.height : fallbackHeight;
 
     const padding = isMobile ? 8 : 16;
-    const availableHeight = containerSize.height - (padding * 2);
-    const availableWidth = containerSize.width - (padding * 2);
+    const availableHeight = actualHeight - (padding * 2);
+    const availableWidth = actualWidth - (padding * 2);
 
     const containerAspectRatio = availableWidth / availableHeight;
     const scaleFactor = isMobile ? 0.90 : 0.85;
@@ -393,9 +406,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     if (!pdfDoc || !pageWidth || !pageHeight) return;
 
     const renderVisiblePages = async () => {
-      // Reduced range for iOS to prevent memory issues and crashes (pages 26-28)
-      // Keep current page ±1 for smooth flipping
-      const visibleRange = isIOSDevice() ? 1 : 2;
+      // Always keep current page ±2 (5 pages) on mobile for smoother experience
+      // Use ±1 (3 pages) only for iOS if needed for stability
+      const visibleRange = isMobile ? 2 : 2; // 2 for mobile (5 pages), can adjust for iOS if needed
       const startPage = Math.max(1, currentPage - visibleRange);
       const endPage = Math.min(totalPages, currentPage + visibleRange);
       
@@ -689,6 +702,18 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       if (onAspectRatioDetected) {
         onAspectRatioDetected(aspectRatio);
       }
+
+      // Force initialization if container size still not detected after a short delay
+      setTimeout(() => {
+        if (containerSize.width === 0 || containerSize.height === 0) {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              setContainerSize({ width: rect.width, height: rect.height });
+            }
+          }
+        }
+      }, 100);
     } catch (err) {
       console.error("Error getting first page:", err);
     }
