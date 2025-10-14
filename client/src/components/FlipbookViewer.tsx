@@ -512,8 +512,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       // Always keep current page ±2 (5 pages) on mobile for smoother experience
       // Use ±2 for desktop as well for consistency
       const visibleRange = 2;
-      const startPage = Math.max(1, currentPage - visibleRange);
-      const endPage = Math.min(totalPages, currentPage + visibleRange);
+      let startPage = Math.max(1, currentPage - visibleRange);
+      let endPage = Math.min(totalPages, currentPage + visibleRange);
+      
+      // On initial load (page 1-3), eagerly render the first 5 pages for better UX
+      if (currentPage <= 3 && endPage < 5) {
+        endPage = Math.min(5, totalPages);
+        console.log(`[PDF Render] Initial load optimization: extending range to first 5 pages`);
+      }
       
       console.log(`[PDF Render] Rendering pages ${startPage}-${endPage} (current: ${currentPage})`);
       
@@ -948,7 +954,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
                     // Match the visible range in the rendering effect (±2)
-                    const shouldRender = Math.abs(pageNum - currentPage) <= 2;
+                    // On initial pages (1-3), also include first 5 pages for eager loading
+                    const inVisibleRange = Math.abs(pageNum - currentPage) <= 2;
+                    const inInitialPages = currentPage <= 3 && pageNum <= 5;
+                    const shouldRender = inVisibleRange || inInitialPages;
                     
                     return (
                       <div
