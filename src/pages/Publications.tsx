@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { PUBLICATIONS, type Publication } from "@/data/publications";
 import { PublicationCard } from "@/components/PublicationCard";
-import { PdfModal } from "@/components/PdfModal";
+import { PdfModal } from "../../../client/src/components/PdfModal";
 
 export default function Publications() {
   const [location, setLocation] = useLocation();

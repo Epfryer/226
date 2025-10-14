@@ -1,3 +1,6 @@
+// This file has been removed. Use client/src/components/PdfModal.tsx instead.
+
+// The PdfModal component has been removed entirely.
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
