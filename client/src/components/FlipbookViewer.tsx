@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import "@/viewer/flipbook.css";
 import { enhanceZoom, ZoomState } from "@/viewer/enhanceZoom";
 import { mountToolbar } from "@/viewer/toolbar";
-import { enableTapFlip } from "@/viewer/tapFlip";
 
 // Use local PDF.js worker for better reliability and version consistency
 if (typeof window !== 'undefined') {
@@ -234,7 +233,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const pageLayerRef = useRef<HTMLDivElement>(null);
   const zoomApiRef = useRef<ReturnType<typeof enhanceZoom> | null>(null);
   const toolbarRef = useRef<ReturnType<typeof mountToolbar> | null>(null);
-  const tapFlipRef = useRef<{ destroy: () => void } | null>(null);
   const zoomAnimationFrameRef = useRef<number>();
   const lastZoomRatioRef = useRef(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
@@ -713,17 +711,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       return Number.isFinite(fit) && fit > 0 ? fit : 1;
     };
 
-  const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 0.5, max: 4, dblStep: 2 });
+    const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 0.5, max: 4, dblStep: 2 });
     zoomApiRef.current = zoomApi;
-
-    const tap = enableTapFlip(
-      surface,
-      () => zoomApi.getState().scale,
-      () => zoomApi.getState().fit,
-      () => goToPrevPage(),
-      () => goToNextPage()
-    );
-    tapFlipRef.current = tap;
 
     const toolbar = mountToolbar(surface, {
       onPrev: () => goToPrevPage(),
@@ -754,13 +743,11 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         zoomAnimationFrameRef.current = undefined;
       }
       toolbar.destroy();
-      tap.destroy();
       zoomApi.destroy();
       surface.classList.remove("fv-root");
       pageLayer.classList.remove("fv-pageLayer");
       zoomApiRef.current = null;
       toolbarRef.current = null;
-      tapFlipRef.current = null;
       setZoomLevel(1);
       lastZoomRatioRef.current = 1;
     };
@@ -1082,7 +1069,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           </div>
 
           <p className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white/70 text-center">
-            Pinch or Ctrl/⌘ + Scroll to zoom • Tap near edges to flip • Toolbar auto-hides
+            Drag from a page corner to flip • Pinch or Ctrl/⌘ + Scroll to zoom • Toolbar auto-hides
           </p>
         </>
       )}

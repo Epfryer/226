@@ -2,8 +2,9 @@
 
 .fv-toolbar {
   position: absolute;
-  right: env(safe-area-inset-right, 16px);
   top: calc(env(safe-area-inset-top, 16px) + 8px);
+  left: 50%;
+  transform: translate(-50%, -6px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -13,14 +14,13 @@
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   opacity: 0;
-  transform: translateY(-6px);
   transition: opacity .18s, transform .18s;
   z-index: 5;
 }
 
 .fv-toolbar.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 .fv-toolbar button {
