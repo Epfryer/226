@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, pdfjs } from "react-pdf";
@@ -16,12 +17,14 @@ if (typeof window !== 'undefined') {
     import.meta.url
   ).toString();
 }
+
 // Load TextLayer utilities from PDF.js
 if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
   import('pdfjs-dist').then((pdfjsLib) => {
     (window as any).pdfjsLib = pdfjsLib;
   });
 }
+
 // PDF.js configuration with range support for streaming and enhanced quality
 const pdfOptions = {
   cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
@@ -39,7 +42,6 @@ const pdfOptions = {
 
 interface FlipbookViewerProps {
   pdfUrl: string;
-  ready?: boolean;
   onFullscreen?: () => void;
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
@@ -87,7 +89,7 @@ async function renderPage(
   // Set the CSS size to layout dimensions (no transform scaling)
   canvas.style.width = `${viewport.width}px`;
   canvas.style.height = `${viewport.height}px`;
-
+  
   // IMPORTANT: Remove any CSS transform on canvas
   canvas.style.transform = 'none';
 
@@ -104,7 +106,7 @@ async function renderPage(
     actualOutputScale = outputScale * scaleDown;
     pxW = Math.max(1, Math.floor(viewport.width * actualOutputScale));
     pxH = Math.max(1, Math.floor(viewport.height * actualOutputScale));
-
+    
     if (isIOSDevice()) {
       console.log(`[iOS] Scaled down canvas from ${Math.floor(viewport.width * outputScale)}x${Math.floor(viewport.height * outputScale)} to ${pxW}x${pxH} to stay within ${maxPixels} pixel budget`);
     }
@@ -115,7 +117,7 @@ async function renderPage(
 
   // Enhanced rendering quality for all devices
   canvas.style.imageRendering = "-webkit-optimize-contrast";
-
+  
   // Create a 2D context with optimized settings for transparency and quality
   const ctx = canvas.getContext("2d", {
     alpha: true,                    // Preserve transparency - IMPORTANT for iOS
@@ -123,7 +125,7 @@ async function renderPage(
     colorSpace: "srgb" as any,      // Consistent color rendering
     willReadFrequently: false       // Optimize for writing (rendering)
   })!;
-
+  
   // Verify context was created successfully
   if (!ctx) {
     throw new Error("Failed to get 2D context from canvas");
@@ -152,7 +154,7 @@ async function renderPage(
   });
 
   (canvas as any).__renderTask = renderTask;
-
+  
   try {
     await renderTask.promise;
   } catch (err: any) {
@@ -166,17 +168,17 @@ async function renderPage(
   if (textLayerDiv) {
     // Clear previous text layer content
     textLayerDiv.innerHTML = '';
-
+    
     // Set text layer dimensions to match canvas CSS dimensions exactly (no transforms)
     textLayerDiv.style.width = `${viewport.width}px`;
     textLayerDiv.style.height = `${viewport.height}px`;
-
+    
     // IMPORTANT: Remove any CSS transform on text layer
     textLayerDiv.style.transform = 'none';
-
+    
     try {
       const textContent = await page.getTextContent({ includeMarkedContent: true });
-
+      
       // Use PDF.js TextLayer if available
       if ((window as any).pdfjsLib?.renderTextLayer) {
         const textRenderTask = (window as any).pdfjsLib.renderTextLayer({
@@ -192,27 +194,12 @@ async function renderPage(
   }
 }
 
-export function FlipbookViewer({
-  pdfUrl,
-  ready = true,
-  onFullscreen,
-  onAspectRatioDetected,
-}: FlipbookViewerProps) {
-  // Wait for the modal to finish animating, then let layout settle one frame
-  useEffect(() => {
-    if (!ready) return;
-    let raf = requestAnimationFrame(() => {
-      // Kick any logic that measures/initializes the flipbook or loads page 1.
-      // If your init lives inside another effect, this single frame is enough.
-      window.dispatchEvent(new Event('resize')); // poke libs that compute on resize
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [ready, pdfUrl]);
+export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-
+  
   // Debug mode detection from URL
   const [debugMode, setDebugMode] = useState(false);
   useEffect(() => {
@@ -312,7 +299,7 @@ export function FlipbookViewer({
     setZoomLevel(1);
     setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
-
+    
     // Clean up canvas refs, text layers and abort controllers
     canvasRefs.current.clear();
     textLayerRefs.current.clear();
@@ -347,20 +334,25 @@ export function FlipbookViewer({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Get initial size immediately and set fallback if needed
     const getInitialSize = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect && rect.width > 0 && rect.height > 0) {
         setContainerSize({ width: rect.width, height: rect.height });
         return true;
       }
+      
+      // Set fallback dimensions immediately if container size not available
       const fallbackWidth = isMobile ? 375 : 1200;
       const fallbackHeight = isMobile ? 667 : 800;
       setContainerSize({ width: fallbackWidth, height: fallbackHeight });
       return false;
     };
 
+    // Try to get initial size immediately
     const hasRealSize = getInitialSize();
-
+    
+    // If we don't have real size, try again after a short delay
     if (!hasRealSize) {
       const retryTimeout = setTimeout(() => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -368,69 +360,171 @@ export function FlipbookViewer({
           setContainerSize({ width: rect.width, height: rect.height });
         }
       }, 50);
+      
+      // Cleanup timeout if component unmounts
       return () => clearTimeout(retryTimeout);
     }
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
+        
+        // Only update if size actually changed significantly
         if (Math.abs(width - containerSize.width) > 5 || Math.abs(height - containerSize.height) > 5) {
+          // Debounce resize to avoid excessive re-renders
           if (resizeTimeoutRef.current) {
             clearTimeout(resizeTimeoutRef.current);
           }
+
           resizeTimeoutRef.current = setTimeout(() => {
+            // Abort all current render tasks
             abortControllers.current.forEach(controller => {
               try {
                 controller.abort();
-              } catch (err) {}
+              } catch (err) {
+                // Ignore abort errors
+              }
             });
             abortControllers.current.clear();
-            setContainerSize({ width: rect.width, height: rect.height });
-          }, 100);
+
+            // Clear rendered flags so pages re-render with new dimensions
+            canvasRefs.current.forEach((canvas) => {
+              (canvas as any).__rendered = false;
+            });
+
+            // Update container size
+            setContainerSize({ width, height });
+          }, 150); // 150ms debounce
         }
       }
     });
 
     resizeObserver.observe(containerRef.current);
-
     return () => {
+      resizeObserver.disconnect();
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current);
       }
-      resizeObserver.disconnect();
     };
-  }, [containerSize, pdfDoc, totalPages, isMobile]);
+  }, [isMobile]);
 
+  useEffect(() => {
+    if (!pdfAspectRatio || !containerSize.width || !containerSize.height) return;
+
+    const padding = isMobile ? 8 : 16;
+    const availableHeight = containerSize.height - (padding * 2);
+    const availableWidth = containerSize.width - (padding * 2);
+
+    const containerAspectRatio = availableWidth / availableHeight;
+    const scaleFactor = isMobile ? 0.90 : 0.85;
+
+    let displayWidth: number;
+    let displayHeight: number;
+
+    if (pdfAspectRatio > containerAspectRatio) {
+      displayWidth = availableWidth * scaleFactor;
+      displayHeight = displayWidth / pdfAspectRatio;
+    } else {
+      displayHeight = availableHeight * scaleFactor;
+      displayWidth = displayHeight * pdfAspectRatio;
+    }
+
+    // Apply zoom level - use Math.round for more accurate dimensions
+    const newWidth = Math.round(displayWidth * zoomLevel);
+    const newHeight = Math.round(displayHeight * zoomLevel);
+    
+    // Only update if dimensions actually changed
+    if (newWidth !== pageWidth || newHeight !== pageHeight) {
+      setPageWidth(newWidth);
+      setPageHeight(newHeight);
+    }
+  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel, pageWidth, pageHeight]);
+
+  // Render pages when they become visible or dimensions change
+  // Virtualization: keep only current ±1 pages rendered to prevent memory issues
   useEffect(() => {
     if (!pdfDoc || !pageWidth || !pageHeight) return;
 
     const renderVisiblePages = async () => {
-      const pagesToRender = Array.from(new Array(totalPages), (_, i) => i + 1)
-        .filter(pageNum => Math.abs(pageNum - currentPage) <= 3);
+      // Always keep current page ±2 (5 pages) on mobile for smoother experience
+      // Use ±1 (3 pages) only for iOS if needed for stability
+      const visibleRange = isMobile ? 2 : 2; // 2 for mobile (5 pages), can adjust for iOS if needed
+      const startPage = Math.max(1, currentPage - visibleRange);
+      const endPage = Math.min(totalPages, currentPage + visibleRange);
+      
+      // Clean up canvases outside the visible range to free memory
+      canvasRefs.current.forEach((canvas, pageNum) => {
+        if (pageNum < startPage || pageNum > endPage) {
+          // Cancel any ongoing render task
+          const controller = abortControllers.current.get(pageNum);
+          if (controller) {
+            try {
+              controller.abort();
+            } catch (err) {
+              // Ignore abort errors
+            }
+            abortControllers.current.delete(pageNum);
+          }
+          
+          // Clear the canvas to free GPU memory
+          if ((canvas as any).__renderTask?.cancel) {
+            try {
+              (canvas as any).__renderTask.cancel();
+            } catch {}
+          }
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          (canvas as any).__rendered = false;
+        }
+      });
+      
+      // Render visible pages
+      for (let i = startPage; i <= endPage; i++) {
+        const canvas = canvasRefs.current.get(i);
+        const textLayer = textLayerRefs.current.get(i);
+        if (!canvas) continue;
 
-      for (const pageNum of pagesToRender) {
-        const canvas = canvasRefs.current.get(pageNum);
-        const textLayerDiv = textLayerRefs.current.get(pageNum);
+        // Skip if already rendered at current dimensions
+        if ((canvas as any).__rendered && 
+            canvas.style.width === `${pageWidth}px` &&
+            canvas.style.height === `${pageHeight}px`) {
+          continue;
+        }
 
-        if (!canvas || (canvas as any).__rendered) continue;
+        // Cancel existing render task for this page
+        const existingController = abortControllers.current.get(i);
+        if (existingController) {
+          try {
+            existingController.abort();
+          } catch (err) {
+            // Ignore abort errors
+          }
+        }
 
         try {
-          const abortController = new AbortController();
-          abortControllers.current.set(pageNum, abortController);
+          const page = await pdfDoc.getPage(i);
+          const controller = new AbortController();
+          abortControllers.current.set(i, controller);
 
-          const page = await pdfDoc.getPage(pageNum);
-          const scale = pageHeight / page.getViewport({ scale: 1 }).height;
+          // Calculate base scale from page natural dimensions and display dimensions
+          const viewport = page.getViewport({ scale: 1 });
+          const baseScale = Math.min(
+            pageWidth / viewport.width,
+            pageHeight / viewport.height
+          );
 
-          await renderPage(page, scale, 0, canvas, textLayerDiv, abortController);
-
+          await renderPage(page, baseScale, 0, canvas, textLayer, controller);
           (canvas as any).__rendered = true;
-
+          
+          // Cleanup page object to free memory
           if (page.cleanup) {
             page.cleanup();
           }
         } catch (err: any) {
-          if (err.name !== 'RenderingCancelledException') {
-            console.error(`Error rendering page ${pageNum}:`, err);
+          if (err.name !== 'AbortError' && err.name !== 'RenderingCancelledException') {
+            console.error(`Error rendering page ${i}:`, err);
           }
         }
       }
@@ -439,80 +533,101 @@ export function FlipbookViewer({
     renderVisiblePages();
   }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight]);
 
-  useEffect(() => {
-    if (!containerSize.width || !containerSize.height || !pdfAspectRatio) return;
+  const handleFlip = (e: any) => {
+    setCurrentPage(e.data + 1);
+  };
 
-    const containerAspect = containerSize.width / containerSize.height;
-    const padding = isMobile ? 20 : 40;
-    const availableWidth = containerSize.width - padding;
-    const availableHeight = containerSize.height - padding;
-
-    let width: number, height: number;
-
-    if (containerAspect > pdfAspectRatio) {
-      height = availableHeight;
-      width = height * pdfAspectRatio;
+  // Debounced navigation for iOS to prevent overlapping renders
+  const goToNextPage = () => {
+    if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
+    
+    // Debounce on iOS to prevent rapid page changes causing crashes
+    if (isIOSDevice()) {
+      if (navigationDebounceRef.current) {
+        clearTimeout(navigationDebounceRef.current);
+      }
+      navigationDebounceRef.current = setTimeout(() => {
+        try {
+          bookRef.current.pageFlip().flipNext();
+        } catch (error) {
+          console.warn("Error navigating to next page:", error);
+        }
+      }, 150); // 150ms debounce for iOS
     } else {
-      width = availableWidth;
-      height = width / pdfAspectRatio;
+      try {
+        bookRef.current.pageFlip().flipNext();
+      } catch (error) {
+        console.warn("Error navigating to next page:", error);
+      }
     }
+  };
 
-    const finalWidth = Math.floor(width);
-    const finalHeight = Math.floor(height);
-
-    if (finalWidth !== pageWidth || finalHeight !== pageHeight) {
-      setPageWidth(finalWidth);
-      setPageHeight(finalHeight);
+  const goToPrevPage = () => {
+    if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
+    
+    // Debounce on iOS to prevent rapid page changes causing crashes
+    if (isIOSDevice()) {
+      if (navigationDebounceRef.current) {
+        clearTimeout(navigationDebounceRef.current);
+      }
+      navigationDebounceRef.current = setTimeout(() => {
+        try {
+          bookRef.current.pageFlip().flipPrev();
+        } catch (error) {
+          console.warn("Error navigating to previous page:", error);
+        }
+      }, 150); // 150ms debounce for iOS
+    } else {
+      try {
+        bookRef.current.pageFlip().flipPrev();
+      } catch (error) {
+        console.warn("Error navigating to previous page:", error);
+      }
     }
-  }, [containerSize, pdfAspectRatio, isMobile, pageWidth, pageHeight]);
+  };
 
-  const handleFlip = useCallback((e: any) => {
-    if (navigationDebounceRef.current) {
-      clearTimeout(navigationDebounceRef.current);
-    }
-
-    navigationDebounceRef.current = setTimeout(() => {
-      const newPage = e.data + 1;
-      setCurrentPage(newPage);
-    }, 100);
-  }, []);
-
-  const goToNextPage = useCallback(() => {
-    if (!bookRef.current?.pageFlip || currentPage >= totalPages) return;
-    try {
-      bookRef.current.pageFlip().flipNext();
-    } catch (error) {
-      console.warn("Error flipping to next page:", error);
-    }
-  }, [currentPage, totalPages]);
-
-  const goToPrevPage = useCallback(() => {
-    if (!bookRef.current?.pageFlip || currentPage <= 1) return;
-    try {
-      bookRef.current.pageFlip().flipPrev();
-    } catch (error) {
-      console.warn("Error flipping to previous page:", error);
-    }
-  }, [currentPage]);
-
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     setError(null);
+    setLoadingProgress(0);
     setLoading(true);
+    setPageWidth(null);
+    setPageHeight(null);
+    setPdfAspectRatio(null);
+    setIsFlipbookReady(false);
+    setCurrentPage(1);
+    sessionStorage.removeItem(getStorageKey());
     setDocumentKey(prev => prev + 1);
-  }, []);
+    canvasRefs.current.clear();
+    abortControllers.current.forEach(controller => controller.abort());
+    abortControllers.current.clear();
+  };
 
-  const zoomIn = useCallback(() => {
+  // Zoom functions
+  const zoomIn = () => {
+    // Clear rendered flags to force re-render at new zoom level
+    canvasRefs.current.forEach((canvas) => {
+      (canvas as any).__rendered = false;
+    });
     setZoomLevel(prev => Math.min(prev + 0.25, 3));
-  }, []);
+  };
 
-  const zoomOut = useCallback(() => {
+  const zoomOut = () => {
+    // Clear rendered flags to force re-render at new zoom level
+    canvasRefs.current.forEach((canvas) => {
+      (canvas as any).__rendered = false;
+    });
     setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
-  }, []);
+  };
 
-  const resetZoom = useCallback(() => {
+  const resetZoom = () => {
+    // Clear rendered flags to force re-render at new zoom level
+    canvasRefs.current.forEach((canvas) => {
+      (canvas as any).__rendered = false;
+    });
     setZoomLevel(1);
-  }, []);
+  };
 
+  // Pinch-to-zoom handlers
   useEffect(() => {
     if (!isMobile || !containerRef.current) return;
 
@@ -527,12 +642,15 @@ export function FlipbookViewer({
           touch2.clientY - touch1.clientY
         );
         pinchStartDistance.current = distance;
-        pinchStartZoom.current = zoomLevel;
+        setZoomLevel(current => {
+          pinchStartZoom.current = current;
+          return current;
+        });
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchStartDistance.current !== null) {
+      if (e.touches.length === 2 && pinchStartDistance.current) {
         e.preventDefault();
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
@@ -541,8 +659,8 @@ export function FlipbookViewer({
           touch2.clientY - touch1.clientY
         );
         const scale = distance / pinchStartDistance.current;
-        const newZoom = Math.min(Math.max(pinchStartZoom.current * scale, 0.5), 3);
-        setZoomLevel(newZoom);
+        const newZoom = pinchStartZoom.current * scale;
+        setZoomLevel(Math.max(0.5, Math.min(3, newZoom)));
       }
     };
 
@@ -550,7 +668,7 @@ export function FlipbookViewer({
       pinchStartDistance.current = null;
     };
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd);
 
@@ -559,7 +677,7 @@ export function FlipbookViewer({
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, zoomLevel]);
+  }, [isMobile]);
 
   const renderLoadingState = () => {
     return (
@@ -615,6 +733,7 @@ export function FlipbookViewer({
       sessionStorage.setItem(getStorageKey(), doc.numPages.toString());
     }
 
+    // Get first page to detect aspect ratio
     try {
       const firstPage = await doc.getPage(1);
       const { width, height } = firstPage.getViewport({ scale: 1 });
@@ -624,19 +743,22 @@ export function FlipbookViewer({
         onAspectRatioDetected(aspectRatio);
       }
 
+      // Force container size detection and dimension calculation immediately
       setTimeout(() => {
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           if (rect.width > 0 && rect.height > 0) {
             setContainerSize({ width: rect.width, height: rect.height });
           } else {
+            // Use fallback dimensions if container size still not available
             const fallbackWidth = isMobile ? 375 : 1200;
             const fallbackHeight = isMobile ? 667 : 800;
             setContainerSize({ width: fallbackWidth, height: fallbackHeight });
           }
         }
-      }, 0);
+      }, 0); // Immediate but async
 
+      // Cleanup the page to prevent memory leaks
       if (firstPage.cleanup) {
         firstPage.cleanup();
       }
@@ -646,8 +768,8 @@ export function FlipbookViewer({
   };
 
   return (
-    <div
-      ref={containerRef}
+    <div 
+      ref={containerRef} 
       className="pdf-viewer-container relative flex items-center justify-center h-full w-full overflow-hidden"
       style={{
         contain: 'size layout paint'
@@ -679,8 +801,10 @@ export function FlipbookViewer({
         >
           {loading ? (
             <div className="flex items-center justify-center h-96 w-full">
+              {/* Loading state is handled by the `loading` prop of Document */}
             </div>
           ) : (
+            // Render flipbook as soon as we have basic requirements
             pdfDoc && totalPages > 0 && pageWidth && pageHeight && (
               <>
                 {debugMode && (
@@ -692,7 +816,7 @@ export function FlipbookViewer({
                     <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
                   </div>
                 )}
-                <div
+                <div 
                   className="absolute inset-0"
                   style={{
                     display: 'flex',
@@ -741,13 +865,13 @@ export function FlipbookViewer({
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
                     const shouldRender = Math.abs(pageNum - currentPage) <= 3;
-
+                    
                     return (
                       <div
                         key={`page_${pageNum}`}
                         className="pdf-page bg-white shadow-lg overflow-hidden relative"
-                        style={{
-                          width: pageWidth,
+                        style={{ 
+                          width: pageWidth, 
                           height: pageHeight,
                           display: 'block'
                         }}
@@ -795,7 +919,7 @@ export function FlipbookViewer({
                             />
                           </>
                         ) : (
-                          <div
+                          <div 
                             className="text-gray-300"
                             style={{
                               display: 'flex',
@@ -821,6 +945,7 @@ export function FlipbookViewer({
 
       {!loading && !error && totalPages > 0 && (
         <>
+          {/* Zoom controls - top right */}
           <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
             <button
               onClick={zoomIn}
@@ -851,6 +976,7 @@ export function FlipbookViewer({
             </button>
           </div>
 
+          {/* Navigation controls - bottom center */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4">
               <button
@@ -899,7 +1025,8 @@ export function FlipbookViewer({
           </p>
         </>
       )}
-
+      
+      {/* Debug overlay - shows when ?debug=1 */}
       {debugMode && (
         <div className="absolute top-4 left-4 z-20 bg-black/80 backdrop-blur-md text-white p-3 rounded-lg text-xs font-mono space-y-1 max-w-xs">
           <div className="font-bold text-sm mb-2">Debug Info</div>
