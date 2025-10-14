@@ -2,13 +2,17 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, pdfjs } from "react-pdf";
-import { ChevronLeft, ChevronRight, Maximize2, RefreshCw, AlertCircle, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { asset } from "@/utils/asset";
-import { isIOSDevice, getClampedDPR, PDFJS_MAX_ACTIVE_CANVASES } from "@/utils/viewport";
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import { isIOSDevice, getClampedDPR } from "@/utils/viewport";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import "@/viewer/flipbook.css";
+import { enhanceZoom, ZoomState } from "@/viewer/enhanceZoom";
+import { mountToolbar } from "@/viewer/toolbar";
+import { enableTapFlip } from "@/viewer/tapFlip";
 
 // Use local PDF.js worker for better reliability and version consistency
 if (typeof window !== 'undefined') {
@@ -226,8 +230,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [hasShownPortraitToast, setHasShownPortraitToast] = useState(false);
   const [canvasRefsReady, setCanvasRefsReady] = useState(false);
   const bookRef = useRef<any>(null);
-  const pinchStartDistance = useRef<number | null>(null);
-  const pinchStartZoom = useRef<number>(1);
+  const viewerSurfaceRef = useRef<HTMLDivElement>(null);
+  const pageLayerRef = useRef<HTMLDivElement>(null);
+  const zoomApiRef = useRef<ReturnType<typeof enhanceZoom> | null>(null);
+  const toolbarRef = useRef<ReturnType<typeof mountToolbar> | null>(null);
+  const tapFlipRef = useRef<{ destroy: () => void } | null>(null);
+  const zoomAnimationFrameRef = useRef<number>();
+  const lastZoomRatioRef = useRef(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const textLayerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const abortControllers = useRef<Map<number, AbortController>>(new Map());
@@ -439,8 +448,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     }
 
     // Apply zoom level - use Math.round for more accurate dimensions
-    const newWidth = Math.round(displayWidth * zoomLevel);
-    const newHeight = Math.round(displayHeight * zoomLevel);
+  const newWidth = Math.round(displayWidth);
+  const newHeight = Math.round(displayHeight);
     
     // Only update if dimensions actually changed
     if (newWidth !== pageWidth || newHeight !== pageHeight) {
@@ -448,7 +457,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       setPageWidth(newWidth);
       setPageHeight(newHeight);
     }
-  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel, pageWidth, pageHeight]);
+  }, [containerSize, pdfAspectRatio, isMobile, pageWidth, pageHeight]);
 
   // Trigger initial render when flipbook becomes ready
   useEffect(() => {
@@ -615,7 +624,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   // Debounced navigation for iOS to prevent overlapping renders
-  const goToNextPage = () => {
+  const goToNextPage = useCallback(() => {
     if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
     
     // Debounce on iOS to prevent rapid page changes causing crashes
@@ -637,9 +646,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         console.warn("Error navigating to next page:", error);
       }
     }
-  };
+  }, [isFlipbookReady]);
 
-  const goToPrevPage = () => {
+  const goToPrevPage = useCallback(() => {
     if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
     
     // Debounce on iOS to prevent rapid page changes causing crashes
@@ -661,7 +670,101 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         console.warn("Error navigating to previous page:", error);
       }
     }
-  };
+  }, [isFlipbookReady]);
+
+  useEffect(() => {
+    if (!isFlipbookReady || !pageWidth || !pageHeight) return;
+
+    const surface = viewerSurfaceRef.current;
+    const pageLayer = pageLayerRef.current;
+    if (!surface || !pageLayer) return;
+
+    surface.classList.add("fv-root");
+    pageLayer.classList.add("fv-pageLayer");
+
+    const apply = (state: ZoomState) => {
+      pageLayer.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+      pageLayer.style.transformOrigin = "0 0";
+
+      const ratio = state.fit > 0 ? state.scale / state.fit : 1;
+      if (Math.abs(ratio - lastZoomRatioRef.current) < 0.01) {
+        return;
+      }
+      lastZoomRatioRef.current = ratio;
+      if (zoomAnimationFrameRef.current) {
+        cancelAnimationFrame(zoomAnimationFrameRef.current);
+      }
+      zoomAnimationFrameRef.current = requestAnimationFrame(() => {
+        setZoomLevel(ratio);
+      });
+    };
+
+    const computeFit = () => {
+      const viewerRect = surface.getBoundingClientRect();
+      const layerRect = pageLayer.getBoundingClientRect();
+      if (!viewerRect.width || !viewerRect.height || !layerRect.width || !layerRect.height) {
+        return 1;
+      }
+      const fit = Math.min(
+        viewerRect.width / layerRect.width,
+        viewerRect.height / layerRect.height,
+        1
+      );
+      return Number.isFinite(fit) && fit > 0 ? fit : 1;
+    };
+
+    const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 1, max: 4, dblStep: 2 });
+    zoomApiRef.current = zoomApi;
+
+    const tap = enableTapFlip(
+      surface,
+      () => zoomApi.getState().scale,
+      () => zoomApi.getState().fit,
+      () => goToPrevPage(),
+      () => goToNextPage()
+    );
+    tapFlipRef.current = tap;
+
+    const toolbar = mountToolbar(surface, {
+      onPrev: () => goToPrevPage(),
+      onNext: () => goToNextPage(),
+      onZoomIn: () => zoomApi.zoomIn(),
+      onZoomOut: () => zoomApi.zoomOut(),
+      onReset: () => zoomApi.reset(),
+      onDownload: () => window.open(pdfUrl, "_blank", "noopener,noreferrer"),
+      onFullscreen: onFullscreen ? () => onFullscreen() : undefined,
+    });
+    toolbarRef.current = toolbar;
+
+    const handleResize = () => {
+      const nextFit = computeFit();
+      const state = zoomApi.getState();
+      state.fit = nextFit;
+      zoomApi.reset();
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+      if (zoomAnimationFrameRef.current) {
+        cancelAnimationFrame(zoomAnimationFrameRef.current);
+        zoomAnimationFrameRef.current = undefined;
+      }
+      toolbar.destroy();
+      tap.destroy();
+      zoomApi.destroy();
+      surface.classList.remove("fv-root");
+      pageLayer.classList.remove("fv-pageLayer");
+      zoomApiRef.current = null;
+      toolbarRef.current = null;
+      tapFlipRef.current = null;
+      setZoomLevel(1);
+      lastZoomRatioRef.current = 1;
+    };
+  }, [isFlipbookReady, pageWidth, pageHeight, pdfUrl, onFullscreen, goToNextPage, goToPrevPage]);
 
   const handleRetry = () => {
     setError(null);
@@ -678,83 +781,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     abortControllers.current.forEach(controller => controller.abort());
     abortControllers.current.clear();
   };
-
-  // Zoom functions
-  const zoomIn = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(prev => Math.min(prev + 0.25, 3));
-  };
-
-  const zoomOut = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
-  };
-
-  const resetZoom = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(1);
-  };
-
-  // Pinch-to-zoom handlers
-  useEffect(() => {
-    if (!isMobile || !containerRef.current) return;
-
-    const container = containerRef.current;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const distance = Math.hypot(
-          touch2.clientX - touch1.clientX,
-          touch2.clientY - touch1.clientY
-        );
-        pinchStartDistance.current = distance;
-        setZoomLevel(current => {
-          pinchStartZoom.current = current;
-          return current;
-        });
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchStartDistance.current) {
-        e.preventDefault();
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const distance = Math.hypot(
-          touch2.clientX - touch1.clientX,
-          touch2.clientY - touch1.clientY
-        );
-        const scale = distance / pinchStartDistance.current;
-        const newZoom = pinchStartZoom.current * scale;
-        setZoomLevel(Math.max(0.5, Math.min(3, newZoom)));
-      }
-    };
-
-    const handleTouchEnd = () => {
-      pinchStartDistance.current = null;
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile]);
 
   const renderLoadingState = () => {
     return (
@@ -896,61 +922,67 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                     <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
                   </div>
                 )}
-                <div 
-                  className="absolute inset-0"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                <div
+                  ref={viewerSurfaceRef}
+                  className="absolute inset-0 flex items-center justify-center"
                 >
-                <HTMLFlipBook
-                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
-                  width={pageWidth}
-                  height={pageHeight}
-                  size="fixed"
-                  minWidth={pageWidth}
-                  maxWidth={pageWidth}
-                  minHeight={pageHeight}
-                  maxHeight={pageHeight}
-                  autoSize={false}
-                  showCover={true}
-                  flippingTime={800}
-                  usePortrait={false}
-                  startPage={Math.min(currentPage - 1, totalPages - 1)}
-                  drawShadow={true}
-                  className="shadow-2xl"
-                  ref={bookRef}
-                  onFlip={handleFlip}
-                  onInit={() => {
-                    console.log('[PDF Flipbook] Flipbook initialized');
-                    console.log('[PDF Flipbook] Current state:', {
-                      currentPage,
-                      totalPages,
-                      pageWidth,
-                      pageHeight,
-                      canvasRefsCount: canvasRefs.current.size
-                    });
-                    setIsFlipbookReady(true);
-                  }}
-                  onChangeState={() => {
-                    if (!isFlipbookReady) {
-                      console.log('[PDF Flipbook] Flipbook state changed, setting ready state');
-                      setIsFlipbookReady(true);
-                    }
-                  }}
-                  mobileScrollSupport={true}
-                  style={{
-                    transform: 'none'
-                  }}
-                  startZIndex={0}
-                  maxShadowOpacity={0.5}
-                  showPageCorners={true}
-                  disableFlipByClick={false}
-                  clickEventForward={true}
-                  useMouseEvents={true}
-                  swipeDistance={30}
-                >
+                  <div
+                    ref={pageLayerRef}
+                    className="relative flex items-center justify-center"
+                    style={{
+                      width: pageWidth,
+                      height: pageHeight,
+                    }}
+                  >
+                    <HTMLFlipBook
+                      key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
+                      width={pageWidth}
+                      height={pageHeight}
+                      size="fixed"
+                      minWidth={pageWidth}
+                      maxWidth={pageWidth}
+                      minHeight={pageHeight}
+                      maxHeight={pageHeight}
+                      autoSize={false}
+                      showCover={true}
+                      flippingTime={800}
+                      usePortrait={false}
+                      startPage={Math.min(currentPage - 1, totalPages - 1)}
+                      drawShadow={true}
+                      className="shadow-2xl"
+                      ref={bookRef}
+                      onFlip={handleFlip}
+                      onInit={() => {
+                        console.log('[PDF Flipbook] Flipbook initialized');
+                        console.log('[PDF Flipbook] Current state:', {
+                          currentPage,
+                          totalPages,
+                          pageWidth,
+                          pageHeight,
+                          canvasRefsCount: canvasRefs.current.size
+                        });
+                        setIsFlipbookReady(true);
+                      }}
+                      onChangeState={() => {
+                        if (!isFlipbookReady) {
+                          console.log('[PDF Flipbook] Flipbook state changed, setting ready state');
+                          setIsFlipbookReady(true);
+                        }
+                      }}
+                      mobileScrollSupport={true}
+                      style={{
+                        width: pageWidth,
+                        height: pageHeight,
+                        transform: 'none'
+                      }}
+                      startZIndex={0}
+                      maxShadowOpacity={0.5}
+                      showPageCorners={true}
+                      disableFlipByClick={false}
+                      clickEventForward={true}
+                      useMouseEvents={true}
+                      swipeDistance={30}
+                    >
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
                     // Match the visible range in the rendering effect (±2)
@@ -1028,7 +1060,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                       </div>
                     );
                   })}
-                </HTMLFlipBook>
+                    </HTMLFlipBook>
+                  </div>
                 </div>
               </>
             )
@@ -1038,83 +1071,18 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
       {!loading && !error && totalPages > 0 && (
         <>
-          {/* Zoom controls - top right */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-            <button
-              onClick={zoomIn}
-              disabled={zoomLevel >= 3}
-              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-              aria-label="Zoom in"
-              title="Zoom in"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              onClick={resetZoom}
-              disabled={zoomLevel === 1}
-              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-              aria-label="Reset zoom"
-              title="Reset zoom"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={zoomOut}
-              disabled={zoomLevel <= 0.5}
-              className="p-2 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-              aria-label="Zoom out"
-              title="Zoom out"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 rounded-full whitespace-nowrap">
+            {currentPage === 1
+              ? `Page 1 of ${totalPages}`
+              : totalPages === 1
+                ? `Page 1 of 1`
+                : currentPage >= totalPages
+                  ? `Page ${totalPages} of ${totalPages}`
+                  : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`}
           </div>
 
-          {/* Navigation controls - bottom center */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <button
-                onClick={goToPrevPage}
-                disabled={currentPage === 1}
-                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/20"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-
-              <div className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white whitespace-nowrap">
-                {currentPage === 1
-                  ? `Page 1 of ${totalPages}`
-                  : totalPages === 1
-                    ? `Page 1 of 1`
-                    : currentPage >= totalPages
-                      ? `Page ${totalPages} of ${totalPages}`
-                      : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`
-                }
-              </div>
-
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-disabled border border-white/20"
-                aria-label="Next page"
-              >
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
-
-            {onFullscreen && (
-              <button
-                onClick={onFullscreen}
-                className="p-2 sm:p-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all border border-white/20"
-                aria-label="Fullscreen"
-              >
-                <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            )}
-          </div>
-
-          <p className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/60 text-center hidden sm:block">
-            Click pages to flip • Use arrow keys to navigate
+          <p className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white/70 text-center">
+            Pinch or Ctrl/⌘ + Scroll to zoom • Tap near edges to flip • Toolbar auto-hides
           </p>
         </>
       )}

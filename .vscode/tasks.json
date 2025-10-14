@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "lint",
+      "type": "npm",
+      "script": "check",
+      "problemMatcher": []
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "prettier", "--", "--write", "src/**/*.{ts,tsx,js,jsx,css}"],
+      "problemMatcher": []
+    }
+  ]
+}
