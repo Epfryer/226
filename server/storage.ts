@@ -93,11 +93,20 @@ export async function getPdfMetadata(filename: string) {
     originalName: filename
   };
   
-  if (filename.includes('hybrid-urbanism')) {
+  if (filename.includes('hybrid-urbanism') || filename.includes('Hybrid-Urbanism')) {
     metadata.title = 'Hybrid Urbanism';
     metadata.year = '2025';
   } else if (filename.includes('5thYear')) {
     metadata.title = '5th Year Selected Works';
+    metadata.year = '2024';
+  } else if (filename.includes('European_Travel') || filename.includes('European Travel')) {
+    metadata.title = 'European Travel Research Paper';
+    metadata.year = '2024';
+  } else if (filename.includes('Natures_Transcendence') || filename.includes('Nature') && filename.includes('Transcendence')) {
+    metadata.title = "Nature's Transcendence ICR";
+    metadata.year = '2024';
+  } else if (filename.includes('WorkSample')) {
+    metadata.title = 'Work Sample 2024';
     metadata.year = '2024';
   } else {
     // Default metadata

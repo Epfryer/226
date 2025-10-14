@@ -42,10 +42,22 @@ export async function fetchPublications(): Promise<Publication[]> {
           .replace(/-/g, ' ') || pub.title;
       }
       
+      // Handle cover path - map special cases for the new publications
+      let coverPath = `/publications/${pub.filename?.replace('.pdf', '.jpg') || pub.slug + '.jpg'}`;
+      
+      // Special mapping for Nature's Transcendence which has "_Page" suffix in the cover
+      if (pub.filename?.includes('Natures_Transcendence_ICR')) {
+        coverPath = '/publications/EthanFryer_Natures_Transcendence_ICR_Page.jpg';
+      }
+      // Special mapping for European Travel which may have a space in the filename
+      else if (pub.filename?.includes('European_Travel') || pub.filename?.includes('European Travel')) {
+        coverPath = '/publications/EthanFryer_European_Travel_Research_Paper.jpg';
+      }
+      
       return {
         ...pub,
         title: displayTitle,
-        coverPath: `/publications/${pub.filename?.replace('.pdf', '.jpg') || pub.slug + '.jpg'}`
+        coverPath
       };
     });
     
