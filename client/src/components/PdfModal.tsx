@@ -15,19 +15,8 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
   useEffect(() => {
-    setAspectRatio(null);
-  }, [pub]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
     const handleTab = (e: KeyboardEvent) => {
       if (e.key === "Tab" && modalRef.current) {
         const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
@@ -57,13 +46,11 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
         closeButtonRef.current?.focus();
       }, 100);
 
-      document.addEventListener("keydown", handleEscape);
       document.addEventListener("keydown", handleTab);
       document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("keydown", handleTab);
       document.body.style.overflow = "unset";
 

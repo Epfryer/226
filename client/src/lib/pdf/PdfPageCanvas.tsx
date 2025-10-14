@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { pdfjs } from 'react-pdf';
 
-// Ensure PDF.js worker is configured
+// Ensure PDF.js worker is configured - use the bundled worker from public folder
 if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/build/pdf.worker.min.mjs';
 }
 
 interface PdfPageCanvasProps {
