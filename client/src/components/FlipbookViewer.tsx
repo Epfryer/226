@@ -457,17 +457,21 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     // Check for canvas refs periodically until they're available
     const checkCanvasRefs = () => {
       const canvasCount = canvasRefs.current.size;
-      console.log(`[PDF Init] Checking canvas refs... found ${canvasCount}`);
+      const currentCanvas = canvasRefs.current.get(currentPage);
+      const hasCurrentPage = !!currentCanvas;
       
-      if (canvasCount > 0) {
-        console.log('[PDF Init] Canvas refs are ready, triggering render');
+      console.log(`[PDF Init] Checking canvas refs... found ${canvasCount} canvases, current page ${currentPage} canvas: ${hasCurrentPage ? '✓' : '✗'}`);
+      
+      // We need at least the current page's canvas to be ready
+      if (canvasCount > 0 && hasCurrentPage) {
+        console.log('[PDF Init] Canvas refs are ready (including current page), triggering render');
         setCanvasRefsReady(true);
         if (canvasCheckTimerRef.current) {
           clearInterval(canvasCheckTimerRef.current);
           canvasCheckTimerRef.current = null;
         }
       } else {
-        console.warn('[PDF Init] No canvas refs found yet, will retry...');
+        console.warn(`[PDF Init] Canvas refs not ready yet (count: ${canvasCount}, has current: ${hasCurrentPage}), will retry...`);
       }
     };
     
@@ -485,7 +489,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         canvasCheckTimerRef.current = null;
       }
     };
-  }, [isFlipbookReady, pdfDoc, pageWidth, pageHeight, canvasRefsReady]);
+  }, [isFlipbookReady, pdfDoc, pageWidth, pageHeight, canvasRefsReady, currentPage]);
 
   // Render pages when they become visible or dimensions change
   // Virtualization: keep only current ±2 pages rendered to prevent memory issues
@@ -913,7 +917,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   ref={bookRef}
                   onFlip={handleFlip}
                   onInit={() => {
-                    console.log('[PDF Flipbook] Flipbook initialized, setting ready state');
+                    console.log('[PDF Flipbook] Flipbook initialized');
+                    console.log('[PDF Flipbook] Current state:', {
+                      currentPage,
+                      totalPages,
+                      pageWidth,
+                      pageHeight,
+                      canvasRefsCount: canvasRefs.current.size
+                    });
                     setIsFlipbookReady(true);
                   }}
                   onChangeState={() => {
