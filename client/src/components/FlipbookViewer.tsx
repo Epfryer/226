@@ -435,22 +435,49 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     
     // Only update if dimensions actually changed
     if (newWidth !== pageWidth || newHeight !== pageHeight) {
+      console.log(`[PDF Dimensions] Calculated page size: ${newWidth}x${newHeight} (zoom: ${zoomLevel})`);
       setPageWidth(newWidth);
       setPageHeight(newHeight);
     }
   }, [containerSize, pdfAspectRatio, isMobile, zoomLevel, pageWidth, pageHeight]);
 
+  // Trigger initial render when flipbook becomes ready
+  useEffect(() => {
+    if (!isFlipbookReady || !pdfDoc || !pageWidth || !pageHeight) return;
+    
+    // Small delay to ensure canvas refs are registered
+    const timer = setTimeout(() => {
+      console.log('[PDF Init] Flipbook ready, checking canvas refs...');
+      const canvasCount = canvasRefs.current.size;
+      console.log(`[PDF Init] Found ${canvasCount} canvas refs`);
+      
+      if (canvasCount === 0) {
+        console.warn('[PDF Init] No canvas refs found yet, will retry on next effect');
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [isFlipbookReady, pdfDoc, pageWidth, pageHeight]);
+
   // Render pages when they become visible or dimensions change
-  // Virtualization: keep only current ±1 pages rendered to prevent memory issues
+  // Virtualization: keep only current ±2 pages rendered to prevent memory issues
   useEffect(() => {
     if (!pdfDoc || !pageWidth || !pageHeight) return;
+    
+    // Wait for flipbook to be ready before rendering
+    if (!isFlipbookReady) {
+      console.log('[PDF Render] Waiting for flipbook to be ready...');
+      return;
+    }
 
     const renderVisiblePages = async () => {
       // Always keep current page ±2 (5 pages) on mobile for smoother experience
-      // Use ±1 (3 pages) only for iOS if needed for stability
-      const visibleRange = isMobile ? 2 : 2; // 2 for mobile (5 pages), can adjust for iOS if needed
+      // Use ±2 for desktop as well for consistency
+      const visibleRange = 2;
       const startPage = Math.max(1, currentPage - visibleRange);
       const endPage = Math.min(totalPages, currentPage + visibleRange);
+      
+      console.log(`[PDF Render] Rendering pages ${startPage}-${endPage} (current: ${currentPage})`);
       
       // Clean up canvases outside the visible range to free memory
       canvasRefs.current.forEach((canvas, pageNum) => {
@@ -484,12 +511,16 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       for (let i = startPage; i <= endPage; i++) {
         const canvas = canvasRefs.current.get(i);
         const textLayer = textLayerRefs.current.get(i);
-        if (!canvas) continue;
+        if (!canvas) {
+          console.log(`[PDF Render] Canvas not found for page ${i}, skipping`);
+          continue;
+        }
 
         // Skip if already rendered at current dimensions
         if ((canvas as any).__rendered && 
             canvas.style.width === `${pageWidth}px` &&
             canvas.style.height === `${pageHeight}px`) {
+          console.log(`[PDF Render] Page ${i} already rendered, skipping`);
           continue;
         }
 
@@ -504,6 +535,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         }
 
         try {
+          console.log(`[PDF Render] Starting render for page ${i}`);
           const page = await pdfDoc.getPage(i);
           const controller = new AbortController();
           abortControllers.current.set(i, controller);
@@ -517,6 +549,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
           await renderPage(page, baseScale, 0, canvas, textLayer, controller);
           (canvas as any).__rendered = true;
+          console.log(`[PDF Render] Completed render for page ${i}`);
           
           // Cleanup page object to free memory
           if (page.cleanup) {
@@ -531,7 +564,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     };
 
     renderVisiblePages();
-  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight]);
+  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight, isFlipbookReady]);
 
   const handleFlip = (e: any) => {
     setCurrentPage(e.data + 1);
@@ -722,7 +755,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   };
 
   const handleDocumentLoad = async (doc: any) => {
-    console.log(`PDF loaded successfully: ${doc.numPages} pages`);
+    console.log(`[PDF Load] PDF loaded successfully: ${doc.numPages} pages`);
     setPdfDoc(doc);
     setTotalPages(doc.numPages);
     setLoading(false);
@@ -738,6 +771,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       const firstPage = await doc.getPage(1);
       const { width, height } = firstPage.getViewport({ scale: 1 });
       const aspectRatio = width / height;
+      console.log(`[PDF Load] Detected aspect ratio: ${aspectRatio.toFixed(2)} (${width}x${height})`);
       setPdfAspectRatio(aspectRatio);
       if (onAspectRatioDetected) {
         onAspectRatioDetected(aspectRatio);
@@ -748,11 +782,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           if (rect.width > 0 && rect.height > 0) {
+            console.log(`[PDF Load] Container size detected: ${rect.width}x${rect.height}`);
             setContainerSize({ width: rect.width, height: rect.height });
           } else {
             // Use fallback dimensions if container size still not available
             const fallbackWidth = isMobile ? 375 : 1200;
             const fallbackHeight = isMobile ? 667 : 800;
+            console.log(`[PDF Load] Using fallback dimensions: ${fallbackWidth}x${fallbackHeight}`);
             setContainerSize({ width: fallbackWidth, height: fallbackHeight });
           }
         }
@@ -763,7 +799,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         firstPage.cleanup();
       }
     } catch (err) {
-      console.error("Error getting first page:", err);
+      console.error("[PDF Load] Error getting first page:", err);
     }
   };
 
@@ -843,10 +879,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   ref={bookRef}
                   onFlip={handleFlip}
                   onInit={() => {
+                    console.log('[PDF Flipbook] Flipbook initialized, setting ready state');
                     setIsFlipbookReady(true);
                   }}
                   onChangeState={() => {
                     if (!isFlipbookReady) {
+                      console.log('[PDF Flipbook] Flipbook state changed, setting ready state');
                       setIsFlipbookReady(true);
                     }
                   }}
@@ -864,7 +902,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                 >
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
-                    const shouldRender = Math.abs(pageNum - currentPage) <= 3;
+                    // Match the visible range in the rendering effect (±2)
+                    const shouldRender = Math.abs(pageNum - currentPage) <= 2;
                     
                     return (
                       <div
