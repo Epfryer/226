@@ -1,16 +1,25 @@
 .fv-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
 .fv-toolbar {
-  position: absolute; right: env(safe-area-inset-right, 12px); top: env(safe-area-inset-top, 12px);
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 14px;
+  position: absolute;
+  left: 50%;
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom, 12px) + 48px);
+  transform: translate(-50%, 12px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
   background: color-mix(in srgb, #000 35%, transparent);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  opacity: 0; transform: translateY(-6px); transition: opacity .18s, transform .18s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity .18s, transform .18s;
   z-index: 5;
 }
 
-.fv-toolbar.show { opacity: 1; transform: translateY(0); }
+.fv-toolbar.show { opacity: 1; transform: translate(-50%, 0); }
 
 .fv-toolbar button {
   appearance: none; border: 0; border-radius: 10px; padding: 6px 10px;

@@ -978,7 +978,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                       startZIndex={0}
                       maxShadowOpacity={0.5}
                       showPageCorners={true}
-                      disableFlipByClick={false}
+                      disableFlipByClick={true}
                       clickEventForward={true}
                       useMouseEvents={true}
                       swipeDistance={30}
