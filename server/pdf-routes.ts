@@ -28,10 +28,10 @@ router.use(cors({
   exposedHeaders: ['Accept-Ranges', 'Content-Range', 'Content-Length']
 }));
 
-// Simple in-memory cache for PDF buffers (helps with range requests and large files)
+// Simple in-memory cache for PDF buffers (helps with range requests)
 const pdfCache = new Map<string, { buffer: Buffer; timestamp: number }>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes - longer for large files
-const MAX_CACHE_SIZE = 3; // Keep only 3 PDFs cached to manage memory
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 5; // Maximum number of PDFs to cache
 
 // Clean up expired cache entries
 function cleanupCache() {
@@ -182,55 +182,30 @@ router.get("/:filename", async (req, res) => {
       return res.send(chunk);
     }
 
-    // For full file requests, check if we should use range-based delivery for large files
-    console.log(`[PDF] Preparing to serve: ${name}`);
-    
-    // First check if file exists and get size by downloading metadata
-    const existsResult = await storage.exists(name);
-    if (!existsResult.ok || !existsResult.value) {
-      console.error("[PDF] File not found:", name);
-      return res.status(404).json({ error: "PDF not found", filename: name });
-    }
-
-    // For large files or if client supports ranges, use byte-range delivery
-    // This prevents timeouts on large files
-    const cached = pdfCache.get(name);
-    let pdfBuffer: Buffer;
-    
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[PDF] Using cached buffer for ${name}`);
-      pdfBuffer = cached.buffer;
-    } else {
-      console.log(`[PDF] Downloading ${name} to serve`);
-      const downloadResult = await storage.downloadAsBytes(name);
-      
-      if (!downloadResult.ok) {
-        console.error("[PDF] Download failed:", downloadResult.error);
-        return res.status(500).json({ 
-          error: "Failed to download PDF",
-          details: downloadResult.error?.message,
-          filename: name
-        });
-      }
-      
-      pdfBuffer = downloadResult.value[0];
-      
-      // Cache it for future requests
-      pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
-      cleanupCache();
-      console.log(`[PDF] Cached ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
-    }
-
-    const fileSize = pdfBuffer.length;
+    // For full file requests (desktop), use streaming
+    console.log(`[PDF] Streaming full file: ${name}`);
+    const stream = storage.downloadAsStream(name);
     
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${name}"`);
     res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Content-Length", fileSize.toString());
     res.setHeader("Cache-Control", "public, max-age=3600");
+
+    stream.pipe(res);
     
-    console.log(`[PDF] Serving full file: ${name} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
-    res.send(pdfBuffer);
+    stream.on('error', (err: any) => {
+      console.error("[PDF] Stream error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "Stream error",
+          details: err?.message || String(err)
+        });
+      }
+    });
+
+    stream.on('end', () => {
+      console.log(`[PDF] Completed streaming: ${name}`);
+    });
 
   } catch (err: any) {
     console.error("[PDF] Error:", err?.message || err);
