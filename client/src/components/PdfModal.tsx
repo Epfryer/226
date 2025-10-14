@@ -16,9 +16,11 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setAspectRatio(null);
+    setReady(false);
   }, [pub]);
 
   useEffect(() => {
@@ -107,6 +109,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
+              onAnimationComplete={() => setReady(true)}
               className="relative w-full h-full flex flex-col max-w-[98vw] sm:max-w-[95vw] max-h-[98vh] sm:max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
               style={{ willChange: 'opacity' }}
@@ -126,8 +129,9 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               </div>
 
               <div className="flex-1 relative overflow-hidden">
-                <FlipbookViewer 
-                  pdfUrl={asset(pub.pdfPath)} 
+                <FlipbookViewer
+                  pdfUrl={asset(pub.pdfPath)}
+                  ready={ready}
                   onFullscreen={handleFullscreen}
                   onAspectRatioDetected={setAspectRatio}
                 />

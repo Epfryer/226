@@ -42,6 +42,7 @@ const pdfOptions = {
 
 interface FlipbookViewerProps {
   pdfUrl: string;
+  ready?: boolean;
   onFullscreen?: () => void;
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
@@ -194,7 +195,22 @@ async function renderPage(
   }
 }
 
-export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
+export function FlipbookViewer({
+  pdfUrl,
+  ready = true,
+  onFullscreen,
+  onAspectRatioDetected,
+}: FlipbookViewerProps) {
+  // Wait for the modal to finish animating, then let layout settle one frame
+  useEffect(() => {
+    if (!ready) return;
+    let raf = requestAnimationFrame(() => {
+      // Kick any logic that measures/initializes the flipbook or loads page 1.
+      // If your init lives inside another effect, this single frame is enough.
+      window.dispatchEvent(new Event('resize')); // poke libs that compute on resize
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [ready, pdfUrl]);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -387,291 +403,185 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
             });
             abortControllers.current.clear();
 
-            // Clear rendered flags so pages re-render with new dimensions
-            canvasRefs.current.forEach((canvas) => {
-              (canvas as any).__rendered = false;
-            });
-
-            // Update container size
-            setContainerSize({ width, height });
-          }, 150); // 150ms debounce
-        }
-      }
-    });
-
-    resizeObserver.observe(containerRef.current);
-    return () => {
-      resizeObserver.disconnect();
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
-      }
-    };
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (!pdfAspectRatio || !containerSize.width || !containerSize.height) return;
-
-    const padding = isMobile ? 8 : 16;
-    const availableHeight = containerSize.height - (padding * 2);
-    const availableWidth = containerSize.width - (padding * 2);
-
-    const containerAspectRatio = availableWidth / availableHeight;
-    const scaleFactor = isMobile ? 0.90 : 0.85;
-
-    let displayWidth: number;
-    let displayHeight: number;
-
-    if (pdfAspectRatio > containerAspectRatio) {
-      displayWidth = availableWidth * scaleFactor;
-      displayHeight = displayWidth / pdfAspectRatio;
-    } else {
-      displayHeight = availableHeight * scaleFactor;
-      displayWidth = displayHeight * pdfAspectRatio;
-    }
-
-    // Apply zoom level - use Math.round for more accurate dimensions
-    const newWidth = Math.round(displayWidth * zoomLevel);
-    const newHeight = Math.round(displayHeight * zoomLevel);
-    
-    // Only update if dimensions actually changed
-    if (newWidth !== pageWidth || newHeight !== pageHeight) {
-      setPageWidth(newWidth);
-      setPageHeight(newHeight);
-    }
-  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel, pageWidth, pageHeight]);
-
-  // Render pages when they become visible or dimensions change
-  // Virtualization: keep only current ±1 pages rendered to prevent memory issues
-  useEffect(() => {
-    if (!pdfDoc || !pageWidth || !pageHeight) return;
-
-    const renderVisiblePages = async () => {
-      // Always keep current page ±2 (5 pages) on mobile for smoother experience
-      // Use ±1 (3 pages) only for iOS if needed for stability
-      const visibleRange = isMobile ? 2 : 2; // 2 for mobile (5 pages), can adjust for iOS if needed
-      const startPage = Math.max(1, currentPage - visibleRange);
-      const endPage = Math.min(totalPages, currentPage + visibleRange);
-      
-      // Clean up canvases outside the visible range to free memory
-      canvasRefs.current.forEach((canvas, pageNum) => {
-        if (pageNum < startPage || pageNum > endPage) {
-          // Cancel any ongoing render task
-          const controller = abortControllers.current.get(pageNum);
-          if (controller) {
-            try {
-              controller.abort();
-            } catch (err) {
-              // Ignore abort errors
-            }
-            abortControllers.current.delete(pageNum);
-          }
-          
-          // Clear the canvas to free GPU memory
-          if ((canvas as any).__renderTask?.cancel) {
-            try {
-              (canvas as any).__renderTask.cancel();
-            } catch {}
-          }
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-          }
-          (canvas as any).__rendered = false;
-        }
-      });
-      
-      // Render visible pages
-      for (let i = startPage; i <= endPage; i++) {
-        const canvas = canvasRefs.current.get(i);
-        const textLayer = textLayerRefs.current.get(i);
-        if (!canvas) continue;
-
-        // Skip if already rendered at current dimensions
-        if ((canvas as any).__rendered && 
-            canvas.style.width === `${pageWidth}px` &&
-            canvas.style.height === `${pageHeight}px`) {
-          continue;
-        }
-
-        // Cancel existing render task for this page
-        const existingController = abortControllers.current.get(i);
-        if (existingController) {
-          try {
-            existingController.abort();
-          } catch (err) {
-            // Ignore abort errors
-          }
-        }
-
-        try {
-          const page = await pdfDoc.getPage(i);
-          const controller = new AbortController();
-          abortControllers.current.set(i, controller);
-
-          // Calculate base scale from page natural dimensions and display dimensions
-          const viewport = page.getViewport({ scale: 1 });
-          const baseScale = Math.min(
-            pageWidth / viewport.width,
-            pageHeight / viewport.height
-          );
-
-          await renderPage(page, baseScale, 0, canvas, textLayer, controller);
-          (canvas as any).__rendered = true;
-          
-          // Cleanup page object to free memory
-          if (page.cleanup) {
-            page.cleanup();
-          }
-        } catch (err: any) {
-          if (err.name !== 'AbortError' && err.name !== 'RenderingCancelledException') {
-            console.error(`Error rendering page ${i}:`, err);
-          }
-        }
-      }
-    };
-
-    renderVisiblePages();
-  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight]);
-
-  const handleFlip = (e: any) => {
-    setCurrentPage(e.data + 1);
-  };
-
-  // Debounced navigation for iOS to prevent overlapping renders
-  const goToNextPage = () => {
-    if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
-    
-    // Debounce on iOS to prevent rapid page changes causing crashes
-    if (isIOSDevice()) {
-      if (navigationDebounceRef.current) {
-        clearTimeout(navigationDebounceRef.current);
-      }
-      navigationDebounceRef.current = setTimeout(() => {
-        try {
-          bookRef.current.pageFlip().flipNext();
-        } catch (error) {
-          console.warn("Error navigating to next page:", error);
-        }
-      }, 150); // 150ms debounce for iOS
-    } else {
-      try {
-        bookRef.current.pageFlip().flipNext();
-      } catch (error) {
-        console.warn("Error navigating to next page:", error);
-      }
-    }
-  };
-
-  const goToPrevPage = () => {
-    if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
-    
-    // Debounce on iOS to prevent rapid page changes causing crashes
-    if (isIOSDevice()) {
-      if (navigationDebounceRef.current) {
-        clearTimeout(navigationDebounceRef.current);
-      }
-      navigationDebounceRef.current = setTimeout(() => {
-        try {
-          bookRef.current.pageFlip().flipPrev();
-        } catch (error) {
-          console.warn("Error navigating to previous page:", error);
-        }
-      }, 150); // 150ms debounce for iOS
-    } else {
-      try {
-        bookRef.current.pageFlip().flipPrev();
-      } catch (error) {
-        console.warn("Error navigating to previous page:", error);
-      }
-    }
-  };
-
-  const handleRetry = () => {
-    setError(null);
-    setLoadingProgress(0);
-    setLoading(true);
-    setPageWidth(null);
-    setPageHeight(null);
-    setPdfAspectRatio(null);
-    setIsFlipbookReady(false);
-    setCurrentPage(1);
-    sessionStorage.removeItem(getStorageKey());
-    setDocumentKey(prev => prev + 1);
-    canvasRefs.current.clear();
-    abortControllers.current.forEach(controller => controller.abort());
-    abortControllers.current.clear();
-  };
-
-  // Zoom functions
-  const zoomIn = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(prev => Math.min(prev + 0.25, 3));
-  };
-
-  const zoomOut = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
-  };
-
-  const resetZoom = () => {
-    // Clear rendered flags to force re-render at new zoom level
-    canvasRefs.current.forEach((canvas) => {
-      (canvas as any).__rendered = false;
-    });
-    setZoomLevel(1);
-  };
-
-  // Pinch-to-zoom handlers
-  useEffect(() => {
-    if (!isMobile || !containerRef.current) return;
-
-    const container = containerRef.current;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const distance = Math.hypot(
-          touch2.clientX - touch1.clientX,
-          touch2.clientY - touch1.clientY
-        );
-        pinchStartDistance.current = distance;
-        setZoomLevel(current => {
-          pinchStartZoom.current = current;
-          return current;
-        });
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && pinchStartDistance.current) {
-        e.preventDefault();
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const distance = Math.hypot(
-          touch2.clientX - touch1.clientX,
-          touch2.clientY - touch1.clientY
-        );
-        const scale = distance / pinchStartDistance.current;
-        const newZoom = pinchStartZoom.current * scale;
-        setZoomLevel(Math.max(0.5, Math.min(3, newZoom)));
-      }
-    };
-
-    const handleTouchEnd = () => {
-      pinchStartDistance.current = null;
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-
+            return (
+              <div
+                ref={containerRef}
+                className="pdf-viewer-container relative flex items-center justify-center w-full overflow-hidden"
+                style={{ aspectRatio: '16 / 10', minHeight: '60vh', contain: 'size layout paint' }}
+              >
+                {ready ? (
+                  <>
+                    {error ? (
+                      renderErrorState()
+                    ) : (
+                      <Document
+                        key={`pdf-${documentKey}`}
+                        file={pdfUrl}
+                        options={pdfOptions}
+                        onLoadSuccess={handleDocumentLoad}
+                        onLoadProgress={({ loaded, total }) => {
+                          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
+                          setLoadingProgress(progress);
+                          if (debugMode) {
+                            console.log(`PDF Loading Progress: ${progress}%`);
+                          }
+                        }}
+                        onLoadError={(error) => {
+                          console.error("Error loading PDF:", error);
+                          const errorMessage = error?.message || "Unknown error occurred";
+                          setError(errorMessage);
+                          setLoading(false);
+                        }}
+                        loading={renderLoadingState()}
+                        error={renderErrorState()}
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center h-96 w-full">
+                            {/* Loading state is handled by the `loading` prop of Document */}
+                          </div>
+                        ) : (
+                          // Render flipbook as soon as we have basic requirements
+                          pdfDoc && totalPages > 0 && pageWidth && pageHeight && (
+                            <>
+                              {debugMode && (
+                                <div className="absolute top-16 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs">
+                                  <div>PDF: {pdfDoc ? '✓' : '✗'}</div>
+                                  <div>Pages: {totalPages}</div>
+                                  <div>Size: {pageWidth}×{pageHeight}</div>
+                                  <div>Aspect: {pdfAspectRatio?.toFixed(2)}</div>
+                                  <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
+                                </div>
+                              )}
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <HTMLFlipBook
+                                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
+                                  width={pageWidth}
+                                  height={pageHeight}
+                                  size="fixed"
+                                  minWidth={pageWidth}
+                                  maxWidth={pageWidth}
+                                  minHeight={pageHeight}
+                                  maxHeight={pageHeight}
+                                  autoSize={false}
+                                  showCover={true}
+                                  flippingTime={800}
+                                  usePortrait={false}
+                                  startPage={Math.min(currentPage - 1, totalPages - 1)}
+                                  drawShadow={true}
+                                  className="shadow-2xl"
+                                  ref={bookRef}
+                                  onFlip={handleFlip}
+                                  onInit={() => {
+                                    setIsFlipbookReady(true);
+                                  }}
+                                  onChangeState={() => {
+                                    if (!isFlipbookReady) {
+                                      setIsFlipbookReady(true);
+                                    }
+                                  }}
+                                  mobileScrollSupport={true}
+                                  style={{
+                                    transform: 'none'
+                                  }}
+                                  startZIndex={0}
+                                  maxShadowOpacity={0.5}
+                                  showPageCorners={true}
+                                  disableFlipByClick={false}
+                                  clickEventForward={true}
+                                  useMouseEvents={true}
+                                  swipeDistance={30}
+                                >
+                                  {Array.from(new Array(totalPages), (_, index) => {
+                                    const pageNum = index + 1;
+                                    const shouldRender = Math.abs(pageNum - currentPage) <= 3;
+                                    return (
+                                      <div
+                                        key={`page_${pageNum}`}
+                                        className="pdf-page bg-white shadow-lg overflow-hidden relative"
+                                        style={{
+                                          width: pageWidth,
+                                          height: pageHeight,
+                                          display: 'block'
+                                        }}
+                                      >
+                                        {shouldRender ? (
+                                          <>
+                                            <canvas
+                                              ref={(el) => {
+                                                if (el) {
+                                                  canvasRefs.current.set(pageNum, el);
+                                                }
+                                              }}
+                                              style={{
+                                                display: 'block',
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: 'auto',
+                                                height: '100%',
+                                                maxWidth: '100%',
+                                                maxHeight: '100%',
+                                                objectFit: 'contain',
+                                                transform: 'none'
+                                              }}
+                                            />
+                                            <div
+                                              ref={(el) => {
+                                                if (el) {
+                                                  textLayerRefs.current.set(pageNum, el);
+                                                }
+                                              }}
+                                              className="textLayer"
+                                              style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                overflow: 'clip',
+                                                opacity: 0.2,
+                                                lineHeight: 1,
+                                                pointerEvents: 'none',
+                                                mixBlendMode: 'normal',
+                                                transform: 'none',
+                                                willChange: 'auto'
+                                              }}
+                                            />
+                                          </>
+                                        ) : (
+                                          <div
+                                            className="text-gray-300"
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              width: '100%',
+                                              height: '100%'
+                                            }}
+                                          >
+                                            Page {pageNum}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </HTMLFlipBook>
+                              </div>
+                            </>
+                          )
+                        )}
+                      </Document>
+                    )}
+                    {/* ...existing controls and debug overlay... */}
+                  </>
+                ) : null}
+              </div>
+            );
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
