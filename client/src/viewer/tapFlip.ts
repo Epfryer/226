@@ -23,8 +23,7 @@ export function enableTapFlip(
     const target = e.target as HTMLElement | null;
     if (target?.closest(INTERACTIVE_SELECTOR)) return;
 
-    // Only flip when at fit scale (<= fit + 0.05)
-    if (getScale() > fitScale() + 0.05) return;
+    if (getScale() > fitScale() * 1.02) return;
 
     // Ignore multi-click sequences (double-click used for zoom)
     if (e.detail > 1) {
@@ -37,9 +36,8 @@ export function enableTapFlip(
     pending = window.setTimeout(() => {
       pending = null;
       const rect = surface.getBoundingClientRect();
-      // Left 40% → prev, right 60% → next
-      const threshold = rect.left + rect.width * 0.4;
-      if (clientX < threshold) onPrev();
+      const mid = rect.left + rect.width * 0.4;
+      if (clientX < mid) onPrev();
       else onNext();
     }, 220);
   };

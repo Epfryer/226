@@ -127,25 +127,11 @@ export function enhanceZoom(
     prevDistance = undefined;
   };
 
-  const dblClickHandler = (e: MouseEvent) => {
-    e.preventDefault();
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    
-    // Toggle between fit and fit * dblStep (2x), centered
-    const targetScale = state.scale <= state.fit * 1.1 
-      ? state.fit * opts.dblStep 
-      : state.fit;
-    zoomAt(cx, cy, targetScale);
-  };
-
   el.addEventListener("wheel", wheelHandler, { passive: false });
   el.addEventListener("pointerdown", pointerDownHandler);
   el.addEventListener("pointermove", pointerMoveHandler);
   el.addEventListener("pointerup", pointerUpHandler);
   el.addEventListener("pointercancel", pointerCancelHandler);
-  el.addEventListener("dblclick", dblClickHandler);
 
   apply(state);
 
@@ -181,7 +167,6 @@ export function enhanceZoom(
       el.removeEventListener("pointermove", pointerMoveHandler as EventListener);
       el.removeEventListener("pointerup", pointerUpHandler as EventListener);
       el.removeEventListener("pointercancel", pointerCancelHandler as EventListener);
-      el.removeEventListener("dblclick", dblClickHandler as EventListener);
       el.style.touchAction = prevTouchAction;
       lastTouches = [];
       isDragging = false;

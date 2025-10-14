@@ -5,7 +5,6 @@ import { Document, pdfjs } from "react-pdf";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { asset } from "@/utils/asset";
 import { isIOSDevice, getClampedDPR } from "@/utils/viewport";
-import { isTouchCapable } from "@/utils/isTouchCapable";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,8 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import "@/viewer/flipbook.css";
 import { enhanceZoom, ZoomState } from "@/viewer/enhanceZoom";
 import { mountToolbar } from "@/viewer/toolbar";
-import { enableSwipeNav } from "@/viewer/swipeNav";
-import { enableTapFlip } from "@/viewer/tapFlip";
 
 // Use local PDF.js worker for better reliability and version consistency
 if (typeof window !== 'undefined') {
@@ -203,7 +200,6 @@ async function renderPage(
 export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const isTouchViewer = isTouchCapable();
   const { toast } = useToast();
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   
@@ -237,8 +233,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const pageLayerRef = useRef<HTMLDivElement>(null);
   const zoomApiRef = useRef<ReturnType<typeof enhanceZoom> | null>(null);
   const toolbarRef = useRef<ReturnType<typeof mountToolbar> | null>(null);
-  const swipeNavRef = useRef<{ destroy: () => void } | null>(null);
-  const tapFlipRef = useRef<{ destroy: () => void } | null>(null);
   const zoomAnimationFrameRef = useRef<number>();
   const lastZoomRatioRef = useRef(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
@@ -731,29 +725,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     });
     toolbarRef.current = toolbar;
 
-    if (isTouchViewer) {
-      const swipe = enableSwipeNav(
-        surface,
-        () => zoomApi.getState().scale,
-        () => zoomApi.getState().fit,
-        () => goToPrevPage(),
-        () => goToNextPage()
-      );
-      swipeNavRef.current = swipe;
-    }
-
-    // Enable tap-to-flip on desktop (non-touch devices)
-    if (!isTouchViewer) {
-      const tapFlip = enableTapFlip(
-        surface,
-        () => zoomApi.getState().scale,
-        () => zoomApi.getState().fit,
-        () => goToPrevPage(),
-        () => goToNextPage()
-      );
-      tapFlipRef.current = tapFlip;
-    }
-
     const handleResize = () => {
       const nextFit = computeFit();
       const state = zoomApi.getState();
@@ -777,18 +748,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       pageLayer.classList.remove("fv-pageLayer");
       zoomApiRef.current = null;
       toolbarRef.current = null;
-      if (swipeNavRef.current) {
-        swipeNavRef.current.destroy();
-        swipeNavRef.current = null;
-      }
-      if (tapFlipRef.current) {
-        tapFlipRef.current.destroy();
-        tapFlipRef.current = null;
-      }
       setZoomLevel(1);
       lastZoomRatioRef.current = 1;
     };
-  }, [isFlipbookReady, pageWidth, pageHeight, pdfUrl, onFullscreen, goToNextPage, goToPrevPage, isTouchViewer]);
+  }, [isFlipbookReady, pageWidth, pageHeight, pdfUrl, onFullscreen, goToNextPage, goToPrevPage]);
 
   const handleRetry = () => {
     setError(null);
@@ -993,7 +956,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                           setIsFlipbookReady(true);
                         }
                       }}
-                      mobileScrollSupport={!isTouchViewer}
+                      mobileScrollSupport={true}
                       style={{
                         width: pageWidth,
                         height: pageHeight,
@@ -1004,7 +967,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                       showPageCorners={true}
                       disableFlipByClick={true}
                       clickEventForward={true}
-                      useMouseEvents={!isTouchViewer}
+                      useMouseEvents={true}
                       swipeDistance={30}
                     >
                   {Array.from(new Array(totalPages), (_, index) => {
@@ -1095,10 +1058,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
       {!loading && !error && totalPages > 0 && (
         <>
-          <div
-            className="absolute left-1/2 -translate-x-1/2 z-10 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 rounded-full whitespace-nowrap"
-            style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + 16px)` }}
-          >
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 rounded-full whitespace-nowrap">
             {currentPage === 1
               ? `Page 1 of ${totalPages}`
               : totalPages === 1
@@ -1108,11 +1068,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`}
           </div>
 
-          <p
-            className="absolute left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white/70 text-center"
-            style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + 52px)` }}
-          >
-            Swipe left or right to flip • Pinch or Ctrl/⌘ + Scroll to zoom • Toolbar auto-hides
+          <p className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white/70 text-center">
+            Drag from a page corner to flip • Pinch or Ctrl/⌘ + Scroll to zoom • Toolbar auto-hides
           </p>
         </>
       )}
