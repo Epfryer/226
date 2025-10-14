@@ -318,40 +318,68 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Immediately get initial size to prevent loading delay
-    const initialRect = containerRef.current.getBoundingClientRect();
-    if (initialRect.width > 0 && initialRect.height > 0) {
-      setContainerSize({ width: initialRect.width, height: initialRect.height });
+    // Get initial size immediately and set fallback if needed
+    const getInitialSize = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        setContainerSize({ width: rect.width, height: rect.height });
+        return true;
+      }
+      
+      // Set fallback dimensions immediately if container size not available
+      const fallbackWidth = isMobile ? 375 : 1200;
+      const fallbackHeight = isMobile ? 667 : 800;
+      setContainerSize({ width: fallbackWidth, height: fallbackHeight });
+      return false;
+    };
+
+    // Try to get initial size immediately
+    const hasRealSize = getInitialSize();
+    
+    // If we don't have real size, try again after a short delay
+    if (!hasRealSize) {
+      const retryTimeout = setTimeout(() => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+          setContainerSize({ width: rect.width, height: rect.height });
+        }
+      }, 50);
+      
+      // Cleanup timeout if component unmounts
+      return () => clearTimeout(retryTimeout);
     }
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         
-        // Debounce resize to avoid excessive re-renders
-        if (resizeTimeoutRef.current) {
-          clearTimeout(resizeTimeoutRef.current);
+        // Only update if size actually changed significantly
+        if (Math.abs(width - containerSize.width) > 5 || Math.abs(height - containerSize.height) > 5) {
+          // Debounce resize to avoid excessive re-renders
+          if (resizeTimeoutRef.current) {
+            clearTimeout(resizeTimeoutRef.current);
+          }
+
+          resizeTimeoutRef.current = setTimeout(() => {
+            // Abort all current render tasks
+            abortControllers.current.forEach(controller => {
+              try {
+                controller.abort();
+              } catch (err) {
+                // Ignore abort errors
+              }
+            });
+            abortControllers.current.clear();
+
+            // Clear rendered flags so pages re-render with new dimensions
+            canvasRefs.current.forEach((canvas) => {
+              (canvas as any).__rendered = false;
+            });
+
+            // Update container size
+            setContainerSize({ width, height });
+          }, 150); // 150ms debounce
         }
-
-        resizeTimeoutRef.current = setTimeout(() => {
-          // Abort all current render tasks
-          abortControllers.current.forEach(controller => {
-            try {
-              controller.abort();
-            } catch (err) {
-              // Ignore abort errors
-            }
-          });
-          abortControllers.current.clear();
-
-          // Clear rendered flags so pages re-render with new dimensions
-          canvasRefs.current.forEach((canvas) => {
-            (canvas as any).__rendered = false;
-          });
-
-          // Update container size
-          setContainerSize({ width, height });
-        }, 150); // 150ms debounce
       }
     });
 
@@ -362,21 +390,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         clearTimeout(resizeTimeoutRef.current);
       }
     };
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
-    if (!pdfAspectRatio) return;
-
-    // Use fallback dimensions if container size not detected yet
-    const fallbackWidth = isMobile ? 375 : 1200;
-    const fallbackHeight = isMobile ? 667 : 800;
-    
-    const actualWidth = containerSize.width > 0 ? containerSize.width : fallbackWidth;
-    const actualHeight = containerSize.height > 0 ? containerSize.height : fallbackHeight;
+    if (!pdfAspectRatio || !containerSize.width || !containerSize.height) return;
 
     const padding = isMobile ? 8 : 16;
-    const availableHeight = actualHeight - (padding * 2);
-    const availableWidth = actualWidth - (padding * 2);
+    const availableHeight = containerSize.height - (padding * 2);
+    const availableWidth = containerSize.width - (padding * 2);
 
     const containerAspectRatio = availableWidth / availableHeight;
     const scaleFactor = isMobile ? 0.90 : 0.85;
@@ -396,9 +417,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     const newWidth = Math.round(displayWidth * zoomLevel);
     const newHeight = Math.round(displayHeight * zoomLevel);
     
-    setPageWidth(newWidth);
-    setPageHeight(newHeight);
-  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel]);
+    // Only update if dimensions actually changed
+    if (newWidth !== pageWidth || newHeight !== pageHeight) {
+      setPageWidth(newWidth);
+      setPageHeight(newHeight);
+    }
+  }, [containerSize, pdfAspectRatio, isMobile, zoomLevel, pageWidth, pageHeight]);
 
   // Render pages when they become visible or dimensions change
   // Virtualization: keep only current ±1 pages rendered to prevent memory issues
@@ -703,17 +727,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         onAspectRatioDetected(aspectRatio);
       }
 
-      // Force initialization if container size still not detected after a short delay
-      setTimeout(() => {
-        if (containerSize.width === 0 || containerSize.height === 0) {
-          if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-              setContainerSize({ width: rect.width, height: rect.height });
-            }
-          }
-        }
-      }, 100);
+      // Cleanup the page to prevent memory leaks
+      if (firstPage.cleanup) {
+        firstPage.cleanup();
+      }
     } catch (err) {
       console.error("Error getting first page:", err);
     }
