@@ -17,14 +17,12 @@ if (typeof window !== 'undefined') {
     import.meta.url
   ).toString();
 }
-
 // Load TextLayer utilities from PDF.js
 if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
   import('pdfjs-dist').then((pdfjsLib) => {
     (window as any).pdfjsLib = pdfjsLib;
   });
 }
-
 // PDF.js configuration with range support for streaming and enhanced quality
 const pdfOptions = {
   cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
