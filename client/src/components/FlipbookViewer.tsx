@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { Document, pdfjs } from "react-pdf";
@@ -88,7 +87,7 @@ async function renderPage(
   // Set the CSS size to layout dimensions (no transform scaling)
   canvas.style.width = `${viewport.width}px`;
   canvas.style.height = `${viewport.height}px`;
-  
+
   // IMPORTANT: Remove any CSS transform on canvas
   canvas.style.transform = 'none';
 
@@ -105,7 +104,7 @@ async function renderPage(
     actualOutputScale = outputScale * scaleDown;
     pxW = Math.max(1, Math.floor(viewport.width * actualOutputScale));
     pxH = Math.max(1, Math.floor(viewport.height * actualOutputScale));
-    
+
     if (isIOSDevice()) {
       console.log(`[iOS] Scaled down canvas from ${Math.floor(viewport.width * outputScale)}x${Math.floor(viewport.height * outputScale)} to ${pxW}x${pxH} to stay within ${maxPixels} pixel budget`);
     }
@@ -116,7 +115,7 @@ async function renderPage(
 
   // Enhanced rendering quality for all devices
   canvas.style.imageRendering = "-webkit-optimize-contrast";
-  
+
   // Create a 2D context with optimized settings for transparency and quality
   const ctx = canvas.getContext("2d", {
     alpha: true,                    // Preserve transparency - IMPORTANT for iOS
@@ -124,7 +123,7 @@ async function renderPage(
     colorSpace: "srgb" as any,      // Consistent color rendering
     willReadFrequently: false       // Optimize for writing (rendering)
   })!;
-  
+
   // Verify context was created successfully
   if (!ctx) {
     throw new Error("Failed to get 2D context from canvas");
@@ -153,7 +152,7 @@ async function renderPage(
   });
 
   (canvas as any).__renderTask = renderTask;
-  
+
   try {
     await renderTask.promise;
   } catch (err: any) {
@@ -167,17 +166,17 @@ async function renderPage(
   if (textLayerDiv) {
     // Clear previous text layer content
     textLayerDiv.innerHTML = '';
-    
+
     // Set text layer dimensions to match canvas CSS dimensions exactly (no transforms)
     textLayerDiv.style.width = `${viewport.width}px`;
     textLayerDiv.style.height = `${viewport.height}px`;
-    
+
     // IMPORTANT: Remove any CSS transform on text layer
     textLayerDiv.style.transform = 'none';
-    
+
     try {
       const textContent = await page.getTextContent({ includeMarkedContent: true });
-      
+
       // Use PDF.js TextLayer if available
       if ((window as any).pdfjsLib?.renderTextLayer) {
         const textRenderTask = (window as any).pdfjsLib.renderTextLayer({
@@ -213,7 +212,7 @@ export function FlipbookViewer({
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  
+
   // Debug mode detection from URL
   const [debugMode, setDebugMode] = useState(false);
   useEffect(() => {
@@ -313,7 +312,7 @@ export function FlipbookViewer({
     setZoomLevel(1);
     setHasShownPortraitToast(false);
     sessionStorage.removeItem(getStorageKey());
-    
+
     // Clean up canvas refs, text layers and abort controllers
     canvasRefs.current.clear();
     textLayerRefs.current.clear();
@@ -348,25 +347,20 @@ export function FlipbookViewer({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Get initial size immediately and set fallback if needed
     const getInitialSize = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect && rect.width > 0 && rect.height > 0) {
         setContainerSize({ width: rect.width, height: rect.height });
         return true;
       }
-      
-      // Set fallback dimensions immediately if container size not available
       const fallbackWidth = isMobile ? 375 : 1200;
       const fallbackHeight = isMobile ? 667 : 800;
       setContainerSize({ width: fallbackWidth, height: fallbackHeight });
       return false;
     };
 
-    // Try to get initial size immediately
     const hasRealSize = getInitialSize();
-    
-    // If we don't have real size, try again after a short delay
+
     if (!hasRealSize) {
       const retryTimeout = setTimeout(() => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -374,218 +368,198 @@ export function FlipbookViewer({
           setContainerSize({ width: rect.width, height: rect.height });
         }
       }, 50);
-      
-      // Cleanup timeout if component unmounts
       return () => clearTimeout(retryTimeout);
     }
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        
-        // Only update if size actually changed significantly
         if (Math.abs(width - containerSize.width) > 5 || Math.abs(height - containerSize.height) > 5) {
-          // Debounce resize to avoid excessive re-renders
           if (resizeTimeoutRef.current) {
             clearTimeout(resizeTimeoutRef.current);
           }
-
           resizeTimeoutRef.current = setTimeout(() => {
-            // Abort all current render tasks
             abortControllers.current.forEach(controller => {
               try {
                 controller.abort();
-              } catch (err) {
-                // Ignore abort errors
-              }
+              } catch (err) {}
             });
             abortControllers.current.clear();
+            setContainerSize({ width: rect.width, height: rect.height });
+          }, 100);
+        }
+      }
+    });
 
-            return (
-              <div
-                ref={containerRef}
-                className="pdf-viewer-container relative flex items-center justify-center w-full overflow-hidden"
-                style={{ aspectRatio: '16 / 10', minHeight: '60vh', contain: 'size layout paint' }}
-              >
-                {ready ? (
-                  <>
-                    {error ? (
-                      renderErrorState()
-                    ) : (
-                      <Document
-                        key={`pdf-${documentKey}`}
-                        file={pdfUrl}
-                        options={pdfOptions}
-                        onLoadSuccess={handleDocumentLoad}
-                        onLoadProgress={({ loaded, total }) => {
-                          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
-                          setLoadingProgress(progress);
-                          if (debugMode) {
-                            console.log(`PDF Loading Progress: ${progress}%`);
-                          }
-                        }}
-                        onLoadError={(error) => {
-                          console.error("Error loading PDF:", error);
-                          const errorMessage = error?.message || "Unknown error occurred";
-                          setError(errorMessage);
-                          setLoading(false);
-                        }}
-                        loading={renderLoadingState()}
-                        error={renderErrorState()}
-                      >
-                        {loading ? (
-                          <div className="flex items-center justify-center h-96 w-full">
-                            {/* Loading state is handled by the `loading` prop of Document */}
-                          </div>
-                        ) : (
-                          // Render flipbook as soon as we have basic requirements
-                          pdfDoc && totalPages > 0 && pageWidth && pageHeight && (
-                            <>
-                              {debugMode && (
-                                <div className="absolute top-16 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs">
-                                  <div>PDF: {pdfDoc ? '✓' : '✗'}</div>
-                                  <div>Pages: {totalPages}</div>
-                                  <div>Size: {pageWidth}×{pageHeight}</div>
-                                  <div>Aspect: {pdfAspectRatio?.toFixed(2)}</div>
-                                  <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
-                                </div>
-                              )}
-                              <div
-                                className="absolute inset-0"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <HTMLFlipBook
-                                  key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
-                                  width={pageWidth}
-                                  height={pageHeight}
-                                  size="fixed"
-                                  minWidth={pageWidth}
-                                  maxWidth={pageWidth}
-                                  minHeight={pageHeight}
-                                  maxHeight={pageHeight}
-                                  autoSize={false}
-                                  showCover={true}
-                                  flippingTime={800}
-                                  usePortrait={false}
-                                  startPage={Math.min(currentPage - 1, totalPages - 1)}
-                                  drawShadow={true}
-                                  className="shadow-2xl"
-                                  ref={bookRef}
-                                  onFlip={handleFlip}
-                                  onInit={() => {
-                                    setIsFlipbookReady(true);
-                                  }}
-                                  onChangeState={() => {
-                                    if (!isFlipbookReady) {
-                                      setIsFlipbookReady(true);
-                                    }
-                                  }}
-                                  mobileScrollSupport={true}
-                                  style={{
-                                    transform: 'none'
-                                  }}
-                                  startZIndex={0}
-                                  maxShadowOpacity={0.5}
-                                  showPageCorners={true}
-                                  disableFlipByClick={false}
-                                  clickEventForward={true}
-                                  useMouseEvents={true}
-                                  swipeDistance={30}
-                                >
-                                  {Array.from(new Array(totalPages), (_, index) => {
-                                    const pageNum = index + 1;
-                                    const shouldRender = Math.abs(pageNum - currentPage) <= 3;
-                                    return (
-                                      <div
-                                        key={`page_${pageNum}`}
-                                        className="pdf-page bg-white shadow-lg overflow-hidden relative"
-                                        style={{
-                                          width: pageWidth,
-                                          height: pageHeight,
-                                          display: 'block'
-                                        }}
-                                      >
-                                        {shouldRender ? (
-                                          <>
-                                            <canvas
-                                              ref={(el) => {
-                                                if (el) {
-                                                  canvasRefs.current.set(pageNum, el);
-                                                }
-                                              }}
-                                              style={{
-                                                display: 'block',
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                width: 'auto',
-                                                height: '100%',
-                                                maxWidth: '100%',
-                                                maxHeight: '100%',
-                                                objectFit: 'contain',
-                                                transform: 'none'
-                                              }}
-                                            />
-                                            <div
-                                              ref={(el) => {
-                                                if (el) {
-                                                  textLayerRefs.current.set(pageNum, el);
-                                                }
-                                              }}
-                                              className="textLayer"
-                                              style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                overflow: 'clip',
-                                                opacity: 0.2,
-                                                lineHeight: 1,
-                                                pointerEvents: 'none',
-                                                mixBlendMode: 'normal',
-                                                transform: 'none',
-                                                willChange: 'auto'
-                                              }}
-                                            />
-                                          </>
-                                        ) : (
-                                          <div
-                                            className="text-gray-300"
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              width: '100%',
-                                              height: '100%'
-                                            }}
-                                          >
-                                            Page {pageNum}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </HTMLFlipBook>
-                              </div>
-                            </>
-                          )
-                        )}
-                      </Document>
-                    )}
-                    {/* ...existing controls and debug overlay... */}
-                  </>
-                ) : null}
-              </div>
-            );
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeObserver.disconnect();
+    };
+  }, [containerSize, pdfDoc, totalPages, isMobile]);
+
+  useEffect(() => {
+    if (!pdfDoc || !pageWidth || !pageHeight) return;
+
+    const renderVisiblePages = async () => {
+      const pagesToRender = Array.from(new Array(totalPages), (_, i) => i + 1)
+        .filter(pageNum => Math.abs(pageNum - currentPage) <= 3);
+
+      for (const pageNum of pagesToRender) {
+        const canvas = canvasRefs.current.get(pageNum);
+        const textLayerDiv = textLayerRefs.current.get(pageNum);
+
+        if (!canvas || (canvas as any).__rendered) continue;
+
+        try {
+          const abortController = new AbortController();
+          abortControllers.current.set(pageNum, abortController);
+
+          const page = await pdfDoc.getPage(pageNum);
+          const scale = pageHeight / page.getViewport({ scale: 1 }).height;
+
+          await renderPage(page, scale, 0, canvas, textLayerDiv, abortController);
+
+          (canvas as any).__rendered = true;
+
+          if (page.cleanup) {
+            page.cleanup();
+          }
+        } catch (err: any) {
+          if (err.name !== 'RenderingCancelledException') {
+            console.error(`Error rendering page ${pageNum}:`, err);
+          }
+        }
+      }
+    };
+
+    renderVisiblePages();
+  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight]);
+
+  useEffect(() => {
+    if (!containerSize.width || !containerSize.height || !pdfAspectRatio) return;
+
+    const containerAspect = containerSize.width / containerSize.height;
+    const padding = isMobile ? 20 : 40;
+    const availableWidth = containerSize.width - padding;
+    const availableHeight = containerSize.height - padding;
+
+    let width: number, height: number;
+
+    if (containerAspect > pdfAspectRatio) {
+      height = availableHeight;
+      width = height * pdfAspectRatio;
+    } else {
+      width = availableWidth;
+      height = width / pdfAspectRatio;
+    }
+
+    const finalWidth = Math.floor(width);
+    const finalHeight = Math.floor(height);
+
+    if (finalWidth !== pageWidth || finalHeight !== pageHeight) {
+      setPageWidth(finalWidth);
+      setPageHeight(finalHeight);
+    }
+  }, [containerSize, pdfAspectRatio, isMobile, pageWidth, pageHeight]);
+
+  const handleFlip = useCallback((e: any) => {
+    if (navigationDebounceRef.current) {
+      clearTimeout(navigationDebounceRef.current);
+    }
+
+    navigationDebounceRef.current = setTimeout(() => {
+      const newPage = e.data + 1;
+      setCurrentPage(newPage);
+    }, 100);
+  }, []);
+
+  const goToNextPage = useCallback(() => {
+    if (!bookRef.current?.pageFlip || currentPage >= totalPages) return;
+    try {
+      bookRef.current.pageFlip().flipNext();
+    } catch (error) {
+      console.warn("Error flipping to next page:", error);
+    }
+  }, [currentPage, totalPages]);
+
+  const goToPrevPage = useCallback(() => {
+    if (!bookRef.current?.pageFlip || currentPage <= 1) return;
+    try {
+      bookRef.current.pageFlip().flipPrev();
+    } catch (error) {
+      console.warn("Error flipping to previous page:", error);
+    }
+  }, [currentPage]);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    setDocumentKey(prev => prev + 1);
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || !containerRef.current) return;
+
+    const container = containerRef.current;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        pinchStartDistance.current = distance;
+        pinchStartZoom.current = zoomLevel;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchStartDistance.current !== null) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        const scale = distance / pinchStartDistance.current;
+        const newZoom = Math.min(Math.max(pinchStartZoom.current * scale, 0.5), 3);
+        setZoomLevel(newZoom);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      pinchStartDistance.current = null;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile]);
+  }, [isMobile, zoomLevel]);
 
   const renderLoadingState = () => {
     return (
@@ -641,7 +615,6 @@ export function FlipbookViewer({
       sessionStorage.setItem(getStorageKey(), doc.numPages.toString());
     }
 
-    // Get first page to detect aspect ratio
     try {
       const firstPage = await doc.getPage(1);
       const { width, height } = firstPage.getViewport({ scale: 1 });
@@ -651,22 +624,19 @@ export function FlipbookViewer({
         onAspectRatioDetected(aspectRatio);
       }
 
-      // Force container size detection and dimension calculation immediately
       setTimeout(() => {
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           if (rect.width > 0 && rect.height > 0) {
             setContainerSize({ width: rect.width, height: rect.height });
           } else {
-            // Use fallback dimensions if container size still not available
             const fallbackWidth = isMobile ? 375 : 1200;
             const fallbackHeight = isMobile ? 667 : 800;
             setContainerSize({ width: fallbackWidth, height: fallbackHeight });
           }
         }
-      }, 0); // Immediate but async
+      }, 0);
 
-      // Cleanup the page to prevent memory leaks
       if (firstPage.cleanup) {
         firstPage.cleanup();
       }
@@ -676,8 +646,8 @@ export function FlipbookViewer({
   };
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="pdf-viewer-container relative flex items-center justify-center h-full w-full overflow-hidden"
       style={{
         contain: 'size layout paint'
@@ -709,10 +679,8 @@ export function FlipbookViewer({
         >
           {loading ? (
             <div className="flex items-center justify-center h-96 w-full">
-              {/* Loading state is handled by the `loading` prop of Document */}
             </div>
           ) : (
-            // Render flipbook as soon as we have basic requirements
             pdfDoc && totalPages > 0 && pageWidth && pageHeight && (
               <>
                 {debugMode && (
@@ -724,7 +692,7 @@ export function FlipbookViewer({
                     <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
                   </div>
                 )}
-                <div 
+                <div
                   className="absolute inset-0"
                   style={{
                     display: 'flex',
@@ -773,13 +741,13 @@ export function FlipbookViewer({
                   {Array.from(new Array(totalPages), (_, index) => {
                     const pageNum = index + 1;
                     const shouldRender = Math.abs(pageNum - currentPage) <= 3;
-                    
+
                     return (
                       <div
                         key={`page_${pageNum}`}
                         className="pdf-page bg-white shadow-lg overflow-hidden relative"
-                        style={{ 
-                          width: pageWidth, 
+                        style={{
+                          width: pageWidth,
                           height: pageHeight,
                           display: 'block'
                         }}
@@ -827,7 +795,7 @@ export function FlipbookViewer({
                             />
                           </>
                         ) : (
-                          <div 
+                          <div
                             className="text-gray-300"
                             style={{
                               display: 'flex',
@@ -853,7 +821,6 @@ export function FlipbookViewer({
 
       {!loading && !error && totalPages > 0 && (
         <>
-          {/* Zoom controls - top right */}
           <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
             <button
               onClick={zoomIn}
@@ -884,7 +851,6 @@ export function FlipbookViewer({
             </button>
           </div>
 
-          {/* Navigation controls - bottom center */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4">
               <button
@@ -933,8 +899,7 @@ export function FlipbookViewer({
           </p>
         </>
       )}
-      
-      {/* Debug overlay - shows when ?debug=1 */}
+
       {debugMode && (
         <div className="absolute top-4 left-4 z-20 bg-black/80 backdrop-blur-md text-white p-3 rounded-lg text-xs font-mono space-y-1 max-w-xs">
           <div className="font-bold text-sm mb-2">Debug Info</div>
