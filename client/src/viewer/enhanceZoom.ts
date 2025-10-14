@@ -23,7 +23,7 @@ export function enhanceZoom(
   el: HTMLElement,
   apply: ApplyTransform,
   initialFit: number,
-  opts: ZoomOptions = { min: 1, max: 4, dblStep: 2 }
+  opts: ZoomOptions = { min: 0.5, max: 4, dblStep: 2 }
 ): ZoomApi {
   const state: ZoomState = {
     scale: initialFit,
@@ -72,13 +72,6 @@ export function enhanceZoom(
     e.preventDefault();
     const factor = Math.exp(-e.deltaY * 0.0015);
     zoomAt(e.clientX, e.clientY, state.scale * factor);
-  };
-
-  const dblClickHandler = (e: MouseEvent) => {
-    e.preventDefault();
-    const targetScale =
-      state.scale <= state.fit * 1.05 ? state.fit * opts.dblStep : state.fit;
-    zoomAt(e.clientX, e.clientY, targetScale);
   };
 
   const pointerDownHandler = (e: PointerEvent) => {
@@ -135,7 +128,6 @@ export function enhanceZoom(
   };
 
   el.addEventListener("wheel", wheelHandler, { passive: false });
-  el.addEventListener("dblclick", dblClickHandler);
   el.addEventListener("pointerdown", pointerDownHandler);
   el.addEventListener("pointermove", pointerMoveHandler);
   el.addEventListener("pointerup", pointerUpHandler);
@@ -171,7 +163,6 @@ export function enhanceZoom(
     },
     destroy() {
       el.removeEventListener("wheel", wheelHandler as EventListener);
-      el.removeEventListener("dblclick", dblClickHandler as EventListener);
       el.removeEventListener("pointerdown", pointerDownHandler as EventListener);
       el.removeEventListener("pointermove", pointerMoveHandler as EventListener);
       el.removeEventListener("pointerup", pointerUpHandler as EventListener);

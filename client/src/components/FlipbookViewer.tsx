@@ -713,7 +713,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       return Number.isFinite(fit) && fit > 0 ? fit : 1;
     };
 
-    const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 1, max: 4, dblStep: 2 });
+  const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 0.5, max: 4, dblStep: 2 });
     zoomApiRef.current = zoomApi;
 
     const tap = enableTapFlip(
