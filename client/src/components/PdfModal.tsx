@@ -141,9 +141,14 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-xl z-50"
+            className="fixed inset-0 z-50 viewer-backdrop"
             onClick={onClose}
             aria-hidden="true"
+            style={{
+              background: 'color-mix(in srgb, #0b0b0f 55%, transparent)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)'
+            }}
           />
 
           <div
@@ -180,37 +185,56 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
 
               <div className="flex-1 relative overflow-hidden">
                 {isMobile && (
-                  <div
-                    className="absolute inset-x-0 flex items-center gap-2 px-3 py-2 z-30 bg-black/45 backdrop-blur-lg rounded-3xl"
-                    style={{
-                      top: `calc(env(safe-area-inset-top, 0px) + 8px)`,
-                      opacity: showMobileChrome ? 1 : 0,
-                      pointerEvents: showMobileChrome ? "auto" : "none",
-                      transition: "opacity 200ms ease",
-                      paddingLeft: `calc(env(safe-area-inset-left, 0px) + 16px)`,
-                      paddingRight: `calc(env(safe-area-inset-right, 0px) + 16px)`,
-                    }}
-                  >
+                  <>
+                    <div
+                      className="absolute inset-x-0 flex items-center gap-2 px-3 py-2 z-30 bg-black/45 backdrop-blur-lg rounded-3xl pdf-titlebar-mobile"
+                      style={{
+                        top: `calc(env(safe-area-inset-top, 0px) + 8px)`,
+                        opacity: showMobileChrome ? 1 : 0,
+                        pointerEvents: showMobileChrome ? "auto" : "none",
+                        transition: "opacity 200ms ease",
+                        paddingLeft: `calc(env(safe-area-inset-left, 0px) + 16px)`,
+                        paddingRight: `calc(env(safe-area-inset-right, 0px) + 16px)`,
+                      }}
+                    >
+                      <button
+                        ref={closeButtonRef}
+                        onClick={onClose}
+                        className="flex items-center justify-center w-10 h-10 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white"
+                        aria-label="Close viewer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                      <div className="flex-1 text-center text-white text-sm font-medium truncate drop-shadow-lg">
+                        {pub.title} ({pub.year})
+                      </div>
+                      <a
+                        href={asset(pub.pdfPath)}
+                        download
+                        className="flex items-center justify-center gap-2 h-10 px-4 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-sm"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download</span>
+                      </a>
+                    </div>
+                    
+                    {/* Standalone close button for landscape mode */}
                     <button
-                      ref={closeButtonRef}
                       onClick={onClose}
-                      className="flex items-center justify-center w-10 h-10 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white"
+                      className="pdf-close-btn-landscape absolute z-30 flex items-center justify-center w-10 h-10 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white"
+                      style={{
+                        top: `calc(env(safe-area-inset-top, 0px) + 12px)`,
+                        right: `calc(env(safe-area-inset-right, 0px) + 12px)`,
+                        opacity: showMobileChrome ? 1 : 0,
+                        transform: showMobileChrome ? 'translateY(0)' : 'translateY(-6px)',
+                        pointerEvents: showMobileChrome ? "auto" : "none",
+                        transition: "opacity 200ms ease, transform 200ms ease",
+                      }}
                       aria-label="Close viewer"
                     >
                       <X className="w-5 h-5" />
                     </button>
-                    <div className="flex-1 text-center text-white text-sm font-medium truncate drop-shadow-lg">
-                      {pub.title} ({pub.year})
-                    </div>
-                    <a
-                      href={asset(pub.pdfPath)}
-                      download
-                      className="flex items-center justify-center gap-2 h-10 px-4 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </a>
-                  </div>
+                  </>
                 )}
                 <FlipbookViewer 
                   pdfUrl={asset(pub.pdfPath)} 

@@ -14,6 +14,7 @@ import "@/viewer/flipbook.css";
 import { enhanceZoom, ZoomState } from "@/viewer/enhanceZoom";
 import { mountToolbar } from "@/viewer/toolbar";
 import { enableSwipeNav } from "@/viewer/swipeNav";
+import { enableTapFlip } from "@/viewer/tapFlip";
 
 // Use local PDF.js worker for better reliability and version consistency
 if (typeof window !== 'undefined') {
@@ -237,6 +238,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const zoomApiRef = useRef<ReturnType<typeof enhanceZoom> | null>(null);
   const toolbarRef = useRef<ReturnType<typeof mountToolbar> | null>(null);
   const swipeNavRef = useRef<{ destroy: () => void } | null>(null);
+  const tapFlipRef = useRef<{ destroy: () => void } | null>(null);
   const zoomAnimationFrameRef = useRef<number>();
   const lastZoomRatioRef = useRef(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
@@ -740,6 +742,18 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       swipeNavRef.current = swipe;
     }
 
+    // Enable tap-to-flip on desktop (non-touch devices)
+    if (!isTouchViewer) {
+      const tapFlip = enableTapFlip(
+        surface,
+        () => zoomApi.getState().scale,
+        () => zoomApi.getState().fit,
+        () => goToPrevPage(),
+        () => goToNextPage()
+      );
+      tapFlipRef.current = tapFlip;
+    }
+
     const handleResize = () => {
       const nextFit = computeFit();
       const state = zoomApi.getState();
@@ -766,6 +780,10 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
       if (swipeNavRef.current) {
         swipeNavRef.current.destroy();
         swipeNavRef.current = null;
+      }
+      if (tapFlipRef.current) {
+        tapFlipRef.current.destroy();
+        tapFlipRef.current = null;
       }
       setZoomLevel(1);
       lastZoomRatioRef.current = 1;
