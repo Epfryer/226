@@ -45,18 +45,20 @@ export function enhanceZoom(
 
   const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 
-  const zoomAt = (cx: number, cy: number, nextScale: number) => {
+  const zoomAt = (_cx: number, _cy: number, nextScale: number) => {
     nextScale = clamp(nextScale, state.min * state.fit, state.max * state.fit);
     const prev = state.scale;
     if (nextScale === prev) return;
 
     const rect = el.getBoundingClientRect();
-    const ox = cx - rect.left - state.x;
-    const oy = cy - rect.top - state.y;
+    const anchorX = rect.left + rect.width / 2;
+    const anchorY = rect.top + rect.height / 2;
+    const ox = anchorX - rect.left - state.x;
+    const oy = anchorY - rect.top - state.y;
     const k = nextScale / prev;
 
-    state.x = cx - rect.left - ox * k;
-    state.y = cy - rect.top - oy * k;
+    state.x = anchorX - rect.left - ox * k;
+    state.y = anchorY - rect.top - oy * k;
     state.scale = nextScale;
     apply(state);
   };
@@ -71,7 +73,7 @@ export function enhanceZoom(
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
     const factor = Math.exp(-e.deltaY * 0.0015);
-    zoomAt(e.clientX, e.clientY, state.scale * factor);
+    zoomAt(0, 0, state.scale * factor);
   };
 
   const pointerDownHandler = (e: PointerEvent) => {
