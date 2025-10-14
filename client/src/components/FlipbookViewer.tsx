@@ -232,6 +232,22 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const abortControllers = useRef<Map<number, AbortController>>(new Map());
   const navigationDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Debug logging for development
+  useEffect(() => {
+    if (debugMode) {
+      console.log('FlipbookViewer Debug State:', {
+        loading,
+        error,
+        pdfDoc: !!pdfDoc,
+        totalPages,
+        pageWidth,
+        pageHeight,
+        pdfAspectRatio,
+        containerSize: containerRef.current?.getBoundingClientRect()
+      });
+    }
+  }, [loading, error, pdfDoc, totalPages, pageWidth, pageHeight, pdfAspectRatio, debugMode]);
+
   // Save page position whenever it changes
   useEffect(() => {
     if (currentPage > 0) {
@@ -727,6 +743,21 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         onAspectRatioDetected(aspectRatio);
       }
 
+      // Force container size detection and dimension calculation immediately
+      setTimeout(() => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            setContainerSize({ width: rect.width, height: rect.height });
+          } else {
+            // Use fallback dimensions if container size still not available
+            const fallbackWidth = isMobile ? 375 : 1200;
+            const fallbackHeight = isMobile ? 667 : 800;
+            setContainerSize({ width: fallbackWidth, height: fallbackHeight });
+          }
+        }
+      }, 0); // Immediate but async
+
       // Cleanup the page to prevent memory leaks
       if (firstPage.cleanup) {
         firstPage.cleanup();
@@ -755,6 +786,9 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
           onLoadProgress={({ loaded, total }) => {
             const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
             setLoadingProgress(progress);
+            if (debugMode) {
+              console.log(`PDF Loading Progress: ${progress}%`);
+            }
           }}
           onLoadError={(error) => {
             console.error("Error loading PDF:", error);
@@ -770,15 +804,26 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
               {/* Loading state is handled by the `loading` prop of Document */}
             </div>
           ) : (
-            pageWidth && pageHeight && totalPages > 0 && (
-              <div 
-                className="absolute inset-0"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
+            // Render flipbook as soon as we have basic requirements
+            pdfDoc && totalPages > 0 && pageWidth && pageHeight && (
+              <>
+                {debugMode && (
+                  <div className="absolute top-16 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs">
+                    <div>PDF: {pdfDoc ? '✓' : '✗'}</div>
+                    <div>Pages: {totalPages}</div>
+                    <div>Size: {pageWidth}×{pageHeight}</div>
+                    <div>Aspect: {pdfAspectRatio?.toFixed(2)}</div>
+                    <div>Ready: {isFlipbookReady ? '✓' : '✗'}</div>
+                  </div>
+                )}
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
                 <HTMLFlipBook
                   key={`${pageWidth}-${pageHeight}-${pdfUrl}`}
                   width={pageWidth}
@@ -891,7 +936,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                     );
                   })}
                 </HTMLFlipBook>
-              </div>
+                </div>
+              </>
             )
           )}
         </Document>

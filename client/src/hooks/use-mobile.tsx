@@ -1,19 +1,24 @@
-import * as React from "react"
+import { useState, useEffect } from "react"
 
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  // Initialize with SSR-safe value that won't cause hydration mismatches
+  const [isMobile, setIsMobile] = useState<boolean>(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
+    // Set initial value immediately
+    const checkMobile = () => window.innerWidth < MOBILE_BREAKPOINT
+    setIsMobile(checkMobile())
+
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      setIsMobile(checkMobile())
     }
+    
     mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobile
+  return isMobile
 }

@@ -103,12 +103,13 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
           >
             <motion.div
               ref={modalRef}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 1 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="relative w-full h-full flex flex-col max-w-[98vw] sm:max-w-[95vw] max-h-[98vh] sm:max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
+              style={{ willChange: 'opacity' }}
             >
               <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
                 <h2 id="modal-title" className="text-sm sm:text-lg md:text-xl font-semibold text-white drop-shadow-lg truncate mr-2">
