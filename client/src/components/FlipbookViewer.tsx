@@ -224,6 +224,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const [isDevicePortrait, setIsDevicePortrait] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [hasShownPortraitToast, setHasShownPortraitToast] = useState(false);
+  const [canvasRefsReady, setCanvasRefsReady] = useState(false);
   const bookRef = useRef<any>(null);
   const pinchStartDistance = useRef<number | null>(null);
   const pinchStartZoom = useRef<number>(1);
@@ -231,6 +232,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const textLayerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const abortControllers = useRef<Map<number, AbortController>>(new Map());
   const navigationDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const canvasCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debug logging for development
   useEffect(() => {
@@ -293,6 +295,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     setPageHeight(null);
     setLoading(true);
     setIsFlipbookReady(false);
+    setCanvasRefsReady(false);
     setLoadingProgress(0);
     setError(null);
     setCurrentPage(1);
@@ -305,6 +308,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     textLayerRefs.current.clear();
     abortControllers.current.forEach(controller => controller.abort());
     abortControllers.current.clear();
+    
+    // Clear any pending canvas check timer
+    if (canvasCheckTimerRef.current) {
+      clearInterval(canvasCheckTimerRef.current);
+      canvasCheckTimerRef.current = null;
+    }
   }, [pdfUrl]);
 
   useEffect(() => {
@@ -445,19 +454,38 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!isFlipbookReady || !pdfDoc || !pageWidth || !pageHeight) return;
     
-    // Small delay to ensure canvas refs are registered
-    const timer = setTimeout(() => {
-      console.log('[PDF Init] Flipbook ready, checking canvas refs...');
+    // Check for canvas refs periodically until they're available
+    const checkCanvasRefs = () => {
       const canvasCount = canvasRefs.current.size;
-      console.log(`[PDF Init] Found ${canvasCount} canvas refs`);
+      console.log(`[PDF Init] Checking canvas refs... found ${canvasCount}`);
       
-      if (canvasCount === 0) {
-        console.warn('[PDF Init] No canvas refs found yet, will retry on next effect');
+      if (canvasCount > 0) {
+        console.log('[PDF Init] Canvas refs are ready, triggering render');
+        setCanvasRefsReady(true);
+        if (canvasCheckTimerRef.current) {
+          clearInterval(canvasCheckTimerRef.current);
+          canvasCheckTimerRef.current = null;
+        }
+      } else {
+        console.warn('[PDF Init] No canvas refs found yet, will retry...');
       }
-    }, 50);
+    };
     
-    return () => clearTimeout(timer);
-  }, [isFlipbookReady, pdfDoc, pageWidth, pageHeight]);
+    // Initial check after a small delay
+    setTimeout(checkCanvasRefs, 50);
+    
+    // If not ready yet, check periodically
+    if (!canvasRefsReady) {
+      canvasCheckTimerRef.current = setInterval(checkCanvasRefs, 100);
+    }
+    
+    return () => {
+      if (canvasCheckTimerRef.current) {
+        clearInterval(canvasCheckTimerRef.current);
+        canvasCheckTimerRef.current = null;
+      }
+    };
+  }, [isFlipbookReady, pdfDoc, pageWidth, pageHeight, canvasRefsReady]);
 
   // Render pages when they become visible or dimensions change
   // Virtualization: keep only current ±2 pages rendered to prevent memory issues
@@ -467,6 +495,12 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     // Wait for flipbook to be ready before rendering
     if (!isFlipbookReady) {
       console.log('[PDF Render] Waiting for flipbook to be ready...');
+      return;
+    }
+    
+    // Wait for canvas refs to be registered
+    if (!canvasRefsReady) {
+      console.log('[PDF Render] Waiting for canvas refs to be ready...');
       return;
     }
 
@@ -564,7 +598,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     };
 
     renderVisiblePages();
-  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight, isFlipbookReady]);
+  }, [pdfDoc, currentPage, totalPages, pageWidth, pageHeight, isFlipbookReady, canvasRefsReady]);
 
   const handleFlip = (e: any) => {
     setCurrentPage(e.data + 1);
