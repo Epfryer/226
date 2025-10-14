@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Download } from "lucide-react";
 import type { Publication } from "@/data/publications";
-import { FlipBookViewer } from "./FlipBookViewer";
+import { FlipbookViewer } from "./FlipbookViewer";
 import { asset } from "@/utils/asset";
 
 interface PdfModalProps {
@@ -75,6 +75,12 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
 
   if (!pub) return null;
 
+  const handleFullscreen = () => {
+    const viewerUrl = asset('pdfjs/web/viewer.html');
+    const fileUrl = asset(pub.pdfPath);
+    window.open(`${viewerUrl}?file=${encodeURIComponent(fileUrl)}#zoom=page-fit`, '_blank');
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -101,25 +107,44 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative w-full h-full max-w-[100vw] max-h-[100vh]"
+              className="relative w-full h-full flex flex-col max-w-[98vw] sm:max-w-[95vw] max-h-[98vh] sm:max-h-[95vh]"
               onClick={(e) => e.stopPropagation()}
               style={{ willChange: 'opacity' }}
             >
-              <button
-                ref={closeButtonRef}
-                onClick={onClose}
-                className="absolute top-4 left-4 z-30 p-2 bg-black/50 backdrop-blur-md hover:bg-black/70 rounded-full transition-all"
-                aria-label="Close modal"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
+              <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
+                <h2 id="modal-title" className="text-sm sm:text-lg md:text-xl font-semibold text-white drop-shadow-lg truncate mr-2">
+                  {pub.title} ({pub.year})
+                </h2>
+                <button
+                  ref={closeButtonRef}
+                  onClick={onClose}
+                  className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </button>
+              </div>
 
-              <FlipBookViewer
-                file={asset(pub.pdfPath)}
-                title={`${pub.title} (${pub.year})`}
-                initialMode="auto"
-                onClose={onClose}
-              />
+              <div className="flex-1 relative overflow-hidden">
+                <FlipbookViewer 
+                  pdfUrl={asset(pub.pdfPath)} 
+                  onFullscreen={handleFullscreen}
+                  onAspectRatioDetected={setAspectRatio}
+                />
+
+                {/* Download button overlay */}
+                <div className="absolute top-4 right-4 z-20">
+                  <a
+                    href={asset(pub.pdfPath)}
+                    download
+                    className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
+                  >
+                    <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Download PDF</span>
+                    <span className="sm:hidden">Download</span>
+                  </a>
+                </div>
+              </div>
             </motion.div>
           </div>
         </>
