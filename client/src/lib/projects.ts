@@ -184,10 +184,10 @@ export const projects: Project[] = [
   {
     id: "Chicago Stu",
   title: "4th Year Competition",
-  location: "Southside, Chciago",
+  location: "Southside, Chicago",
   year: 2025,
   description: "Tasked with creating 100 affordable housing units, the project site is in the Logan Square neighborhood in Chicago along the 'Milwaukee Cultural Corridor' situated between the Concord Music Hall and Congress Theater. The project sits on a vast undeveloped lot on this cultural corridor that has been a hole in the urban fabric waiting to be engaged with. The two historic venues are pulling from both sides, creating a stage between them for the public, opening the curtain of the new development to allow the public to experience the space behind the curtain. The concept of 'Behind the Curtain' draws inspiration from the historical transition of form and function embodied by curtains. Initially serving as practical dividers, curtains evolved into symbols of anticipation and spectacle, embodying the essence of revelation. This evolution mirrors the architectural journey from mere structural necessity to expressive artistry.",
-  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards_nsdyia.jpg",  // Updated to Cloudinary URL
+  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards_nsdyia.jpg",
   images: [
     "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards2_jrfhdp.jpg",
     "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557822/ChistuBoards3_iy82ff.jpg",
