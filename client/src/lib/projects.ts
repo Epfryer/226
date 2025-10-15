@@ -172,10 +172,11 @@ export const projects: Project[] = [
     title: "AIA Virgina BauthHaus",
     location: "Alexandria, Virginia",
     year: 2025,
-    description: "This thesis challenges the rigidity of the Cartesian Grid by proposing a shift toward a Dynamic use of euclidean Space, allowing urban circulation to evolve beyond static corridors into a meandering, adaptive network. This model fosters organic interactions within public transportation and infrastructure, breaking the reliance on rigid zoning and fixed hierarchies.The 78 project applies this Framework of Dynamic Bridges, redistributing urban density and freeing the tower from its traditional role as the city’s sole vertical icon. By interweaving public and private realms across multiple planes, the city streets transforms into a fluid, Urban model rather than a collection of isolated structures. As architecture embraces dynamic adaptability, the city of the future may not just be built, but animated like the grand narratives once confined to Hollywood’s silver screen",
-    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF_iqucdo.jpg",  // Updated to Cloudinary URL
+    description: "Set within the urban fabric of Alexandria, Virginia, In the Pursuit of Life, Liberty & Happiness reimagines the public bath as a civic equalizer — a space where comfort, dignity, and access intersect. The project addresses disparities in hygiene infrastructure by designing modular, transparent bath units that prioritize visibility, safety, and autonomy. Each pod adapts between “Occupied” and “Unoccupied” states, symbolizing both privacy and public trust.The design layers equity, equality, and empathy into a spatial narrative — a sequence of accessible pods, reflective enclosures, and illuminated thresholds that operate as both functional infrastructure and social statement. At night, the architecture transforms into a glowing civic landmark, embodying the American ideals of Life, Liberty, and Happiness through the lens of equitable design.",
+    image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760565962/AIA_Bauthaus_bey1te.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF2_iznfp4.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760565963/AIA_Bauthaus2_lz1x01.jpg",
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760565962/AIA_Bauthaus3_peys3p.jpg",
     ],
     category: "Competition",
     metadata: ["2025", "Office"]
@@ -199,10 +200,11 @@ export const projects: Project[] = [
   title: "House Of light & Shadows",
   location: "New Mexico",
   year: 2025,
-  description: "This thesis challenges the rigidity of the Cartesian Grid by proposing a shift toward a Dynamic use of euclidean Space, allowing urban circulation to evolve beyond static corridors into a meandering, adaptive network. This model fosters organic interactions within public transportation and infrastructure, breaking the reliance on rigid zoning and fixed hierarchies.The 78 project applies this Framework of Dynamic Bridges, redistributing urban density and freeing the tower from its traditional role as the city’s sole vertical icon. By interweaving public and private realms across multiple planes, the city streets transforms into a fluid, Urban model rather than a collection of isolated structures. As architecture embraces dynamic adaptability, the city of the future may not just be built, but animated like the grand narratives once confined to Hollywood’s silver screen",
-  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF_iqucdo.jpg",  // Updated to Cloudinary URL
+  description: "With Noah Freedman, David Kitterman, and Nicholas Cabral, Teranova explores the dialogue between the terrestrial and celestial realms through a dwelling shared by a Navajo and an astronomer. The design bridges Earth and cosmos — one rooted in cultural heritage, the other in scientific exploration — creating a shared architecture of reflection and discovery. Drawing inspiration from Navajo cosmology and the astronomer’s gaze into the infinite, the project manifests as a dual habitat: one embedded within the landscape, the other oriented toward the stars. Together, they form a spatial continuum between observation and grounding — a poetic union of myth, science, and dwelling that celebrates humanity’s enduring pursuit of understanding our place in the universe.",
+  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760566433/Project_Shadows_vxel4r.jpg",  // Updated to Cloudinary URL
   images: [
-    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF2_iznfp4.jpg",
+    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760566433/Project_Shadows2_m66ow1.jpg",
+    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760566432/Project_Shadows3_guflmi.jpg",
   ],
   category: "Competition",
   metadata: ["2024", "Office"]
