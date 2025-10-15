@@ -23,7 +23,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289071/Circus3_azussb.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289078/Circus4_c69anh.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289074/Circus5_rxn4zj.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289176/Untitled-1_vozsjt.jpg", 
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289176/Untitled-1_vozsjt.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289175/Untitled-12_mglonv.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289079/Circus8_xuryh8.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738289076/Circus9_ecsu04.jpg",
@@ -64,7 +64,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337827/Statue_Haus2_rvwcqd.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337828/Statue_Haus3_xeep34.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus4_uvl6f0.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus1_nlesjf.jpg", 
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus1_nlesjf.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337944/Statue_Haus12_c4q60i.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337945/Statue_Haus13_u8f5xg.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738337829/Statue_Haus8_pzqz9v.jpg",
@@ -185,8 +185,7 @@ export const projects: Project[] = [
   title: "4th Year Competition",
   location: "Southside, Chciago",
   year: 2025,
-  description: "	Tasked with creating 100 affordable housing units, the project site is in the Logan Square neighborhood in Chicago along the 'Milwaukee Cultural Corridor 'situated between the Concord Music Hall and Congress Theater. The project sits on a vast, undeveloped lot in this cultural corridor, a hole in the urban fabric waiting to be engaged. The two historic venues are pulling from both sides, creating a stage for the public between them, opening the curtain on the new development so the public can experience the space behind it. The concept of “Behind the Curtain” draws inspiration from the historical transition of form and function embodied by curtains. Initially serving as practical dividers, curtains evolved into symbols of anticipation and spectacle, embodying the essence of revelation. This evolution mirrors the architectural journey from mere structural necessity to expressive artistry.
-",
+  description: "Tasked with creating 100 affordable housing units, the project site is in the Logan Square neighborhood in Chicago along the 'Milwaukee Cultural Corridor' situated between the Concord Music Hall and Congress Theater. The project sits on a vast undeveloped lot on this cultural corridor that has been a hole in the urban fabric waiting to be engaged with. The two historic venues are pulling from both sides, creating a stage between them for the public, opening the curtain of the new development to allow the public to experience the space behind the curtain. The concept of 'Behind the Curtain' draws inspiration from the historical transition of form and function embodied by curtains. Initially serving as practical dividers, curtains evolved into symbols of anticipation and spectacle, embodying the essence of revelation. This evolution mirrors the architectural journey from mere structural necessity to expressive artistry.",
   image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards_nsdyia.jpg",  // Updated to Cloudinary URL
   images: [
     "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards2_jrfhdp.jpg",
