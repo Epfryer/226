@@ -166,7 +166,7 @@ export const projects: Project[] = [
     ],
     category: "Academic",
     metadata: ["2022", "Office"]
-  }
+  },
   {
     id: "AIA Comp",
     title: "AIA Virgina BauthHaus",
@@ -196,9 +196,9 @@ export const projects: Project[] = [
     ],
     category: "Competition",
     metadata: ["2025", "Office"]
-  }
-{
-  id: "Chicago Stu",
+  },
+  {
+    id: "Chicago Stu",
   title: "4th Year Competition",
   location: "Southside, Chciago",
   year: 2025,
@@ -209,7 +209,7 @@ export const projects: Project[] = [
   ],
   category: "Competition",
   metadata: ["2024", "Office"]
-}
+},
 {
   id: "International Comp",
   title: "House Of light & Shadows",
