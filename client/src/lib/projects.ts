@@ -96,7 +96,7 @@ export const projects: Project[] = [
     description: "For the Spring 2024 Chicago Studio, my partner  Spencer Schmalzried and I were tasked with transforming a vacant site in Logan Square into a 100-unit mixed-use affordable housing complex and cultural venue along the future “Milwaukee Cultural Corridor.” Rooted in the concept of the “curtain” as a threshold between public and private, our design blends residential, commercial, and cultural spaces. The project features low-rise housing, a 10,000-square-foot music school, and 3,000 square feet of commercial space to support local businesses. The narrative unfolds through three courtyards: a resident-focused sanctuary with a gym, daycare, and co-working spaces; a public plaza hosting markets and art installations; and a performance courtyard with an amphitheater for music recitals. Inspired by the Congress Theatre and Concord Music Hall, “Behind the Curtain” blurs the line between performance and daily life, fostering a vibrant community where creativity and connection thrive.",
     image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545517/Chicago_Studio_vr1pa4.jpg",  // Updated to Cloudinary URL
     images: [
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545517/Chicago_Studio2_ubx9jm.jpg"
+      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545517/Chicago_Studio2_ubx9jm.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545527/Chicago_Studio3_i71ebw.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545518/Chicago_Studio4_uk2mgs.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1760545526/Chicago_Studio5_mpv0qs.jpg",
