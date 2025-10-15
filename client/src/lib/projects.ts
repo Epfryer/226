@@ -85,7 +85,7 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343815/Bike_Hub4_no3dfl.jpg",
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1738343812/Bike_Hub5_dp8ebn.jpg"
     ],
-    category: "Competiton",
+    category: "Competition",
     metadata: ["2023", "Cultural"]
   },
   {
@@ -176,23 +176,6 @@ export const projects: Project[] = [
     image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF_iqucdo.jpg",  // Updated to Cloudinary URL
     images: [
       "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF2_iznfp4.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548952/Thesis_DEF3_tetgvj.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548951/Thesis_DEF4_svw7gw.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548952/Thesis_DEF5_qlltxr.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF6_avinls.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF7_r2nqck.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548953/Thesis_DEF8_xlbxlw.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548953/Thesis_DEF9_wzrjmh.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF10_fmpbzj.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF11_bpqtoz.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548951/Thesis_DEF12_puffct.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548951/Thesis_DEF13_qunelj.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548953/Thesis_DEF14_enzvs5.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548954/Thesis_DEF15_eq2bqb.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548952/Thesis_DEF16_p3ihag.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548954/Thesis_DEF17_doakep.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548953/Thesis_DEF18_ctwq1x.jpg",
-      "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF19_tpbka9.jpg",
     ],
     category: "Competition",
     metadata: ["2025", "Office"]
@@ -202,10 +185,12 @@ export const projects: Project[] = [
   title: "4th Year Competition",
   location: "Southside, Chciago",
   year: 2025,
-  description: "This thesis challenges the rigidity of the Cartesian Grid by proposing a shift toward a Dynamic use of euclidean Space, allowing urban circulation to evolve beyond static corridors into a meandering, adaptive network. This model fosters organic interactions within public transportation and infrastructure, breaking the reliance on rigid zoning and fixed hierarchies.The 78 project applies this Framework of Dynamic Bridges, redistributing urban density and freeing the tower from its traditional role as the city’s sole vertical icon. By interweaving public and private realms across multiple planes, the city streets transforms into a fluid, Urban model rather than a collection of isolated structures. As architecture embraces dynamic adaptability, the city of the future may not just be built, but animated like the grand narratives once confined to Hollywood’s silver screen",
-  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548950/Thesis_DEF_iqucdo.jpg",  // Updated to Cloudinary URL
+  description: "	Tasked with creating 100 affordable housing units, the project site is in the Logan Square neighborhood in Chicago along the 'Milwaukee Cultural Corridor 'situated between the Concord Music Hall and Congress Theater. The project sits on a vast, undeveloped lot in this cultural corridor, a hole in the urban fabric waiting to be engaged. The two historic venues are pulling from both sides, creating a stage for the public between them, opening the curtain on the new development so the public can experience the space behind it. The concept of “Behind the Curtain” draws inspiration from the historical transition of form and function embodied by curtains. Initially serving as practical dividers, curtains evolved into symbols of anticipation and spectacle, embodying the essence of revelation. This evolution mirrors the architectural journey from mere structural necessity to expressive artistry.
+",
+  image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards_nsdyia.jpg",  // Updated to Cloudinary URL
   images: [
-    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760548949/Thesis_DEF2_iznfp4.jpg",
+    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557821/ChistuBoards2_jrfhdp.jpg",
+    "https://res.cloudinary.com/dtxqagii0/image/upload/v1760557822/ChistuBoards3_iy82ff.jpg",
   ],
   category: "Competition",
   metadata: ["2024", "Office"]
