@@ -1,8 +1,5 @@
 import { motion } from "framer-motion";
 import { Timeline } from "@/components/Timeline";
-import { WhiteHeader } from "@/components/layout/WhiteHeader";
-// Added import for WhiteFooter
-import { WhiteFooter } from "@/components/layout/WhiteFooter";
 
 
 export default function About() {
@@ -55,7 +52,6 @@ export default function About() {
 
   return (
     <div className="min-h-screen bg-black">
-      <WhiteHeader /> {/* Added WhiteHeader here */}
       <div className="pt-24">
         <motion.div
           initial={{ opacity: 0 }}
@@ -94,9 +90,7 @@ export default function About() {
         </motion.div>
         <Timeline data={timelineData} />
       </div>
-      <WhiteFooter />
     </div>
   );
 }
 
-// Placeholder WhiteFooter component
