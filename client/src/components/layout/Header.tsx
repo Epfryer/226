@@ -17,11 +17,11 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 z-50 p-6">
+    <header className="fixed top-0 left-0 z-50 w-full p-6">
       <div>
-        <div className="flex items-start">
+        <div className="flex items-center justify-between md:block">
           <motion.div 
-            className={`text-2xl font-bold inline-block ${isAboutPage ? 'text-white' : ''}`}
+            className={`ml-2 text-2xl font-bold inline-block md:ml-0 ${isAboutPage ? 'text-white' : ''}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -56,6 +56,13 @@ export function Header() {
               )}
             </Link>
           </motion.div>
+          <button 
+            className="md:hidden relative z-10"
+            onClick={() => setIsOpen(!isOpen)}
+            style={headerStyle}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
 
         <div 
@@ -78,17 +85,9 @@ export function Header() {
           </nav>
         </div>
 
-        <button 
-          className="md:hidden relative z-10"
-          onClick={() => setIsOpen(!isOpen)}
-          style={headerStyle}
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-
         {isOpen && !isProjectExpanded && (
           <div
-            className={`absolute top-16 left-0 ${isAboutPage ? 'bg-transparent' : 'bg-white'} py-4 px-6 md:hidden`}
+            className={`absolute top-16 left-6 right-6 ${isAboutPage ? 'bg-transparent' : 'bg-white'} py-4 px-6 md:hidden`}
           >
             <nav className="flex flex-col space-y-4">
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/">
