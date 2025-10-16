@@ -75,7 +75,7 @@ export default function About() {
 
             <div className="prose prose-lg text-white">
               <p>
-                Ethan Fryer is an architecture Graduate at Virginia Tech College of Architecture Arts and Design.
+                Ethan Fryer is an Architecture Graduate at Virginia Tech College of Architecture Arts and Design.
               </p>
 
               <p>
