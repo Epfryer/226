@@ -12,7 +12,7 @@ export default function About() {
       content: (
         <div>
           <p className="text-white text-xs md:text-sm font-normal mb-8">
-            Current B.Arch Student at Virginia Tech College of Architecture Arts and Design
+            Graduate B.Arch Student From Virginia Tech College of Architecture Arts and Design
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <img
@@ -79,11 +79,11 @@ export default function About() {
 
             <div className="prose prose-lg text-white">
               <p>
-                Ethan Fryer is an architecture student at Virginia Tech College of Architecture Arts and Design.
+                Ethan Fryer is an architecture Graduate at Virginia Tech College of Architecture Arts and Design.
               </p>
 
               <p>
-                Coming soon
+               More Coming soon
               </p>
 
               <p>

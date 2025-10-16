@@ -32,9 +32,9 @@ export default function Contact() {
               <h2 className="text-xl font-medium mb-4">What is D.EF</h2>
               <address className="text-gray-600 not-italic">
                 D.EF - Dangerously Euphoric Functions<br />
-                45 Main Street<br />
-                New York, NY 11201<br />
-                United States
+                No Silly<br />
+                Designs by Ethan Fryer<br />
+                Palm Harbor Fl, United States
               </address>
               
               <div className="mt-4">
@@ -47,8 +47,8 @@ export default function Contact() {
 
           <div className="mt-12">
             <h2 className="text-xl font-medium mb-4">General Inquiries</h2>
-            <a href="mailto:Epfryer@vt.edu" className="text-gray-600 hover:text-black">
-              Epfryer@vt.edu
+            <a href="mailto:Epfryer@me.com" className="text-gray-600 hover:text-black">
+              Epfryer@me.com
             </a>
           </div>
         </div>
