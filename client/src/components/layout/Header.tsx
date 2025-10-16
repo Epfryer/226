@@ -79,7 +79,7 @@ export function Header() {
         </div>
 
         <button 
-          className="md:hidden"
+          className="md:hidden relative z-10"
           onClick={() => setIsOpen(!isOpen)}
           style={headerStyle}
         >
