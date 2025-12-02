@@ -14,7 +14,7 @@ Preferred communication style: Simple, everyday language.
 
 **Framework & Routing:**
 - React 18+ with TypeScript for type safety
-- Wouter for lightweight client-side routing (routes: Home `/`, About `/about`, Contact `/contact`)
+- Wouter for lightweight client-side routing (routes: Home `/`, About `/about`, Publications `/publications`, Studio `/studio`, Contact `/contact`)
 - Vite as the build tool and development server
 
 **UI Component System:**
@@ -127,8 +127,17 @@ Preferred communication style: Simple, everyday language.
 - esbuild for production server bundling
 - Replit-specific Vite plugins for theme and error handling
 
+**Studio/Shop Integration:**
+- `/studio` page implements a gallery-style shop interface
+- 3-column layout: category sidebar, product grid, detail panel
+- Integrated with Printful API for product data (`/api/shop/products`)
+- Features staggered animations, hover effects, and crossfade transitions
+- Mobile responsive with horizontal category pills and bottom sheet for product details
+- SSR-safe media query hook for responsive behavior
+
 **Missing/Incomplete Integrations:**
 - Authentication system (schema exists but no implementation)
 - API routes for CRUD operations on projects
 - Database migration workflow (Drizzle Kit configured but not utilized)
 - Form submissions for contact page
+- Cart functionality for Studio page (Add to Cart button is placeholder)
