@@ -1,0 +1,348 @@
+This UI is basically your **“STUDIO”** view: a calm, architectural gallery that happens to sell garments, graphics, and objects. I’ll describe it like a spec you can hand straight to an AI dev agent.
+
+---
+
+## 1. Page Concept & Route
+
+**Page name:** `Studio`
+**Route:** `/studio` (or `/shop` that displays “STUDIO” in the UI)
+
+**Concept:**
+A gallery wall, not a typical store. Left = category column, center = asymmetric grid of items, right = description panel of the currently selected item.
+
+Keep the **same header, logo, and typography system** as EthanFryer.com so this feels like just another “section” of your practice, not a separate brand.
+
+---
+
+## 2. Layout Specification (Desktop)
+
+Assume a max content width around **1200–1320px** centered in the viewport.
+
+### 2.1. High-level layout
+
+Use a 3-column layout:
+
+* **Left sidebar (Category rail)**
+
+  * Width: ~160–200px
+  * Background: same as page background (no box)
+  * Content:
+
+    * Top: page label `STUDIO` (all caps)
+    * Below: vertical list of category links:
+
+      * `GARMENTS`
+      * `GRAPHICS`
+      * `OBJECTS`
+      * `STUDIES`
+  * Alignment: top-left, with generous line-height
+
+* **Center column (Gallery grid)**
+
+  * Width: ~55–60% of remaining space
+  * Layout: CSS grid with **2 columns** and variable row heights
+
+    * Gap: 24–32px both directions
+    * Items: mix of garment shots, graphics, and objects
+    * Use different image sizes (some tall, some square) for an **asymmetric grid** effect
+  * Each tile:
+
+    * Clean, borderless image inside subtle card area
+    * Caption either below the main gallery or on hover (see interactions)
+
+* **Right column (Detail panel)**
+
+  * Width: ~280–340px
+  * Shows the **currently selected item**:
+
+    * Title (e.g., `FIELD JACKET 01`)
+    * Material line (e.g., `MODULAR NYLON`)
+    * Short “Intent” paragraph (reads like a design brief)
+    * Price (simple, small)
+    * Action: `Add to Cart` or `Inquire` (depending on how commercial you want to be)
+  * Align this content at the top with plenty of breathing room.
+
+### 2.2. Typographic hierarchy
+
+Reuse existing site font stack and sizes. Rough mapping:
+
+* `STUDIO` label:
+
+  * All caps, same style as section headers on EthanFryer.com
+  * Slight letterspacing
+* Category links:
+
+  * Same font as nav items, slightly smaller than `STUDIO`
+* Item title in detail panel:
+
+  * Same or 1 step larger than body, bold or semi-bold
+* Intent text:
+
+  * Standard body size with generous line height
+* Price:
+
+  * Small and quiet, maybe lighter gray
+
+### 2.3. Color & background
+
+* Page background: use whatever off-white / neutral you’re already using (`var(--background)` or equivalent).
+* Text: mostly near-black (`#111` or your existing `body` color).
+* No bright accent colors on this page. Let product photography carry color.
+
+---
+
+## 3. Component & State Model
+
+Describe to the agent as a simple state-driven layout (works in React, Vue, or vanilla JS):
+
+### 3.1. Data model for items
+
+```jsonc
+[
+  {
+    "id": "field-jacket-01",
+    "category": "GARMENTS",
+    "title": "Field Jacket 01",
+    "material": "Modular Nylon",
+    "intent": "Developed as part of a longer system, meant to move between city and coast...",
+    "price": 180,
+    "images": [
+      "/studio/field-jacket-01-front.jpg",
+      "/studio/field-jacket-01-back.jpg",
+      "/studio/field-jacket-01-detail.jpg"
+    ]
+  },
+  {
+    "id": "ceramic-vessel-01",
+    "category": "OBJECTS",
+    ...
+  }
+]
+```
+
+### 3.2. Components (for an SPA / React-style implementation)
+
+* `<StudioPage>`
+
+  * Holds state: `selectedCategory`, `selectedItemId`
+  * Renders:
+
+    * `<StudioSidebar />`
+    * `<StudioGrid />`
+    * `<StudioDetailPanel />`
+
+* `<StudioSidebar>`
+
+  * Props: `selectedCategory`, `onCategoryChange(category)`
+  * Renders category list; clicking updates `selectedCategory`.
+
+* `<StudioGrid>`
+
+  * Props: `items[]`, `selectedItemId`, `onSelectItem(id)`
+  * Filters items by `selectedCategory`
+  * Renders the asymmetric grid of tiles
+
+* `<StudioDetailPanel>`
+
+  * Props: `item` (the selected one)
+  * Displays title, material, intent, price, and CTA
+
+---
+
+## 4. Interaction & Transition Spec
+
+This is what you can hand to the agent so they know exactly how it should *feel*.
+
+### 4.1. Page load
+
+* **Initial state:**
+
+  * `selectedCategory = "GARMENTS"` (or “ALL” if you want a combined view)
+  * `selectedItem = first item in that category`
+
+* **Animation:**
+
+  * When `/studio` loads:
+
+    * Sidebar fades in from opacity 0 → 1 over `200–250ms`
+    * Grid tiles:
+
+      * Staggered fade + slight upward motion:
+      * Each tile: `opacity: 0; transform: translateY(8px)` → `opacity: 1; translateY(0)`
+      * Delay each by `40–60ms` for a calm cascading effect
+    * Detail panel:
+
+      * Fade + gentle horizontal slide from the right (`translateX(12px)` → `0`)
+
+Use a single CSS class like `.fade-in-up` with `transition: opacity 220ms ease-out, transform 220ms ease-out;` and add a small custom delay per tile.
+
+### 4.2. Hover / focus on grid items
+
+**Desktop:**
+
+* On hover:
+
+  * Image scales slightly: `transform: translateY(-3px)` (no zoom necessary if you don’t want)
+  * Subtle shadow or border appears:
+
+    * `box-shadow` or a 1px border in a light gray
+  * Optional: overlay a very thin text label at bottom:
+
+    * `FIELD JACKET 01` in tiny all caps
+* On keyboard focus:
+
+  * Use the same styles so it’s accessible.
+
+**CSS idea:**
+
+```css
+.studio-item {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out, opacity 200ms ease-out;
+}
+.studio-item:hover,
+.studio-item:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+```
+
+### 4.3. Selecting an item
+
+When user clicks a tile:
+
+1. `selectedItemId` updates.
+2. Detail panel on the right transitions:
+
+   * Old content:
+
+     * Fade out: `opacity 1 → 0` and `translateY(4px)`
+   * New content:
+
+     * Fade in: `opacity 0 → 1` and `translateY(0)`
+
+   Use a **crossfade** effect to keep it soft and non-dramatic.
+
+Implementation pattern (React-ish):
+
+* Wrap detail panel content in a simple transition component, or manually:
+
+  * Add a `key={selectedItemId}` to the container so it re-mounts and animate via CSS.
+
+### 4.4. Changing categories in the sidebar
+
+When clicking `GARMENTS / GRAPHICS / OBJECTS / STUDIES`:
+
+1. Sidebar:
+
+   * Active category uses:
+
+     * Slightly darker text OR
+     * A subtle left border (2px) or bullet.
+   * Transition for active indicator: `transition: color 160ms ease-out, border-color 160ms ease-out;`
+
+2. Grid:
+
+   * Do **not** hard-cut.
+   * Option A (simpler):
+
+     * Fade all items out (`opacity: 1 → 0` over 150ms).
+     * After `150ms`, swap the filtered item list and fade the new ones in with the same staggered fade-up as on initial load.
+   * Option B (fancier, but optional):
+
+     * Use CSS transitions with FLIP technique; but for an AI agent, Option A is safer.
+
+3. Detail panel:
+
+   * Automatically set `selectedItem` to the first item in the new category.
+   * Crossfade content same as in 4.3.
+
+### 4.5. Add-to-cart / interaction
+
+Even if you integrate a full cart later, keep the button visually quiet:
+
+* Text: `Add to Cart` or `Inquire`
+* Button style:
+
+  * Thin border, same text color as body
+  * Slight radius (matching your existing buttons)
+  * Hover: subtle background tint, maybe 3–5% darker than page background.
+
+---
+
+## 5. Responsive / Mobile Behavior
+
+When viewport width < ~900px:
+
+* Collapse into a **single-column layout**:
+
+  * Top: `STUDIO` label
+  * Then a **horizontal scroll** of categories:
+
+    * Small pill buttons: `GARMENTS / GRAPHICS / OBJECTS / STUDIES`
+  * Grid below (1 or 2 columns depending on width)
+  * Detail view becomes a **bottom sheet** or full-page overlay:
+
+    * Tapping an item:
+
+      * Opens a full-screen panel:
+
+        * Large image at top
+        * Text and button below
+      * Slide-up animation from bottom: `transform: translateY(100%) → 0; opacity: 0 → 1`
+
+* You can also just route to `/studio/[slug]` on click for mobile, using a standard product page, while keeping the gallery-only layout on desktop.
+
+---
+
+## 6. Integration into EthanFryer.com
+
+Give this part directly to the dev agent:
+
+1. **Navigation**
+
+   * Add a `STUDIO` link in your main navigation next to `Publications`, `About`, `Contact`.
+   * Use the exact same link styles (hover, active, spacing).
+
+2. **Routing**
+
+   * Implement route `/studio` that uses your existing site shell/layout.
+   * Inside shell, render the three-column Studio layout described above.
+
+3. **Styling**
+
+   * Use your existing CSS variables for:
+
+     * `--font-family`
+     * `--background`
+     * `--text-color`
+   * Define a small set of new classes:
+
+     * `.studio-page`
+     * `.studio-sidebar`
+     * `.studio-category`
+     * `.studio-category--active`
+     * `.studio-grid`
+     * `.studio-item`
+     * `.studio-detail`
+
+4. **Assets**
+
+   * Store all images under a folder like `/assets/studio/` or `/public/studio/`.
+   * Keep naming structured (`category-name-01-front.jpg`, `object-02-detail.jpg`).
+
+5. **Accessibility**
+
+   * Use semantic HTML:
+
+     * `<main>` for content region
+     * `<nav>` for category list
+     * `<button>`/`<a>` for interactive elements
+   * Ensure category changes and item selection update ARIA `aria-selected` states where possible.
+
+---
+
+If you paste this whole spec into your dev agent, you can say:
+
+> “Implement a new `/studio` page on EthanFryer.com following this exact layout, structure, and animation behavior, reusing my current typography, colors, and header/footer.”
+
+That should give you a Studio/Shop page that feels **100% integrated** with your site and exactly like the UI in the image.
