@@ -68,6 +68,9 @@ export function WhiteHeader() {
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/publications">
               Publications
             </Link>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/studio">
+              Studio
+            </Link>
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
               About
             </Link>
@@ -95,6 +98,9 @@ export function WhiteHeader() {
               </Link>
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/publications">
                 Publications
+              </Link>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/studio">
+                Studio
               </Link>
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
                 About

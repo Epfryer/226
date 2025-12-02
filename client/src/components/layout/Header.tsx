@@ -76,6 +76,9 @@ export function Header() {
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/publications">
               Publications
             </Link>
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
+              Studio
+            </Link>
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
               About
             </Link>
@@ -95,6 +98,9 @@ export function Header() {
               </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/publications">
                 Publications
+              </Link>
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
+                Studio
               </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
                 About
