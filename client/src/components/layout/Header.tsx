@@ -70,6 +70,12 @@ export function Header() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
+              About
+            </Link>
+            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
+              Contact
+            </Link>
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/">
               Projects
             </Link>
@@ -79,12 +85,6 @@ export function Header() {
             <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
               Studio
             </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
-              About
-            </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
-              Contact
-            </Link>
           </nav>
         </div>
 
@@ -93,6 +93,12 @@ export function Header() {
             className={`absolute top-16 left-6 right-6 ${isAboutPage ? 'bg-transparent' : 'bg-white'} py-4 px-6 md:hidden`}
           >
             <nav className="flex flex-col space-y-4">
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
+                About
+              </Link>
+              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
+                Contact
+              </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/">
                 Projects
               </Link>
@@ -101,12 +107,6 @@ export function Header() {
               </Link>
               <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
                 Studio
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
-                About
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
-                Contact
               </Link>
             </nav>
           </div>

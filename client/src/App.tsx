@@ -32,16 +32,17 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAboutPage = location === "/about";
+  const isStudioPage = location === "/studio";
 
   return (
     <QueryClientProvider client={queryClient}>
       <ProjectProvider>
         <div className="min-h-screen flex flex-col">
-          {isAboutPage ? <WhiteHeader /> : <Header />}
+          {!isStudioPage && (isAboutPage ? <WhiteHeader /> : <Header />)}
           <main className="flex-1">
             <Router />
           </main>
-          {isAboutPage ? <WhiteFooter /> : <Footer />}
+          {!isStudioPage && (isAboutPage ? <WhiteFooter /> : <Footer />)}
         </div>
         <Toaster />
       </ProjectProvider>

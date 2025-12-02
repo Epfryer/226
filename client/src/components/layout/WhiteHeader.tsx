@@ -62,6 +62,12 @@ export function WhiteHeader() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
+              About
+            </Link>
+            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
+              Contact
+            </Link>
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/">
               Projects
             </Link>
@@ -70,12 +76,6 @@ export function WhiteHeader() {
             </Link>
             <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/studio">
               Studio
-            </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
-              About
-            </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
-              Contact
             </Link>
           </nav>
         </div>
@@ -93,6 +93,12 @@ export function WhiteHeader() {
             className="absolute top-16 left-0 bg-transparent py-4 px-6 md:hidden"
           >
             <nav className="flex flex-col space-y-4">
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
+                About
+              </Link>
+              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
+                Contact
+              </Link>
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/">
                 Projects
               </Link>
@@ -101,12 +107,6 @@ export function WhiteHeader() {
               </Link>
               <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/studio">
                 Studio
-              </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/about">
-                About
-              </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide text-white" href="/contact">
-                Contact
               </Link>
             </nav>
           </div>
