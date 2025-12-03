@@ -485,7 +485,7 @@ export default function Studio() {
           </Link>
         </motion.div>
       </header>
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-6 pl-8 lg:pl-12">
         <StudioMobileCategories
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
