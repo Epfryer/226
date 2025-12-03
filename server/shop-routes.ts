@@ -2,7 +2,27 @@
 import { type Express } from "express";
 import { getPrintfulClient } from "./printful";
 
+function isPrintfulConfigured(): boolean {
+  return !!(process.env.PRINTFUL_API_KEY && process.env.PRINTFUL_STORE_ID);
+}
+
 export function registerShopRoutes(app: Express) {
+  // Check if Printful is configured
+  if (!isPrintfulConfigured()) {
+    console.warn("[Shop] Printful not configured - shop routes will return empty results");
+    
+    // Register placeholder routes that return empty results
+    app.get("/api/shop/products", (req, res) => {
+      res.json({ code: 200, result: [], message: "Shop not configured" });
+    });
+    
+    app.get("/api/shop/products/:id", (req, res) => {
+      res.status(404).json({ error: "Shop not configured" });
+    });
+    
+    return;
+  }
+
   const printful = getPrintfulClient();
 
   // Get all products
@@ -158,23 +178,18 @@ export function registerShopRoutes(app: Express) {
       switch (type) {
         case 'package_shipped':
           console.log("Package shipped:", data);
-          // Handle shipment notification
           break;
         case 'package_returned':
           console.log("Package returned:", data);
-          // Handle return notification
           break;
         case 'order_failed':
           console.log("Order failed:", data);
-          // Handle order failure
           break;
         case 'order_canceled':
           console.log("Order canceled:", data);
-          // Handle order cancellation
           break;
         case 'product_synced':
           console.log("Product synced:", data);
-          // Handle product sync
           break;
         default:
           console.log("Unknown webhook type:", type);
