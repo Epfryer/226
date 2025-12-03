@@ -93,7 +93,7 @@ function StudioSidebar({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
-      <div className="sticky top-32">
+      <div className="sticky top-12">
         <h1 className="text-sm font-medium uppercase tracking-widest mb-8 text-foreground">
           Studio
         </h1>
@@ -266,7 +266,7 @@ function StudioDetailPanel({
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
       >
-        <div className="sticky top-24">
+        <div className="sticky top-12">
           <p className="text-sm text-muted-foreground">Select an item to view details</p>
         </div>
       </motion.div>
@@ -285,7 +285,7 @@ function StudioDetailPanel({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
     >
-      <div className="sticky top-24">
+      <div className="sticky top-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={product.id}
