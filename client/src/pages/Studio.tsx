@@ -658,7 +658,13 @@ function StudioDetailPanel({
                 <p className="text-sm text-destructive">Failed to load product details</p>
                 <p className="text-xs text-muted-foreground">Please try selecting another product</p>
               </div>
-            ) : !productDetail?.result?.sync_variants || productDetail.result.sync_variants.length === 0 ? (
+            ) : !productDetail?.result?.sync_variants ? (
+              <div className="space-y-4">
+                <Skeleton className="aspect-square w-full rounded-lg" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ) : productDetail.result.sync_variants.length === 0 ? (
               <div className="space-y-4">
                 <img
                   src={product.thumbnail_url}
@@ -919,7 +925,13 @@ function StudioMobileSheet({
                 <div className="space-y-4">
                   <p className="text-sm text-destructive">Failed to load product details</p>
                 </div>
-              ) : !productDetail?.result?.sync_variants || productDetail.result.sync_variants.length === 0 ? (
+              ) : !productDetail?.result?.sync_variants ? (
+                <div className="space-y-4">
+                  <Skeleton className="aspect-square w-full rounded-lg" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ) : productDetail.result.sync_variants.length === 0 ? (
                 <div className="space-y-4">
                   <img
                     src={product.thumbnail_url}
