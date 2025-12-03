@@ -500,6 +500,11 @@ function StudioDetailPanel({
   useEffect(() => {
     if (product?.id && productDetail) {
       console.log(`Product ${product.id} detail:`, productDetail);
+      console.log(`Sync variants:`, productDetail?.result?.sync_variants);
+      console.log(`Number of variants:`, productDetail?.result?.sync_variants?.length || 0);
+      if (productDetail?.result?.sync_product) {
+        console.log(`Sync product info:`, productDetail.result.sync_product);
+      }
     }
     if (detailError) {
       console.error(`Error loading product ${product?.id}:`, detailError);

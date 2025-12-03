@@ -55,10 +55,13 @@ export function registerShopRoutes(app: Express) {
   app.get("/api/shop/products/:id", async (req, res) => {
     try {
       const productId = parseInt(req.params.id);
+      console.log(`[Shop] Fetching product details for ID: ${productId}`);
       const product = await printful.getProduct(productId);
+      console.log(`[Shop] Product ${productId} response:`, JSON.stringify(product, null, 2));
+      console.log(`[Shop] Variants count:`, product?.result?.sync_variants?.length || 0);
       res.json(product);
     } catch (error: any) {
-      console.error("Error fetching product:", error);
+      console.error(`[Shop] Error fetching product ${req.params.id}:`, error);
       res.status(500).json({ 
         error: "Failed to fetch product",
         message: error.message 
