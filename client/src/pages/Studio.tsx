@@ -464,7 +464,7 @@ export default function Studio() {
   }, []);
 
   return (
-    <div className="min-h-screen pt-18 pb-16">
+    <div className="min-h-screen pt-20 pb-16">
       <header className="fixed top-0 left-0 z-50 p-5">
         <motion.div
           initial={{ opacity: 0 }}
