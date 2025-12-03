@@ -4,7 +4,13 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const res = await fetch(queryKey[0] as string, {
+        const basePath = queryKey[0] as string;
+        const pathSegments = queryKey.slice(1).filter(seg => seg != null);
+        const url = pathSegments.length > 0 
+          ? `${basePath}/${pathSegments.join('/')}`
+          : basePath;
+        
+        const res = await fetch(url, {
           credentials: "include",
         });
 
