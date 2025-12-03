@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 
 type Category = "ALL" | "GARMENTS" | "GRAPHICS" | "OBJECTS" | "STUDIES";
 
@@ -463,6 +465,26 @@ export default function Studio() {
 
   return (
     <div className="min-h-screen pt-32 pb-16">
+      <header className="fixed top-0 left-0 z-50 p-6">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            duration: 0.8,
+            ease: "easeInOut",
+            delay: 0.2
+          }}
+        >
+          <Link href="/" className="hover:opacity-70 transition-opacity">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-light">Designed by</span>
+              <span className="text-base font-bold">
+                <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
+              </span>
+            </div>
+          </Link>
+        </motion.div>
+      </header>
       <div className="max-w-7xl mx-auto px-6">
         <StudioMobileCategories 
           selectedCategory={selectedCategory}
