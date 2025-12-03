@@ -491,10 +491,20 @@ function StudioDetailPanel({
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
   
-  const { data: productDetail, isLoading: isLoadingDetail } = useQuery<ProductDetailResponse>({
+  const { data: productDetail, isLoading: isLoadingDetail, error: detailError } = useQuery<ProductDetailResponse>({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id,
   });
+  
+  // Log for debugging
+  useEffect(() => {
+    if (product?.id && productDetail) {
+      console.log(`Product ${product.id} detail:`, productDetail);
+    }
+    if (detailError) {
+      console.error(`Error loading product ${product?.id}:`, detailError);
+    }
+  }, [product?.id, productDetail, detailError]);
   
   const { colors, sizes, selectedVariant, variantImages } = useMemo(() => {
     if (!productDetail?.result?.sync_variants) {
@@ -636,6 +646,26 @@ function StudioDetailPanel({
                 <Skeleton className="aspect-square w-full rounded-lg" />
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
+                <p className="text-xs text-muted-foreground mt-2">Loading product details...</p>
+              </div>
+            ) : detailError ? (
+              <div className="space-y-4">
+                <p className="text-sm text-destructive">Failed to load product details</p>
+                <p className="text-xs text-muted-foreground">Please try selecting another product</p>
+              </div>
+            ) : !productDetail?.result?.sync_variants || productDetail.result.sync_variants.length === 0 ? (
+              <div className="space-y-4">
+                <img
+                  src={product.thumbnail_url}
+                  alt={product.name}
+                  className="w-full aspect-square object-cover rounded-lg"
+                />
+                <div>
+                  <h2 className="text-base font-semibold uppercase tracking-wide mb-1">
+                    {product.name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">No variants available</p>
+                </div>
               </div>
             ) : (
               <>
@@ -727,7 +757,7 @@ function StudioMobileSheet({
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
   
-  const { data: productDetail, isLoading: isLoadingDetail } = useQuery<ProductDetailResponse>({
+  const { data: productDetail, isLoading: isLoadingDetail, error: detailError } = useQuery<ProductDetailResponse>({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id && isOpen,
   });
@@ -878,6 +908,20 @@ function StudioMobileSheet({
                   <Skeleton className="aspect-square w-full rounded-lg" />
                   <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
+                  <p className="text-xs text-muted-foreground">Loading details...</p>
+                </div>
+              ) : detailError ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-destructive">Failed to load product details</p>
+                </div>
+              ) : !productDetail?.result?.sync_variants || productDetail.result.sync_variants.length === 0 ? (
+                <div className="space-y-4">
+                  <img
+                    src={product.thumbnail_url}
+                    alt={product.name}
+                    className="w-full aspect-square object-cover rounded-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">No variants available for this product</p>
                 </div>
               ) : (
                 <>
