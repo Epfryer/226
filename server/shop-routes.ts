@@ -3,7 +3,7 @@ import { type Express } from "express";
 import { getPrintfulClient } from "./printful";
 
 function isPrintfulConfigured(): boolean {
-  return !!(process.env.PRINTFUL_API_KEY && process.env.PRINTFUL_STORE_ID);
+  return !!process.env.PRINTFUL_API_KEY;
 }
 
 export function registerShopRoutes(app: Express) {
