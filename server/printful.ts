@@ -1,4 +1,3 @@
-
 import axios, { AxiosInstance } from 'axios';
 
 const PRINTFUL_API_BASE = 'https://api.printful.com';
@@ -6,12 +5,13 @@ const PRINTFUL_API_BASE = 'https://api.printful.com';
 class PrintfulClient {
   private client: AxiosInstance;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, storeId: string) {
     this.client = axios.create({
       baseURL: PRINTFUL_API_BASE,
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'X-PF-Store-Id': storeId
       },
     });
   }
@@ -152,13 +152,18 @@ let printfulClient: PrintfulClient | null = null;
 
 export function getPrintfulClient(): PrintfulClient {
   const apiKey = process.env.PRINTFUL_API_KEY;
-  
+  const storeId = process.env.PRINTFUL_STORE_ID;
+
   if (!apiKey) {
     throw new Error('PRINTFUL_API_KEY environment variable is not set');
   }
 
+  if (!storeId) {
+    throw new Error('PRINTFUL_STORE_ID environment variable is not set');
+  }
+
   if (!printfulClient) {
-    printfulClient = new PrintfulClient(apiKey);
+    printfulClient = new PrintfulClient(apiKey, storeId);
   }
 
   return printfulClient;
