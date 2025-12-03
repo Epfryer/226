@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag } from "lucide-react";
+import { X, ShoppingBag, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypingAnimation } from "@/components/ui/typing-animation";
+import { useToast } from "@/hooks/use-toast";
 
 type Category = "ALL" | "GARMENTS" | "GRAPHICS" | "OBJECTS" | "STUDIES";
 
@@ -18,10 +19,6 @@ interface StudioProduct {
   thumbnail_url: string;
   is_ignored: boolean;
   category?: Category;
-  material?: string;
-  intent?: string;
-  price?: number;
-  images?: string[];
 }
 
 interface PrintfulSyncProduct {
@@ -32,6 +29,45 @@ interface PrintfulSyncProduct {
   synced: number;
   thumbnail_url?: string;
   is_ignored: boolean;
+}
+
+interface PrintfulFile {
+  id: number;
+  type: string;
+  hash: string;
+  url: string | null;
+  filename: string;
+  preview_url: string;
+  thumbnail_url: string;
+}
+
+interface PrintfulSyncVariant {
+  id: number;
+  external_id: string;
+  sync_product_id: number;
+  name: string;
+  synced: boolean;
+  variant_id: number;
+  retail_price: string;
+  currency: string;
+  size: string;
+  color: string;
+  availability_status: string;
+  product: {
+    variant_id: number;
+    product_id: number;
+    image: string;
+    name: string;
+  };
+  files: PrintfulFile[];
+}
+
+interface ProductDetailResponse {
+  code: number;
+  result: {
+    sync_product: PrintfulSyncProduct;
+    sync_variants: PrintfulSyncVariant[];
+  };
 }
 
 interface PrintfulApiResponse {
@@ -45,7 +81,75 @@ interface PrintfulApiResponse {
   };
 }
 
+interface ColorOption {
+  name: string;
+  hex: string;
+  variants: PrintfulSyncVariant[];
+}
+
+interface CartItem {
+  variantId: number;
+  syncVariantId: number;
+  name: string;
+  color: string;
+  size: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
 const categories: Category[] = ["ALL", "GARMENTS", "GRAPHICS", "OBJECTS", "STUDIES"];
+
+const colorMap: Record<string, string> = {
+  "graphite heather": "#5C5C5C",
+  "black": "#1a1a1a",
+  "white": "#ffffff",
+  "navy": "#1a2b4a",
+  "red": "#c41e3a",
+  "royal": "#4169e1",
+  "charcoal": "#36454f",
+  "heather grey": "#9CA3AF",
+  "sport grey": "#8B8B8B",
+  "dark heather": "#4a4a4a",
+  "light blue": "#ADD8E6",
+  "maroon": "#800000",
+  "military green": "#4B5320",
+  "orange": "#FF6600",
+  "pink": "#FFC0CB",
+  "purple": "#800080",
+  "sand": "#C2B280",
+  "forest green": "#228B22",
+  "gold": "#FFD700",
+  "irish green": "#009A63",
+  "natural": "#FAEBD7",
+  "sapphire": "#0F52BA",
+  "cardinal red": "#C41E3A",
+  "daisy": "#FFE135",
+  "heliconia": "#FF69B4",
+  "ice grey": "#D3D3D3",
+  "indigo blue": "#4B0082",
+  "lime": "#32CD32",
+  "carolina blue": "#56A0D3",
+  "sunset": "#FAD6A5",
+  "antique cherry red": "#CD5C5C",
+  "antique sapphire": "#2A52BE",
+  "dark chocolate": "#3D1E0F",
+  "kiwi": "#8EE53F",
+  "ash": "#B2BEB5",
+  "cobalt": "#0047AB",
+  "heather cardinal": "#CD5C5C",
+  "heather navy": "#2C3E50",
+  "heather sapphire": "#4169E1",
+  "turf green": "#3CB371",
+  "coral silk": "#FF7F7F",
+  "electric green": "#00FF00",
+  "gravel": "#837E7C",
+};
+
+function getColorHex(colorName: string): string {
+  const normalized = colorName.toLowerCase();
+  return colorMap[normalized] || "#9CA3AF";
+}
 
 function categorizeProduct(name: string): Category {
   const lowerName = name.toLowerCase();
@@ -252,11 +356,245 @@ function StudioGrid({
   );
 }
 
+function ColorSwatch({
+  color,
+  isSelected,
+  onClick
+}: {
+  color: ColorOption;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const hex = getColorHex(color.name);
+  const isLight = hex === "#ffffff" || hex === "#FAEBD7" || hex === "#FAD6A5" || hex === "#FFE135";
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        relative w-8 h-8 rounded-full transition-all duration-150
+        ${isSelected ? "ring-2 ring-offset-2 ring-foreground" : "hover:scale-110"}
+        ${isLight ? "border border-gray-300" : ""}
+      `}
+      style={{ backgroundColor: hex }}
+      title={color.name}
+      aria-label={`Select ${color.name} color`}
+    >
+      {isSelected && (
+        <span className={`absolute inset-0 flex items-center justify-center ${isLight ? "text-black" : "text-white"}`}>
+          <Check className="w-4 h-4" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function SizeButton({
+  size,
+  isSelected,
+  isAvailable,
+  onClick
+}: {
+  size: string;
+  isSelected: boolean;
+  isAvailable: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={!isAvailable}
+      className={`
+        px-4 py-2 text-xs uppercase tracking-wide border transition-all duration-150
+        ${isSelected 
+          ? "bg-foreground text-background border-foreground" 
+          : isAvailable
+            ? "border-foreground/30 hover:border-foreground"
+            : "border-muted text-muted-foreground line-through cursor-not-allowed opacity-50"
+        }
+      `}
+      aria-label={`Select size ${size}${!isAvailable ? " (unavailable)" : ""}`}
+    >
+      {size}
+    </button>
+  );
+}
+
+function ImageCarousel({
+  images,
+  currentIndex,
+  onPrev,
+  onNext
+}: {
+  images: string[];
+  currentIndex: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  if (images.length === 0) return null;
+  
+  return (
+    <div className="relative aspect-square bg-muted/30 rounded-lg overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={currentIndex}
+          src={images[currentIndex]}
+          alt="Product preview"
+          className="w-full h-full object-cover"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        />
+      </AnimatePresence>
+      
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={onPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-white" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function StudioDetailPanel({
-  product
+  product,
+  cart,
+  onAddToCart
 }: {
   product: StudioProduct | null;
+  cart: CartItem[];
+  onAddToCart: (item: CartItem) => void;
 }) {
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [imageIndex, setImageIndex] = useState(0);
+  
+  const { data: productDetail, isLoading: isLoadingDetail } = useQuery<ProductDetailResponse>({
+    queryKey: ["/api/shop/products", product?.id],
+    enabled: !!product?.id,
+  });
+  
+  const { colors, sizes, selectedVariant, variantImages } = useMemo(() => {
+    if (!productDetail?.result?.sync_variants) {
+      return { colors: [], sizes: [], selectedVariant: null, variantImages: [] };
+    }
+    
+    const variants = productDetail.result.sync_variants;
+    
+    const colorMap = new Map<string, ColorOption>();
+    variants.forEach(v => {
+      if (!colorMap.has(v.color)) {
+        colorMap.set(v.color, {
+          name: v.color,
+          hex: getColorHex(v.color),
+          variants: []
+        });
+      }
+      colorMap.get(v.color)!.variants.push(v);
+    });
+    const colorOptions = Array.from(colorMap.values());
+    
+    const currentColor = selectedColor || colorOptions[0]?.name;
+    const colorVariants = colorMap.get(currentColor || "")?.variants || [];
+    
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+    const uniqueSizes = Array.from(new Set(colorVariants.map(v => v.size)));
+    const sortedSizes = uniqueSizes.sort((a, b) => {
+      const aIndex = sizeOrder.indexOf(a);
+      const bIndex = sizeOrder.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+    
+    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
+    const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
+    
+    const images: string[] = [];
+    if (variant) {
+      const previewFile = variant.files.find(f => f.type === "preview");
+      if (previewFile?.preview_url) {
+        images.push(previewFile.preview_url);
+      }
+      if (variant.product?.image) {
+        images.push(variant.product.image);
+      }
+      const frontFile = variant.files.find(f => f.type === "front_dtf" || f.type === "front");
+      if (frontFile?.preview_url) {
+        images.push(frontFile.preview_url);
+      }
+    }
+    
+    return {
+      colors: colorOptions,
+      sizes: sortedSizes.map(size => ({
+        size,
+        available: colorVariants.some(v => v.size === size && v.availability_status === "active")
+      })),
+      selectedVariant: variant,
+      variantImages: images.length > 0 ? images : [product?.thumbnail_url || ""]
+    };
+  }, [productDetail, selectedColor, selectedSize, product]);
+  
+  useEffect(() => {
+    if (colors.length > 0 && !selectedColor) {
+      setSelectedColor(colors[0].name);
+    }
+  }, [colors, selectedColor]);
+  
+  useEffect(() => {
+    if (sizes.length > 0) {
+      const availableSize = sizes.find(s => s.available);
+      if (availableSize && !selectedSize) {
+        setSelectedSize(availableSize.size);
+      }
+    }
+  }, [sizes, selectedSize]);
+  
+  useEffect(() => {
+    setImageIndex(0);
+  }, [selectedColor]);
+  
+  const handleAddToCart = () => {
+    if (!selectedVariant || !selectedSize) return;
+    
+    const item: CartItem = {
+      variantId: selectedVariant.variant_id,
+      syncVariantId: selectedVariant.id,
+      name: product?.name || "",
+      color: selectedVariant.color,
+      size: selectedSize,
+      price: parseFloat(selectedVariant.retail_price),
+      quantity: 1,
+      image: variantImages[0]
+    };
+    
+    onAddToCart(item);
+  };
+
   if (!product) {
     return (
       <motion.div
@@ -273,9 +611,7 @@ function StudioDetailPanel({
     );
   }
 
-  const price = product.price || 45.00;
-  const material = product.material || "Premium Materials";
-  const intent = product.intent || "Crafted with intention, each piece represents a study in form and function. Designed to move seamlessly between contexts while maintaining its architectural presence.";
+  const price = selectedVariant ? parseFloat(selectedVariant.retail_price) : 0;
 
   return (
     <motion.div
@@ -293,26 +629,82 @@ function StudioDetailPanel({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
+            className="space-y-6"
           >
-            <h2 className="text-base font-semibold uppercase tracking-wide mb-2">
-              {product.name}
-            </h2>
-            <p className="text-sm text-muted-foreground uppercase tracking-wide mb-6">
-              {material}
-            </p>
-            <p className="text-sm text-foreground/80 leading-relaxed mb-8">
-              {intent}
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              ${price.toFixed(2)}
-            </p>
-            <Button
-              variant="outline"
-              className="w-full uppercase tracking-wide text-xs h-11 border-foreground/20 hover:bg-foreground/5"
-            >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Add to Cart
-            </Button>
+            {isLoadingDetail ? (
+              <div className="space-y-4">
+                <Skeleton className="aspect-square w-full rounded-lg" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ) : (
+              <>
+                <ImageCarousel
+                  images={variantImages}
+                  currentIndex={imageIndex}
+                  onPrev={() => setImageIndex(i => i > 0 ? i - 1 : variantImages.length - 1)}
+                  onNext={() => setImageIndex(i => i < variantImages.length - 1 ? i + 1 : 0)}
+                />
+                
+                <div>
+                  <h2 className="text-base font-semibold uppercase tracking-wide mb-1">
+                    {product.name}
+                  </h2>
+                  <p className="text-lg font-medium">
+                    ${price.toFixed(2)}
+                  </p>
+                </div>
+                
+                {colors.length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
+                      Color: {selectedColor}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((color) => (
+                        <ColorSwatch
+                          key={color.name}
+                          color={color}
+                          isSelected={selectedColor === color.name}
+                          onClick={() => {
+                            setSelectedColor(color.name);
+                            setSelectedSize(null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {sizes.length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
+                      Size
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sizes.map(({ size, available }) => (
+                        <SizeButton
+                          key={size}
+                          size={size}
+                          isSelected={selectedSize === size}
+                          isAvailable={available}
+                          onClick={() => setSelectedSize(size)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={!selectedVariant || !selectedSize}
+                  className="w-full uppercase tracking-wide text-xs h-11"
+                >
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Add to Cart - ${price.toFixed(2)}
+                </Button>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -323,15 +715,29 @@ function StudioDetailPanel({
 function StudioMobileSheet({
   product,
   isOpen,
-  onClose
+  onClose,
+  onAddToCart
 }: {
   product: StudioProduct | null;
   isOpen: boolean;
   onClose: () => void;
+  onAddToCart: (item: CartItem) => void;
 }) {
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [imageIndex, setImageIndex] = useState(0);
+  
+  const { data: productDetail, isLoading: isLoadingDetail } = useQuery<ProductDetailResponse>({
+    queryKey: ["/api/shop/products", product?.id],
+    enabled: !!product?.id && isOpen,
+  });
+  
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setSelectedColor(null);
+      setSelectedSize(null);
+      setImageIndex(0);
     } else {
       document.body.style.overflow = "";
     }
@@ -340,11 +746,101 @@ function StudioMobileSheet({
     };
   }, [isOpen]);
 
+  const { colors, sizes, selectedVariant, variantImages } = useMemo(() => {
+    if (!productDetail?.result?.sync_variants) {
+      return { colors: [], sizes: [], selectedVariant: null, variantImages: [] };
+    }
+    
+    const variants = productDetail.result.sync_variants;
+    
+    const colorMap = new Map<string, ColorOption>();
+    variants.forEach(v => {
+      if (!colorMap.has(v.color)) {
+        colorMap.set(v.color, {
+          name: v.color,
+          hex: getColorHex(v.color),
+          variants: []
+        });
+      }
+      colorMap.get(v.color)!.variants.push(v);
+    });
+    const colorOptions = Array.from(colorMap.values());
+    
+    const currentColor = selectedColor || colorOptions[0]?.name;
+    const colorVariants = colorMap.get(currentColor || "")?.variants || [];
+    
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+    const uniqueSizes = Array.from(new Set(colorVariants.map(v => v.size)));
+    const sortedSizes = uniqueSizes.sort((a, b) => {
+      const aIndex = sizeOrder.indexOf(a);
+      const bIndex = sizeOrder.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+    
+    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
+    const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
+    
+    const images: string[] = [];
+    if (variant) {
+      const previewFile = variant.files.find(f => f.type === "preview");
+      if (previewFile?.preview_url) {
+        images.push(previewFile.preview_url);
+      }
+      if (variant.product?.image) {
+        images.push(variant.product.image);
+      }
+    }
+    
+    return {
+      colors: colorOptions,
+      sizes: sortedSizes.map(size => ({
+        size,
+        available: colorVariants.some(v => v.size === size && v.availability_status === "active")
+      })),
+      selectedVariant: variant,
+      variantImages: images.length > 0 ? images : [product?.thumbnail_url || ""]
+    };
+  }, [productDetail, selectedColor, selectedSize, product]);
+  
+  useEffect(() => {
+    if (colors.length > 0 && !selectedColor) {
+      setSelectedColor(colors[0].name);
+    }
+  }, [colors, selectedColor]);
+  
+  useEffect(() => {
+    if (sizes.length > 0) {
+      const availableSize = sizes.find(s => s.available);
+      if (availableSize && !selectedSize) {
+        setSelectedSize(availableSize.size);
+      }
+    }
+  }, [sizes, selectedSize]);
+  
+  const handleAddToCart = () => {
+    if (!selectedVariant || !selectedSize) return;
+    
+    const item: CartItem = {
+      variantId: selectedVariant.variant_id,
+      syncVariantId: selectedVariant.id,
+      name: product?.name || "",
+      color: selectedVariant.color,
+      size: selectedSize,
+      price: parseFloat(selectedVariant.retail_price),
+      quantity: 1,
+      image: variantImages[0]
+    };
+    
+    onAddToCart(item);
+    onClose();
+  };
+
   if (!product) return null;
 
-  const price = product.price || 45.00;
-  const material = product.material || "Premium Materials";
-  const intent = product.intent || "Crafted with intention, each piece represents a study in form and function. Designed to move seamlessly between contexts while maintaining its architectural presence.";
+  const price = selectedVariant ? parseFloat(selectedVariant.retail_price) : 0;
 
   return (
     <AnimatePresence>
@@ -358,7 +854,7 @@ function StudioMobileSheet({
             onClick={onClose}
           />
           <motion.div
-            className="fixed bottom-0 left-0 right-0 bg-background z-50 lg:hidden rounded-t-2xl max-h-[85vh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 bg-background z-50 lg:hidden rounded-t-2xl max-h-[90vh] overflow-y-auto"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -376,29 +872,214 @@ function StudioMobileSheet({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6">
-              <div className="aspect-square w-full mb-6 bg-muted/30 rounded-lg overflow-hidden">
-                <img
-                  src={product.thumbnail_url}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+            <div className="p-6 space-y-6">
+              {isLoadingDetail ? (
+                <div className="space-y-4">
+                  <Skeleton className="aspect-square w-full rounded-lg" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ) : (
+                <>
+                  <ImageCarousel
+                    images={variantImages}
+                    currentIndex={imageIndex}
+                    onPrev={() => setImageIndex(i => i > 0 ? i - 1 : variantImages.length - 1)}
+                    onNext={() => setImageIndex(i => i < variantImages.length - 1 ? i + 1 : 0)}
+                  />
+                  
+                  <div>
+                    <p className="text-lg font-medium">
+                      ${price.toFixed(2)}
+                    </p>
+                  </div>
+                  
+                  {colors.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
+                        Color: {selectedColor}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {colors.map((color) => (
+                          <ColorSwatch
+                            key={color.name}
+                            color={color}
+                            isSelected={selectedColor === color.name}
+                            onClick={() => {
+                              setSelectedColor(color.name);
+                              setSelectedSize(null);
+                              setImageIndex(0);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {sizes.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
+                        Size
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {sizes.map(({ size, available }) => (
+                          <SizeButton
+                            key={size}
+                            size={size}
+                            isSelected={selectedSize === size}
+                            isAvailable={available}
+                            onClick={() => setSelectedSize(size)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={!selectedVariant || !selectedSize}
+                    className="w-full uppercase tracking-wide text-xs h-12"
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Add to Cart - ${price.toFixed(2)}
+                  </Button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function CartDrawer({
+  cart,
+  isOpen,
+  onClose,
+  onUpdateQuantity,
+  onRemoveItem,
+  onCheckout
+}: {
+  cart: CartItem[];
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdateQuantity: (syncVariantId: number, quantity: number) => void;
+  onRemoveItem: (syncVariantId: number) => void;
+  onCheckout: () => void;
+}) {
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+  
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            className="fixed inset-0 bg-black/40 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background z-50 shadow-xl"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          >
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-base font-semibold uppercase tracking-wide">
+                  Cart ({cart.length})
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                  aria-label="Close cart"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <p className="text-sm text-muted-foreground uppercase tracking-wide mb-4">
-                {material}
-              </p>
-              <p className="text-sm text-foreground/80 leading-relaxed mb-6">
-                {intent}
-              </p>
-              <p className="text-lg font-medium mb-6">
-                ${price.toFixed(2)}
-              </p>
-              <Button
-                className="w-full uppercase tracking-wide text-xs h-12"
-              >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Add to Cart
-              </Button>
+              
+              <div className="flex-1 overflow-y-auto p-4">
+                {cart.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Your cart is empty
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {cart.map((item) => (
+                      <div key={item.syncVariantId} className="flex gap-4">
+                        <div className="w-20 h-20 bg-muted rounded overflow-hidden shrink-0">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium truncate">{item.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {item.color} / {item.size}
+                          </p>
+                          <p className="text-sm font-medium mt-1">
+                            ${item.price.toFixed(2)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => onUpdateQuantity(item.syncVariantId, item.quantity - 1)}
+                              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-muted"
+                              disabled={item.quantity <= 1}
+                            >
+                              -
+                            </button>
+                            <span className="text-sm w-6 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => onUpdateQuantity(item.syncVariantId, item.quantity + 1)}
+                              className="w-6 h-6 flex items-center justify-center border rounded hover:bg-muted"
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() => onRemoveItem(item.syncVariantId)}
+                              className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {cart.length > 0 && (
+                <div className="p-4 border-t space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm uppercase tracking-wide">Total</span>
+                    <span className="text-lg font-semibold">${total.toFixed(2)}</span>
+                  </div>
+                  <Button
+                    onClick={onCheckout}
+                    className="w-full uppercase tracking-wide text-xs h-12"
+                  >
+                    Proceed to Checkout
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         </>
@@ -411,7 +1092,10 @@ export default function Studio() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("ALL");
   const [selectedProduct, setSelectedProduct] = useState<StudioProduct | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  
+  const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const { data: apiResponse, isLoading, error } = useQuery<PrintfulApiResponse>({
@@ -430,9 +1114,6 @@ export default function Studio() {
       thumbnail_url: p.thumbnail_url || `https://picsum.photos/seed/${p.id}/400/400`,
       is_ignored: p.is_ignored,
       category: categorizeProduct(p.name),
-      material: "Premium Materials",
-      intent: "Crafted with intention, each piece represents a study in form and function.",
-      price: 45.00
     }));
   }, [apiResponse]);
 
@@ -462,10 +1143,48 @@ export default function Studio() {
   const handleCloseMobileSheet = useCallback(() => {
     setMobileSheetOpen(false);
   }, []);
+  
+  const handleAddToCart = useCallback((item: CartItem) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.syncVariantId === item.syncVariantId);
+      if (existing) {
+        return prev.map(i => 
+          i.syncVariantId === item.syncVariantId 
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        );
+      }
+      return [...prev, item];
+    });
+    toast({
+      title: "Added to cart",
+      description: `${item.name} - ${item.color} / ${item.size}`,
+    });
+  }, [toast]);
+  
+  const handleUpdateQuantity = useCallback((syncVariantId: number, quantity: number) => {
+    if (quantity < 1) return;
+    setCart(prev => prev.map(item => 
+      item.syncVariantId === syncVariantId 
+        ? { ...item, quantity }
+        : item
+    ));
+  }, []);
+  
+  const handleRemoveItem = useCallback((syncVariantId: number) => {
+    setCart(prev => prev.filter(item => item.syncVariantId !== syncVariantId));
+  }, []);
+  
+  const handleCheckout = useCallback(() => {
+    toast({
+      title: "Checkout",
+      description: "Checkout functionality will be implemented with Stripe integration.",
+    });
+  }, [toast]);
 
   return (
     <div className="min-h-screen pt-20 pb-16">
-      <header className="fixed top-0 left-0 z-50 p-5">
+      <header className="fixed top-0 left-0 right-0 z-50 p-5 flex justify-between items-start">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -484,7 +1203,24 @@ export default function Studio() {
             </div>
           </Link>
         </motion.div>
+        
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.3 }}
+          onClick={() => setCartOpen(true)}
+          className="relative p-2 hover:bg-muted rounded-full transition-colors"
+          aria-label="Open cart"
+        >
+          <ShoppingBag className="w-5 h-5" />
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-foreground text-background text-xs rounded-full flex items-center justify-center">
+              {cart.length}
+            </span>
+          )}
+        </motion.button>
       </header>
+      
       <div className="max-w-7xl mx-auto px-6 pl-8 lg:pl-12">
         <StudioMobileCategories
           selectedCategory={selectedCategory}
@@ -518,6 +1254,8 @@ export default function Studio() {
 
           <StudioDetailPanel
             product={selectedProduct}
+            cart={cart}
+            onAddToCart={handleAddToCart}
           />
         </div>
       </div>
@@ -526,6 +1264,16 @@ export default function Studio() {
         product={selectedProduct}
         isOpen={mobileSheetOpen}
         onClose={handleCloseMobileSheet}
+        onAddToCart={handleAddToCart}
+      />
+      
+      <CartDrawer
+        cart={cart}
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={handleCheckout}
       />
     </div>
   );
