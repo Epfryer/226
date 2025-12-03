@@ -66,7 +66,7 @@ function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     const mediaQuery = window.matchMedia(query);
     setMatches(mediaQuery.matches);
 
@@ -166,7 +166,7 @@ function StudioGridItem({
   index: number;
 }) {
   const isLarge = index % 5 === 0 || index % 7 === 0;
-  
+
   return (
     <motion.button
       className={`
@@ -266,7 +266,7 @@ function StudioDetailPanel({
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
       >
-        <div className="sticky top-32">
+        <div className="sticky top-24">
           <p className="text-sm text-muted-foreground">Select an item to view details</p>
         </div>
       </motion.div>
@@ -285,7 +285,7 @@ function StudioDetailPanel({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
     >
-      <div className="sticky top-32">
+      <div className="sticky top-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={product.id}
@@ -411,7 +411,7 @@ export default function Studio() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("ALL");
   const [selectedProduct, setSelectedProduct] = useState<StudioProduct | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  
+
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const { data: apiResponse, isLoading, error } = useQuery<PrintfulApiResponse>({
@@ -490,13 +490,13 @@ export default function Studio() {
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
         />
-        
+
         <div className="flex gap-8 lg:gap-12">
           <StudioSidebar 
             selectedCategory={selectedCategory}
             onCategoryChange={handleCategoryChange}
           />
-          
+
           <main className="flex-1 min-w-0" role="main" aria-label="Product gallery">
             <AnimatePresence mode="wait">
               <motion.div
@@ -515,7 +515,7 @@ export default function Studio() {
               </motion.div>
             </AnimatePresence>
           </main>
-          
+
           <StudioDetailPanel 
             product={selectedProduct}
           />
