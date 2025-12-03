@@ -78,15 +78,15 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-function StudioSidebar({ 
-  selectedCategory, 
-  onCategoryChange 
-}: { 
-  selectedCategory: Category; 
+function StudioSidebar({
+  selectedCategory,
+  onCategoryChange
+}: {
+  selectedCategory: Category;
   onCategoryChange: (category: Category) => void;
 }) {
   return (
-    <motion.aside 
+    <motion.aside
       className="hidden lg:flex flex-col shrink-0"
       style={{ width: "180px" }}
       initial={{ opacity: 0 }}
@@ -104,8 +104,8 @@ function StudioSidebar({
               onClick={() => onCategoryChange(category)}
               className={`
                 text-left text-sm uppercase tracking-wide transition-all duration-150
-                ${selectedCategory === category 
-                  ? "text-foreground font-medium border-l-2 border-foreground pl-3 -ml-[2px]" 
+                ${selectedCategory === category
+                  ? "text-foreground font-medium border-l-2 border-foreground pl-3 -ml-[2px]"
                   : "text-muted-foreground hover:text-foreground pl-0"
                 }
               `}
@@ -139,8 +139,8 @@ function StudioMobileCategories({
             onClick={() => onCategoryChange(category)}
             className={`
               px-4 py-2 text-xs uppercase tracking-wide whitespace-nowrap rounded-full border transition-all duration-150 shrink-0
-              ${selectedCategory === category 
-                ? "bg-foreground text-background border-foreground" 
+              ${selectedCategory === category
+                ? "bg-foreground text-background border-foreground"
                 : "bg-transparent text-muted-foreground border-muted hover:border-foreground hover:text-foreground"
               }
             `}
@@ -177,8 +177,8 @@ function StudioGridItem({
       `}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        duration: 0.22, 
+      transition={{
+        duration: 0.22,
         ease: "easeOut",
         delay: Math.min(index * 0.05, 0.4)
       }}
@@ -259,14 +259,14 @@ function StudioDetailPanel({
 }) {
   if (!product) {
     return (
-      <motion.div 
+      <motion.div
         className="hidden lg:block shrink-0"
         style={{ width: "300px" }}
         initial={{ opacity: 0, x: 12 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
       >
-        <div className="sticky top-12">
+        <div className="sticky top-20">
           <p className="text-sm text-muted-foreground">Select an item to view details</p>
         </div>
       </motion.div>
@@ -278,14 +278,14 @@ function StudioDetailPanel({
   const intent = product.intent || "Crafted with intention, each piece represents a study in form and function. Designed to move seamlessly between contexts while maintaining its architectural presence.";
 
   return (
-    <motion.div 
+    <motion.div
       className="hidden lg:block shrink-0"
       style={{ width: "300px" }}
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
     >
-      <div className="sticky top-12">
+      <div className="sticky top-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={product.id}
@@ -306,8 +306,8 @@ function StudioDetailPanel({
             <p className="text-sm text-muted-foreground mb-6">
               ${price.toFixed(2)}
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full uppercase tracking-wide text-xs h-11 border-foreground/20 hover:bg-foreground/5"
             >
               <ShoppingBag className="w-4 h-4 mr-2" />
@@ -368,7 +368,7 @@ function StudioMobileSheet({
               <h2 className="text-base font-semibold uppercase tracking-wide">
                 {product.name}
               </h2>
-              <button 
+              <button
                 onClick={onClose}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
                 aria-label="Close product details"
@@ -393,7 +393,7 @@ function StudioMobileSheet({
               <p className="text-lg font-medium mb-6">
                 ${price.toFixed(2)}
               </p>
-              <Button 
+              <Button
                 className="w-full uppercase tracking-wide text-xs h-12"
               >
                 <ShoppingBag className="w-4 h-4 mr-2" />
@@ -466,7 +466,7 @@ export default function Studio() {
   return (
     <div className="min-h-screen pt-32 pb-16">
       <header className="fixed top-0 left-0 z-50 p-6">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{
@@ -486,13 +486,13 @@ export default function Studio() {
         </motion.div>
       </header>
       <div className="max-w-7xl mx-auto px-6">
-        <StudioMobileCategories 
+        <StudioMobileCategories
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
         />
 
         <div className="flex gap-8 lg:gap-12">
-          <StudioSidebar 
+          <StudioSidebar
             selectedCategory={selectedCategory}
             onCategoryChange={handleCategoryChange}
           />
@@ -516,7 +516,7 @@ export default function Studio() {
             </AnimatePresence>
           </main>
 
-          <StudioDetailPanel 
+          <StudioDetailPanel
             product={selectedProduct}
           />
         </div>
