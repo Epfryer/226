@@ -23,10 +23,6 @@ localPort = 35371
 externalPort = 3003
 
 [[ports]]
-localPort = 37311
-externalPort = 4200
-
-[[ports]]
 localPort = 41351
 externalPort = 3001
 
@@ -63,3 +59,6 @@ waitForPort = 5000
 
 [objectStorage]
 defaultBucketID = "replit-objstore-a538e3dd-048a-46be-b441-abad6fd99c02"
+
+[agent]
+integrations = ["stripe:1.0.0"]

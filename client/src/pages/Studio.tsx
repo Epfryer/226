@@ -959,7 +959,8 @@ function CartDrawer({
   onClose,
   onUpdateQuantity,
   onRemoveItem,
-  onCheckout
+  onCheckout,
+  isCheckingOut
 }: {
   cart: CartItem[];
   isOpen: boolean;
@@ -967,6 +968,7 @@ function CartDrawer({
   onUpdateQuantity: (syncVariantId: number, quantity: number) => void;
   onRemoveItem: (syncVariantId: number) => void;
   onCheckout: () => void;
+  isCheckingOut?: boolean;
 }) {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
@@ -1074,9 +1076,10 @@ function CartDrawer({
                   </div>
                   <Button
                     onClick={onCheckout}
+                    disabled={isCheckingOut}
                     className="w-full uppercase tracking-wide text-xs h-12"
                   >
-                    Proceed to Checkout
+                    {isCheckingOut ? "Processing..." : "Proceed to Checkout"}
                   </Button>
                 </div>
               )}
@@ -1094,9 +1097,49 @@ export default function Studio() {
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
   
   const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const sessionId = urlParams.get('session_id');
+    const canceled = urlParams.get('canceled');
+    
+    if (success === 'true' && sessionId) {
+      fetch(`/api/shop/checkout/${sessionId}/verify`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setCart([]);
+            setOrderSuccess(true);
+            toast({
+              title: "Order Placed!",
+              description: "Thank you for your purchase. Your order is being processed.",
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Error verifying checkout:', err);
+          toast({
+            title: "Payment Received",
+            description: "Your payment was successful. We're processing your order.",
+          });
+        })
+        .finally(() => {
+          window.history.replaceState({}, '', '/studio');
+        });
+    } else if (canceled === 'true') {
+      toast({
+        title: "Checkout Canceled",
+        description: "Your checkout was canceled. Your cart items are still saved.",
+      });
+      window.history.replaceState({}, '', '/studio');
+    }
+  }, [toast]);
 
   const { data: apiResponse, isLoading, error } = useQuery<PrintfulApiResponse>({
     queryKey: ["/api/shop/products"],
@@ -1175,12 +1218,41 @@ export default function Studio() {
     setCart(prev => prev.filter(item => item.syncVariantId !== syncVariantId));
   }, []);
   
-  const handleCheckout = useCallback(() => {
-    toast({
-      title: "Checkout",
-      description: "Checkout functionality will be implemented with Stripe integration.",
-    });
-  }, [toast]);
+  const handleCheckout = useCallback(async () => {
+    if (cart.length === 0) return;
+    
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch('/api/shop/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: cart }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+      
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Checkout Error",
+        description: "There was a problem starting checkout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  }, [cart, toast]);
 
   return (
     <div className="min-h-screen pt-20 pb-16">
@@ -1274,6 +1346,7 @@ export default function Studio() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
+        isCheckingOut={isCheckingOut}
       />
     </div>
   );
