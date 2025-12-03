@@ -94,7 +94,7 @@ function StudioSidebar({
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
       <div className="sticky top-12">
-        <h1 className="text-sm font-medium uppercase tracking-widest mb-8 text-foreground">
+        <h1 className="text-sm font-medium uppercase tracking-widest mb-4 text-foreground">
           Studio
         </h1>
         <nav className="flex flex-col space-y-3">
@@ -464,7 +464,7 @@ export default function Studio() {
   }, []);
 
   return (
-    <div className="min-h-screen pt-32 pb-16">
+    <div className="min-h-screen pt-20 pb-16">
       <header className="fixed top-0 left-0 z-50 p-6">
         <motion.div
           initial={{ opacity: 0 }}
