@@ -504,30 +504,32 @@ function ImageCarousel({
         />
       </AnimatePresence>
       
-      {images.length > 1 && !isZoomed && (
+      {images.length > 1 && (
         <>
           <button
             onClick={onPrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors z-10"
             aria-label="Previous image"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={onNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors z-10"
             aria-label="Next image"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.map((_, i) => (
-              <div
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-white" : "bg-white/50"}`}
-              />
-            ))}
-          </div>
+          {!isZoomed && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-white" : "bg-white/50"}`}
+                />
+              ))}
+            </div>
+          )}
         </>
       )}
       
