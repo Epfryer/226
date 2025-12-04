@@ -182,6 +182,38 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+function extractVariantImages(variant: PrintfulSyncVariant | null, fallbackThumbnail: string): string[] {
+  const images: string[] = [];
+  if (!variant) return [fallbackThumbnail];
+  
+  const addedUrls = new Set<string>();
+  const addImage = (url: string | null | undefined) => {
+    if (url && !addedUrls.has(url)) {
+      addedUrls.add(url);
+      images.push(url);
+    }
+  };
+  
+  const previewFile = variant.files.find(f => f.type === "preview");
+  addImage(previewFile?.preview_url);
+  
+  const defaultFile = variant.files.find(f => f.type === "default");
+  addImage(defaultFile?.preview_url);
+  
+  const frontFile = variant.files.find(f => f.type === "front_dtf" || f.type === "front");
+  addImage(frontFile?.preview_url);
+  
+  const backFile = variant.files.find(f => f.type === "back_dtf" || f.type === "back");
+  addImage(backFile?.preview_url);
+  
+  const mockupFile = variant.files.find(f => f.type === "mockup");
+  addImage(mockupFile?.preview_url);
+  
+  addImage(variant.product?.image);
+  
+  return images.length > 0 ? images : [fallbackThumbnail];
+}
+
 function StudioSidebar({
   selectedCategory,
   onCategoryChange
@@ -276,8 +308,7 @@ function StudioGridItem({
       className={`
         studio-item relative group cursor-pointer text-left w-full
         ${isLarge ? "row-span-2" : ""}
-        ${isSelected ? "ring-1 ring-foreground" : ""}
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2
+        focus:outline-none
       `}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -290,9 +321,9 @@ function StudioGridItem({
       whileHover={{ y: -3 }}
     >
       <div className={`
-        relative overflow-hidden bg-muted/30 transition-shadow duration-200
+        relative overflow-hidden bg-muted/30 transition-all duration-200
         ${isLarge ? "aspect-[3/4]" : "aspect-square"}
-        group-hover:shadow-lg group-focus-visible:shadow-lg
+        group-hover:shadow-lg
       `}>
         <img
           src={product.thumbnail_url}
@@ -300,6 +331,9 @@ function StudioGridItem({
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           loading="lazy"
         />
+        {isSelected && (
+          <div className="absolute top-2 right-2 w-2 h-2 bg-foreground rounded-full" />
+        )}
         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <span className="text-[10px] uppercase tracking-wider text-white font-medium">
             {product.name}
@@ -424,23 +458,45 @@ function ImageCarousel({
   images,
   currentIndex,
   onPrev,
-  onNext
+  onNext,
+  enableZoom = false
 }: {
   images: string[];
   currentIndex: number;
   onPrev: () => void;
   onNext: () => void;
+  enableZoom?: boolean;
 }) {
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
+  
   if (images.length === 0) return null;
   
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!enableZoom) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePosition({ x, y });
+  };
+  
   return (
-    <div className="relative aspect-square bg-muted/30 rounded-lg overflow-hidden">
+    <div 
+      className="relative aspect-square bg-muted/30 rounded-lg overflow-hidden"
+      onMouseEnter={() => enableZoom && setIsZoomed(true)}
+      onMouseLeave={() => setIsZoomed(false)}
+      onMouseMove={handleMouseMove}
+    >
       <AnimatePresence mode="wait">
         <motion.img
           key={currentIndex}
           src={images[currentIndex]}
           alt="Product preview"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-150"
+          style={isZoomed ? {
+            transform: 'scale(2.5)',
+            transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`
+          } : undefined}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -448,7 +504,7 @@ function ImageCarousel({
         />
       </AnimatePresence>
       
-      {images.length > 1 && (
+      {images.length > 1 && !isZoomed && (
         <>
           <button
             onClick={onPrev}
@@ -473,6 +529,12 @@ function ImageCarousel({
             ))}
           </div>
         </>
+      )}
+      
+      {enableZoom && !isZoomed && (
+        <div className="absolute bottom-3 right-3 text-[10px] uppercase tracking-wide text-white/70 bg-black/30 px-2 py-1 rounded">
+          Hover to zoom
+        </div>
       )}
     </div>
   );
@@ -548,21 +610,6 @@ function StudioDetailPanel({
     const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
     const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
     
-    const images: string[] = [];
-    if (variant) {
-      const previewFile = variant.files.find(f => f.type === "preview");
-      if (previewFile?.preview_url) {
-        images.push(previewFile.preview_url);
-      }
-      if (variant.product?.image) {
-        images.push(variant.product.image);
-      }
-      const frontFile = variant.files.find(f => f.type === "front_dtf" || f.type === "front");
-      if (frontFile?.preview_url) {
-        images.push(frontFile.preview_url);
-      }
-    }
-    
     return {
       colors: colorOptions,
       sizes: sortedSizes.map(size => ({
@@ -570,7 +617,7 @@ function StudioDetailPanel({
         available: colorVariants.some(v => v.size === size && v.availability_status === "active")
       })),
       selectedVariant: variant,
-      variantImages: images.length > 0 ? images : [product?.thumbnail_url || ""]
+      variantImages: extractVariantImages(variant, product?.thumbnail_url || "")
     };
   }, [productDetail, selectedColor, selectedSize, product]);
   
@@ -685,6 +732,7 @@ function StudioDetailPanel({
                   currentIndex={imageIndex}
                   onPrev={() => setImageIndex(i => i > 0 ? i - 1 : variantImages.length - 1)}
                   onNext={() => setImageIndex(i => i < variantImages.length - 1 ? i + 1 : 0)}
+                  enableZoom={true}
                 />
                 
                 <div>
@@ -694,6 +742,11 @@ function StudioDetailPanel({
                   <p className="text-lg font-medium">
                     ${price.toFixed(2)}
                   </p>
+                  {selectedVariant?.product?.name && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {selectedVariant.product.name.split('|')[0]?.trim()}
+                    </p>
+                  )}
                 </div>
                 
                 {colors.length > 0 && (
@@ -824,17 +877,6 @@ function StudioMobileSheet({
     const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
     const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
     
-    const images: string[] = [];
-    if (variant) {
-      const previewFile = variant.files.find(f => f.type === "preview");
-      if (previewFile?.preview_url) {
-        images.push(previewFile.preview_url);
-      }
-      if (variant.product?.image) {
-        images.push(variant.product.image);
-      }
-    }
-    
     return {
       colors: colorOptions,
       sizes: sortedSizes.map(size => ({
@@ -842,7 +884,7 @@ function StudioMobileSheet({
         available: colorVariants.some(v => v.size === size && v.availability_status === "active")
       })),
       selectedVariant: variant,
-      variantImages: images.length > 0 ? images : [product?.thumbnail_url || ""]
+      variantImages: extractVariantImages(variant, product?.thumbnail_url || "")
     };
   }, [productDetail, selectedColor, selectedSize, product]);
   

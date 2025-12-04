@@ -4,6 +4,7 @@ import { Client } from '@replit/object-storage';
 import multer from 'multer';
 import { uploadPdf, listPdfs, deletePdf, getPdfMetadata } from './storage';
 import pdfRoutes from './pdf-routes';
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault, isPayPalConfigured } from "./paypal";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -132,6 +133,24 @@ export function registerRoutes(app: Express): Server {
 
   // Register PDF routes for publications
   app.use("/api/publications", pdfRoutes);
+  
+  // PayPal routes - paths must match the PayPalButton component
+  app.get("/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/order", async (req, res) => {
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
+  });
+  
+  // Endpoint to check PayPal availability
+  app.get("/api/paypal/status", (_req, res) => {
+    res.json({ available: isPayPalConfigured() });
+  });
 
   const httpServer = createServer(app);
 
