@@ -69,7 +69,6 @@
     "lucide-react": "^0.468.0",
     "memorystore": "^1.6.7",
     "multer": "^2.0.2",
-    "next": "^15.1.6",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pdfjs-dist": "5.4.296",
