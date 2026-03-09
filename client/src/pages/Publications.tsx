@@ -1,28 +1,38 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { PublicationCard } from "@/components/PublicationCard";
-import { PdfModal } from "@/components/PdfModal";
 import { fetchPublications, type Publication } from "@/data/publications";
 
+const PdfModal = lazy(() => import("@/components/PdfModal").then((module) => ({ default: module.PdfModal })));
+
+function PdfModalFallback({ open }: { open: boolean }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-6">
+      <div className="rounded-2xl border border-white/10 bg-black/70 px-6 py-5 text-white shadow-2xl">
+        <p className="text-sm uppercase tracking-[0.25em] text-white/60">Loading viewer</p>
+        <p className="mt-3 text-base text-white/85">Preparing publication…</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Publications() {
-  const [location, setLocation] = useLocation();
   const [selectedPub, setSelectedPub] = useState<Publication | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch publications from API
     fetchPublications().then((pubs) => {
       setPublications(pubs);
       setLoading(false);
-      
-      // Check for deep link after publications are loaded
+
       const params = new URLSearchParams(window.location.search);
       const docSlug = params.get("doc");
-      
+
       if (docSlug) {
-        const pub = pubs.find(p => p.slug === docSlug);
+        const pub = pubs.find((item) => item.slug === docSlug);
         if (pub) {
           setSelectedPub(pub);
           setIsModalOpen(true);
@@ -34,7 +44,7 @@ export default function Publications() {
   const handleOpenPub = (pub: Publication) => {
     setSelectedPub(pub);
     setIsModalOpen(true);
-    
+
     const newUrl = `/publications?doc=${pub.slug}`;
     window.history.pushState({}, "", newUrl);
   };
@@ -42,7 +52,7 @@ export default function Publications() {
   const handleClosePub = () => {
     setIsModalOpen(false);
     setSelectedPub(undefined);
-    
+
     window.history.pushState({}, "", "/publications");
   };
 
@@ -50,9 +60,9 @@ export default function Publications() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const docSlug = params.get("doc");
-      
+
       if (docSlug) {
-        const pub = publications.find(p => p.slug === docSlug);
+        const pub = publications.find((item) => item.slug === docSlug);
         if (pub) {
           setSelectedPub(pub);
           setIsModalOpen(true);
@@ -69,41 +79,38 @@ export default function Publications() {
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Publications</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Explore my academic work, research papers, and architectural theses. 
-            Click any publication to view it in an interactive PDF reader.
+          <h1 className="mb-4 text-4xl font-bold md:text-5xl">Publications</h1>
+          <p className="max-w-2xl text-lg text-muted-foreground">
+            Explore academic work, research papers, and architectural theses. The interactive viewer only loads when you open a publication.
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">
-              Loading publications...
-            </p>
+          <div className="py-16 text-center">
+            <p className="text-lg text-muted-foreground">Loading publications...</p>
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+            <div className="flex flex-wrap justify-center gap-6 md:justify-start">
               {publications.map((pub) => (
                 <PublicationCard key={pub.slug} pub={pub} onOpen={handleOpenPub} />
               ))}
             </div>
 
             {publications.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground text-lg">
-                  No publications available yet. Check back soon!
-                </p>
+              <div className="py-16 text-center">
+                <p className="text-lg text-muted-foreground">No publications available yet. Check back soon!</p>
               </div>
             )}
           </>
         )}
       </div>
 
-      <PdfModal open={isModalOpen} pub={selectedPub} onClose={handleClosePub} />
+      <Suspense fallback={<PdfModalFallback open={isModalOpen} />}>
+        <PdfModal open={isModalOpen} pub={selectedPub} onClose={handleClosePub} />
+      </Suspense>
     </div>
   );
 }
