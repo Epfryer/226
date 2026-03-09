@@ -39,11 +39,27 @@ const shopPreview = [
   },
 ];
 
+const sectionReveal = {
+  hidden: { opacity: 0, y: 28 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-black">
-      <section className="border-b border-black/10 px-6 pb-16 pt-32 md:px-10 md:pb-20 lg:px-16">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.5fr_0.9fr] lg:items-end">
+      <section className="relative overflow-hidden border-b border-black/10 px-6 pb-16 pt-32 md:px-10 md:pb-24 lg:px-16">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.1 }}
+          className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_top_left,rgba(0,0,0,0.08),transparent_45%),radial-gradient(circle_at_80%_20%,rgba(0,0,0,0.05),transparent_35%)]"
+        />
+
+        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.5fr_0.9fr] lg:items-end">
           <div className="space-y-8">
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -57,7 +73,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-4xl space-y-6"
             >
               <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.04em] md:text-7xl lg:text-[6.5rem]">
@@ -72,17 +88,17 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col gap-4 sm:flex-row"
             >
               <Link href="/studio">
-                <a className="inline-flex items-center justify-center gap-2 border border-black bg-black px-6 py-3 text-sm uppercase tracking-[0.2em] text-white transition hover:bg-white hover:text-black">
+                <a className="inline-flex items-center justify-center gap-2 border border-black bg-black px-6 py-3 text-sm uppercase tracking-[0.2em] text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
                   Enter the Studio
                   <ArrowRight size={16} />
                 </a>
               </Link>
               <Link href="/publications">
-                <a className="inline-flex items-center justify-center gap-2 border border-black/20 px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition hover:border-black">
+                <a className="inline-flex items-center justify-center gap-2 border border-black/20 px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:border-black">
                   View Publications
                   <ArrowUpRight size={16} />
                 </a>
@@ -91,10 +107,10 @@ export default function Home() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="border border-black/10 bg-[#f4f1ea] p-6 md:p-8"
+            initial={{ opacity: 0, y: 34, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="border border-black/10 bg-[#f4f1ea] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.08)] md:p-8"
           >
             <div className="space-y-5">
               <p className="text-xs uppercase tracking-[0.3em] text-black/50">Studio note</p>
@@ -110,7 +126,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 px-6 py-16 md:px-10 md:py-20 lg:px-16">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="border-b border-black/10 px-6 py-16 md:px-10 md:py-20 lg:px-16"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl space-y-3">
@@ -130,21 +152,24 @@ export default function Home() {
               <motion.article
                 key={project!.id}
                 initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="group flex flex-col border border-black/10 bg-white"
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.55, delay: 0.08 * index, ease: [0.22, 1, 0.36, 1] }}
+                className="group flex flex-col border border-black/10 bg-white transition duration-300 hover:-translate-y-1 hover:border-black/20 hover:shadow-[0_24px_60px_rgba(0,0,0,0.08)]"
               >
                 <div className="aspect-[4/5] overflow-hidden bg-black/5">
                   <img
                     src={project!.image}
                     alt={project!.title}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-4 p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-black/45">{project!.year} · {project!.category}</p>
+                      <p className="text-xs uppercase tracking-[0.25em] text-black/45">
+                        {project!.year} · {project!.category}
+                      </p>
                       <h3 className="mt-2 text-2xl font-medium tracking-[-0.02em]">{project!.title}</h3>
                     </div>
                     <span className="text-sm text-black/40">{String(index + 1).padStart(2, "0")}</span>
@@ -156,9 +181,15 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="border-b border-black/10 px-6 py-16 md:px-10 md:py-20 lg:px-16">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="border-b border-black/10 px-6 py-16 md:px-10 md:py-20 lg:px-16"
+      >
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-black/50">The framework</p>
@@ -167,17 +198,30 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
-            {studioPillars.map((pillar) => (
-              <div key={pillar.title} className="border border-black/10 p-6">
+            {studioPillars.map((pillar, index) => (
+              <motion.div
+                key={pillar.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.08 * index }}
+                className="border border-black/10 p-6 transition duration-300 hover:border-black/20 hover:bg-black/[0.02]"
+              >
                 <p className="text-sm uppercase tracking-[0.2em] text-black/45">{pillar.title}</p>
                 <p className="mt-4 text-base leading-relaxed text-black/70">{pillar.body}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="border-b border-black/10 bg-[#111111] px-6 py-16 text-white md:px-10 md:py-20 lg:px-16">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="border-b border-black/10 bg-[#111111] px-6 py-16 text-white md:px-10 md:py-20 lg:px-16"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 max-w-3xl space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-white/45">Shop preview</p>
@@ -191,26 +235,39 @@ export default function Home() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {shopPreview.map((item) => (
-              <div key={item.title} className="border border-white/10 p-6">
+            {shopPreview.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.5, delay: 0.08 * index }}
+                className="border border-white/10 p-6 transition duration-300 hover:border-white/20 hover:bg-white/[0.03]"
+              >
                 <p className="text-sm uppercase tracking-[0.2em] text-white/45">{item.title}</p>
                 <p className="mt-4 text-base leading-relaxed text-white/72">{item.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           <div className="mt-10">
             <Link href="/studio">
-              <a className="inline-flex items-center gap-2 border border-white bg-white px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition hover:bg-transparent hover:text-white">
+              <a className="inline-flex items-center gap-2 border border-white bg-white px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:bg-transparent hover:text-white">
                 Preview the studio shop
                 <ArrowRight size={16} />
               </a>
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="px-6 py-16 md:px-10 md:py-20 lg:px-16">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="px-6 py-16 md:px-10 md:py-20 lg:px-16"
+      >
         <div className="mx-auto grid max-w-7xl gap-8 border border-black/10 p-8 md:grid-cols-[1.2fr_0.8fr] md:p-10">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-black/50">Next</p>
@@ -222,26 +279,26 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-4 self-end">
             <Link href="/about">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition hover:border-black">
+              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 About the practice
                 <ArrowUpRight size={16} />
               </a>
             </Link>
             <Link href="/contact">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition hover:border-black">
+              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Contact / collaborate
                 <ArrowUpRight size={16} />
               </a>
             </Link>
             <Link href="/studio">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition hover:border-black">
+              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Enter studio + shop
                 <ArrowUpRight size={16} />
               </a>
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 }
