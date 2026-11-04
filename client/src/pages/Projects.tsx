@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { ProjectFilter } from "@/components/projects/ProjectFilter";
 import { projects } from "@/lib/projects";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Projects() {
   const [location] = useLocation();
@@ -42,7 +43,10 @@ export default function Projects() {
           <ProjectFilter
             categories={categories}
             activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
+            onCategoryChange={(category) => {
+              setActiveCategory(category);
+              trackEvent("project_category_selected", { category: category || "all" });
+            }}
           />
         </div>
 

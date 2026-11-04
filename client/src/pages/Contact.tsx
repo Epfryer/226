@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { trackEvent } from "@/lib/analytics";
 
 const inquiryTypes = [
   "Commissions",
@@ -38,14 +39,14 @@ export default function Contact() {
           <div className="flex flex-col gap-6 border-t border-black/10 pt-8 md:border-l md:border-t-0 md:pl-10 md:pt-0">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-black/45">Email</p>
-              <a href="mailto:Epfryer@me.com" className="mt-3 inline-block text-2xl font-medium tracking-[-0.02em] hover:opacity-70">
+              <a href="mailto:Epfryer@me.com" onClick={() => trackEvent("contact_clicked", { method: "email" })} className="mt-3 inline-block text-2xl font-medium tracking-[-0.02em] hover:opacity-70">
                 Epfryer@me.com
               </a>
             </div>
 
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-black/45">Phone</p>
-              <a href="tel:+18135050290" className="mt-3 inline-block text-xl font-medium hover:opacity-70">
+              <a href="tel:+18135050290" onClick={() => trackEvent("contact_clicked", { method: "phone" })} className="mt-3 inline-block text-xl font-medium hover:opacity-70">
                 +1 (813) 505-0290
               </a>
             </div>

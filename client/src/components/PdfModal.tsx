@@ -4,6 +4,7 @@ import { X, Download } from "lucide-react";
 import type { Publication } from "@/data/publications";
 import { FlipbookViewer } from "./FlipbookViewer";
 import { asset } from "@/utils/asset";
+import { trackEvent } from "@/lib/analytics";
 
 interface PdfModalProps {
   open: boolean;
@@ -137,6 +138,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                   <a
                     href={asset(pub.pdfPath)}
                     download
+                    onClick={() => trackEvent("publication_download_clicked", { publication: pub.slug })}
                     className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
                   >
                     <Download className="w-3 h-3 sm:w-4 sm:h-4" />

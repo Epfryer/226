@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, ChevronLeft, ChevronRight, Check } from "lucide-react";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent } from "@/lib/analytics";
 
 type Category = "ALL" | "GARMENTS" | "GRAPHICS" | "OBJECTS" | "STUDIES";
 
@@ -1204,6 +1205,7 @@ export default function Studio() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const trackedPurchase = useRef<string | null>(null);
   
   const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -1219,6 +1221,10 @@ export default function Studio() {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
+            if (trackedPurchase.current !== sessionId) {
+              trackedPurchase.current = sessionId;
+              trackEvent("purchase_verified");
+            }
             setCart([]);
             setOrderSuccess(true);
             toast({
@@ -1238,6 +1244,7 @@ export default function Studio() {
           window.history.replaceState({}, '', '/studio');
         });
     } else if (canceled === 'true') {
+      trackEvent("checkout_canceled");
       toast({
         title: "Checkout Canceled",
         description: "Your checkout was canceled. Your cart items are still saved.",
@@ -1277,11 +1284,13 @@ export default function Studio() {
   }, [filteredProducts, selectedProduct]);
 
   const handleCategoryChange = useCallback((category: Category) => {
+    trackEvent("shop_category_selected", { category });
     setSelectedCategory(category);
     setSelectedProduct(null);
   }, []);
 
   const handleSelectProduct = useCallback((product: StudioProduct) => {
+    trackEvent("product_selected", { product_id: product.id, category: product.category || "ALL" });
     setSelectedProduct(product);
     if (!isDesktop) {
       setMobileSheetOpen(true);
@@ -1293,6 +1302,7 @@ export default function Studio() {
   }, []);
   
   const handleAddToCart = useCallback((item: CartItem) => {
+    trackEvent("add_to_cart", { variant_id: item.syncVariantId, price: item.price, quantity: 1, currency: "USD" });
     setCart(prev => {
       const existing = prev.find(i => i.syncVariantId === item.syncVariantId);
       if (existing) {
@@ -1320,12 +1330,19 @@ export default function Studio() {
   }, []);
   
   const handleRemoveItem = useCallback((syncVariantId: number) => {
+    trackEvent("remove_from_cart", { variant_id: syncVariantId });
     setCart(prev => prev.filter(item => item.syncVariantId !== syncVariantId));
   }, []);
   
   const handleCheckout = useCallback(async () => {
     if (cart.length === 0) return;
     
+    const checkoutData = {
+      item_count: cart.reduce((sum, item) => sum + item.quantity, 0),
+      value: Number(cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)),
+      currency: "USD",
+    };
+    trackEvent("checkout_started", checkoutData);
     setIsCheckingOut(true);
     try {
       const response = await fetch('/api/shop/checkout', {
@@ -1343,11 +1360,13 @@ export default function Studio() {
       const data = await response.json();
       
       if (data.url) {
+        trackEvent("checkout_redirected", checkoutData);
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
+      trackEvent("checkout_failed");
       console.error('Checkout error:', error);
       toast({
         title: "Checkout Error",
@@ -1385,7 +1404,10 @@ export default function Studio() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeInOut", delay: 0.3 }}
-          onClick={() => setCartOpen(true)}
+          onClick={() => {
+            trackEvent("cart_opened", { item_count: cart.reduce((sum, item) => sum + item.quantity, 0) });
+            setCartOpen(true);
+          }}
           className="relative p-2 hover:bg-muted rounded-full transition-colors"
           aria-label="Open cart"
         >

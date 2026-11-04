@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { PublicationCard } from "@/components/PublicationCard";
 import { fetchPublications, type Publication } from "@/data/publications";
+import { trackEvent } from "@/lib/analytics";
 
 const PdfModal = lazy(() => import("@/components/PdfModal").then((module) => ({ default: module.PdfModal })));
 
@@ -42,6 +43,7 @@ export default function Publications() {
   }, []);
 
   const handleOpenPub = (pub: Publication) => {
+    trackEvent("publication_opened", { publication: pub.slug });
     setSelectedPub(pub);
     setIsModalOpen(true);
 
