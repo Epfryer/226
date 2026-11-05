@@ -1,5 +1,5 @@
-// ...existing code...
-return (
+export function ProjectContainer() {
+  return (
   <div className="w-full px-6">
     <div className="flex justify-center mb-12">
       <div className="flex flex-wrap justify-center gap-4 mb-8">
@@ -10,5 +10,5 @@ return (
       {/* ...projects list... */}
     </div>
   </div>
-);
-// ...existing code...
+  );
+}
