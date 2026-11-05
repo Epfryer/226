@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reserve the fixed desktop navigation rail without creating a containing
+   block: project/viewer overlays must remain fixed to the full viewport. */
+.portfolio-shell {
+  min-height: 100dvh;
+}
+
+.portfolio-shell--about {
+  background: #000;
+}
+
+.portfolio-main {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .portfolio-main,
+  .portfolio-shell > footer {
+    padding-left: 12rem;
+  }
+}
+
+.portfolio-header a:focus-visible,
+.portfolio-header button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

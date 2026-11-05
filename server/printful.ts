@@ -41,6 +41,11 @@ class PrintfulClient {
   }
 
   // Get product variants
+  async getSyncVariant(id: number) {
+    const response = await this.client.get(`/store/variants/${id}`, { timeout: 15000 });
+    return response.data;
+  }
+
   async getProductVariants(productId: number) {
     const response = await this.client.get(`/store/products/${productId}`);
     return response.data;

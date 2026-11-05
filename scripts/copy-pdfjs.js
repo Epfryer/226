@@ -31,3 +31,8 @@ if (existsSync(buildSourcePath)) {
 }
 
 console.log('PDF.js setup complete!');
+// Keep auxiliary assets aligned with the installed renderer and worker.
+for (const directory of ['cmaps', 'standard_fonts', 'wasm']) {
+  const source = join(pdfjsDistPath, directory);
+  if (existsSync(source)) cpSync(source, join(publicPdfjsDir, directory), { recursive: true });
+}

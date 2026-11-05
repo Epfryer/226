@@ -23,6 +23,14 @@
   transform: translate(-50%, 0);
 }
 
+.fv-toolbar:focus-within { opacity: 1; transform: translate(-50%, 0); }
+.fv-toolbar button { min-width: 44px; min-height: 44px; }
+.fv-toolbar button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+@media (max-width: 600px) {
+  .fv-toolbar { gap: 2px; padding: 4px; max-width: calc(100% - 8px); }
+  .fv-sep { display: none; }
+}
+
 .fv-toolbar button {
   appearance: none; border: 0; border-radius: 10px; padding: 6px 10px;
   font-size: 14px; line-height: 1; color: #fff; background: rgba(255, 255, 255, .08);

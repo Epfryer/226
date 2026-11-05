@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { Client } from "@replit/object-storage";
+import { PdfFileCache, parseRange } from "./pdf-delivery";
 
 const router = express.Router();
 // Use the bucket ID from environment or config
@@ -28,32 +29,7 @@ router.use(cors({
   exposedHeaders: ['Accept-Ranges', 'Content-Range', 'Content-Length']
 }));
 
-// Simple in-memory cache for PDF buffers (helps with range requests)
-const pdfCache = new Map<string, { buffer: Buffer; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const MAX_CACHE_SIZE = 5; // Maximum number of PDFs to cache
-
-// Clean up expired cache entries
-function cleanupCache() {
-  const now = Date.now();
-  for (const [key, value] of Array.from(pdfCache.entries())) {
-    if (now - value.timestamp >= CACHE_TTL) {
-      pdfCache.delete(key);
-      console.log(`Removed expired cache entry: ${key}`);
-    }
-  }
-  
-  // If still over size limit, remove oldest entries
-  if (pdfCache.size > MAX_CACHE_SIZE) {
-    const entries = Array.from(pdfCache.entries())
-      .sort((a, b) => a[1].timestamp - b[1].timestamp);
-    const toRemove = entries.slice(0, pdfCache.size - MAX_CACHE_SIZE);
-    toRemove.forEach(([key]) => {
-      pdfCache.delete(key);
-      console.log(`Removed old cache entry due to size limit: ${key}`);
-    });
-  }
-}
+const rangeCache = new PdfFileCache(name => storage.downloadAsStream(name));
 
 // Health check endpoint to verify storage connection
 router.get("/health", async (req, res) => {
@@ -89,13 +65,16 @@ router.get("/health", async (req, res) => {
 
 router.get("/:filename", async (req, res) => {
   try {
-    const nameRaw = decodeURIComponent(req.params.filename || "");
+    const nameRaw = req.params.filename || "";
     if (!nameRaw) {
       console.error("[PDF] Missing filename param");
       return res.status(400).json({ error: "Missing filename param" });
     }
 
     let name = /\.pdf$/i.test(nameRaw) ? nameRaw : `${nameRaw}.pdf`;
+    if (/[\\/\r\n"]/.test(name) || name.includes("..")) {
+      return res.status(400).json({ error: "Invalid PDF filename" });
+    }
     
     // Optional: Check for iOS user agent or ?mobile=1 flag to serve mobile-optimized PDF
     const userAgent = req.headers['user-agent'] || '';
@@ -131,59 +110,53 @@ router.get("/:filename", async (req, res) => {
         return res.status(404).json({ error: "PDF not found", filename: name });
       }
 
-      // For range requests, we need to download the full file to get the size
-      // This is a limitation - we'll cache it for subsequent range requests
-      let pdfBuffer: Buffer;
-      const cached = pdfCache.get(name);
-      
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log(`[PDF] Using cached for range request: ${name}`);
-        pdfBuffer = cached.buffer;
-      } else {
-        console.log(`[PDF] Downloading for range request: ${name}`);
-        const downloadResult = await storage.downloadAsBytes(name);
-        
-        if (!downloadResult.ok) {
-          console.error("[PDF] Download failed:", downloadResult.error);
-          return res.status(500).json({ 
-            error: "Failed to download PDF",
-            details: downloadResult.error?.message,
-            filename: name
-          });
-        }
-        
-        pdfBuffer = downloadResult.value[0];
-        pdfCache.set(name, { buffer: pdfBuffer, timestamp: Date.now() });
-        console.log(`[PDF] Cached for ranges: ${name} (${(pdfBuffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+      let file;
+      try {
+        file = await rangeCache.acquire(name);
+      } catch (error) {
+        // HTTP permits ignoring Range and sending 200. Preserve access to large
+        // books or during cache saturation without growing the disk/RAM cache.
+        const message = error instanceof Error ? error.message : "";
+        if (!message.includes("exceeds supported size") && !message.includes("service busy")) throw error;
+        if (res.destroyed) return;
+        res.status(200).set({
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="${name}"`,
+          "Cache-Control": "public, max-age=3600",
+        });
+        const fallback = storage.downloadAsStream(name);
+        res.on("close", () => fallback.destroy());
+        fallback.on("error", () => res.destroy());
+        fallback.pipe(res);
+        return;
       }
-
-      const fileSize = pdfBuffer.length;
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-      if (start >= fileSize || end >= fileSize) {
-        res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
-        return res.send("Range Not Satisfiable");
+      if (res.destroyed) { file.release(); return; }
+      const parsed = parseRange(range, file.size);
+      if (!parsed) {
+        file.release();
+        return res.status(416).set("Content-Range", `bytes */${file.size}`).send("Range Not Satisfiable");
       }
-
-      const chunk = pdfBuffer.slice(start, end + 1);
-      const chunkSize = end - start + 1;
-
-      res.status(206);
-      res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-      res.setHeader("Accept-Ranges", "bytes");
-      res.setHeader("Content-Length", chunkSize.toString());
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `inline; filename="${name}"`);
-      res.setHeader("Cache-Control", "public, max-age=3600");
-      
-      console.log(`[PDF] Serving range: ${start}-${end}/${fileSize} for ${name}`);
-      return res.send(chunk);
+      res.status(206).set({
+        "Content-Range": `bytes ${parsed.start}-${parsed.end}/${file.size}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": String(parsed.end - parsed.start + 1),
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${name}"`,
+        "Cache-Control": "public, max-age=3600",
+      });
+      const stream = file.stream(parsed);
+      res.on("close", () => { stream.destroy(); file.release(); });
+      stream.on("error", () => { file.release(); res.destroy(); });
+      stream.pipe(res);
+      return;
     }
 
     // For full file requests (desktop), use streaming
     console.log(`[PDF] Streaming full file: ${name}`);
+    const exists = await storage.exists(name);
+    if (!exists.ok) return res.status(503).json({ error: "PDF storage unavailable" });
+    if (!exists.value) return res.status(404).json({ error: "PDF not found" });
+    if (res.destroyed) return;
     const stream = storage.downloadAsStream(name);
     
     res.setHeader("Content-Type", "application/pdf");
@@ -192,6 +165,7 @@ router.get("/:filename", async (req, res) => {
     res.setHeader("Cache-Control", "public, max-age=3600");
 
     stream.pipe(res);
+    res.on("close", () => stream.destroy());
     
     stream.on('error', (err: any) => {
       console.error("[PDF] Stream error:", err);
@@ -200,7 +174,7 @@ router.get("/:filename", async (req, res) => {
           error: "Stream error",
           details: err?.message || String(err)
         });
-      }
+      } else res.destroy();
     });
 
     stream.on('end', () => {

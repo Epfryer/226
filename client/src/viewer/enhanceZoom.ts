@@ -45,20 +45,20 @@ export function enhanceZoom(
 
   const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 
-  const zoomAt = (_cx: number, _cy: number, nextScale: number) => {
+  const zoomAt = (cx: number, cy: number, nextScale: number) => {
     nextScale = clamp(nextScale, state.min * state.fit, state.max * state.fit);
     const prev = state.scale;
     if (nextScale === prev) return;
 
     const rect = el.getBoundingClientRect();
-    const anchorX = rect.left + rect.width / 2;
-    const anchorY = rect.top + rect.height / 2;
-    const ox = anchorX - rect.left - state.x;
-    const oy = anchorY - rect.top - state.y;
+    const anchorX = cx - rect.left - rect.width / 2;
+    const anchorY = cy - rect.top - rect.height / 2;
+    const ox = anchorX - state.x;
+    const oy = anchorY - state.y;
     const k = nextScale / prev;
 
-    state.x = anchorX - rect.left - ox * k;
-    state.y = anchorY - rect.top - oy * k;
+    state.x = anchorX - ox * k;
+    state.y = anchorY - oy * k;
     state.scale = nextScale;
     apply(state);
   };
@@ -73,11 +73,12 @@ export function enhanceZoom(
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
     const factor = Math.exp(-e.deltaY * 0.0015);
-    zoomAt(0, 0, state.scale * factor);
+    zoomAt(e.clientX, e.clientY, state.scale * factor);
   };
 
   const pointerDownHandler = (e: PointerEvent) => {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    if ((e.target as Element).closest("button, a, input")) return;
+    if (state.scale > state.fit * 1.02) el.setPointerCapture?.(e.pointerId);
     if (e.isPrimary) {
       isDragging = true;
       dragX = e.clientX;
@@ -128,6 +129,18 @@ export function enhanceZoom(
     lastTouches = [];
     prevDistance = undefined;
   };
+  // PageFlip also listens for native mouse/touch events. While zoomed or
+  // pinching, those events belong to pan/zoom rather than page turning.
+  const guardPageFlip = (event: Event) => {
+    if ((event.target as Element).closest("button, a, input")) return;
+    const touches = (event as TouchEvent).touches;
+    if (state.scale > state.fit * 1.02 || (touches && touches.length > 1)) {
+      event.stopPropagation();
+      if (event.cancelable) event.preventDefault();
+    }
+  };
+  const guardedEvents = ["mousedown", "mousemove", "touchstart", "touchmove"];
+  guardedEvents.forEach(name => el.addEventListener(name, guardPageFlip, { capture: true, passive: false }));
 
   el.addEventListener("wheel", wheelHandler, { passive: false });
   el.addEventListener("pointerdown", pointerDownHandler);
@@ -164,6 +177,7 @@ export function enhanceZoom(
       return state;
     },
     destroy() {
+      guardedEvents.forEach(name => el.removeEventListener(name, guardPageFlip, true));
       el.removeEventListener("wheel", wheelHandler as EventListener);
       el.removeEventListener("pointerdown", pointerDownHandler as EventListener);
       el.removeEventListener("pointermove", pointerMoveHandler as EventListener);

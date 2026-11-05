@@ -1,3 +1,5 @@
+import { lazy, Suspense } from "react";
+import { MotionConfig } from "framer-motion";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,13 +10,14 @@ import { WhiteHeader } from "@/components/layout/WhiteHeader";
 import { WhiteFooter } from "@/components/layout/WhiteFooter";
 import { ProjectProvider } from "@/context/ProjectContext";
 import Home from "@/pages/Home";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import Publications from "@/pages/Publications";
-import Projects from "@/pages/Projects";
-import Studio from "@/pages/Studio";
-import Diagnostics from "@/pages/Diagnostics";
-import NotFound from "@/pages/not-found";
+
+const About = lazy(() => import("@/pages/About"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const Publications = lazy(() => import("@/pages/Publications"));
+const Projects = lazy(() => import("@/pages/Projects"));
+const Studio = lazy(() => import("@/pages/Studio"));
+const Diagnostics = lazy(() => import("@/pages/Diagnostics"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 function Router() {
   return (
@@ -37,18 +40,31 @@ function App() {
   const isStudioPage = location === "/studio";
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ProjectProvider>
-        <div className="min-h-screen flex flex-col">
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <ProjectProvider>
+        <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
           {!isStudioPage && (isAboutPage ? <WhiteHeader /> : <Header />)}
-          <main className="flex-1">
-            <Router />
+          <main className={`flex-1 ${isStudioPage ? "" : "portfolio-main"}`}>
+            <Suspense fallback={
+              <div role="status" aria-live="polite" className={`px-6 py-32 ${isAboutPage ? "text-white" : ""}`}>
+                <span className="sr-only">Loading page…</span>
+                <div aria-hidden="true" className="space-y-6 motion-safe:animate-pulse">
+                  <div className="h-10 w-2/3 bg-current opacity-10" />
+                  <div className="h-4 w-1/2 bg-current opacity-10" />
+                  <div className="h-48 w-full bg-current opacity-10" />
+                </div>
+              </div>
+            }>
+              <Router />
+            </Suspense>
           </main>
           {!isStudioPage && (isAboutPage ? <WhiteFooter /> : <Footer />)}
         </div>
         <Toaster />
-      </ProjectProvider>
-    </QueryClientProvider>
+        </ProjectProvider>
+      </QueryClientProvider>
+    </MotionConfig>
   );
 }
 

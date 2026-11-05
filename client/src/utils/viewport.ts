@@ -27,7 +27,8 @@ export function getViewportSize(
  */
 export function isIOSDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
-  return /iPad|iPhone|iPod/i.test(navigator.userAgent) && !(window as any).MSStream;
+  return (/iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) && !(window as any).MSStream;
 }
 
 /**

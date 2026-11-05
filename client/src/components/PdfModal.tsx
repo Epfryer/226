@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download } from "lucide-react";
 import type { Publication } from "@/data/publications";
@@ -23,6 +23,9 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   }, [pub]);
 
   useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    let focusTimer: ReturnType<typeof setTimeout>;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -32,7 +35,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     const handleTab = (e: KeyboardEvent) => {
       if (e.key === "Tab" && modalRef.current) {
         const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
         );
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
@@ -54,7 +57,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     if (open) {
       previousActiveElementRef.current = document.activeElement as HTMLElement;
 
-      setTimeout(() => {
+      focusTimer = setTimeout(() => {
         closeButtonRef.current?.focus();
       }, 100);
 
@@ -66,7 +69,8 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("keydown", handleTab);
-      document.body.style.overflow = "unset";
+      clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
 
       if (previousActiveElementRef.current) {
         previousActiveElementRef.current.focus();
@@ -74,13 +78,19 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
     };
   }, [open, onClose]);
 
-  if (!pub) return null;
+  const [expanded, setExpanded] = useState(false);
+  const handleFullscreen = useCallback(() => {
+    const element = modalRef.current;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => setExpanded(false));
+    } else if (element?.requestFullscreen) {
+      void element.requestFullscreen().catch(() => setExpanded(value => !value));
+    } else {
+      setExpanded(value => !value);
+    }
+  }, []);
 
-  const handleFullscreen = () => {
-    const viewerUrl = asset('pdfjs/web/viewer.html');
-    const fileUrl = asset(pub.pdfPath);
-    window.open(`${viewerUrl}?file=${encodeURIComponent(fileUrl)}#zoom=page-fit`, '_blank');
-  };
+  if (!pub) return null;
 
   return (
     <AnimatePresence>
@@ -101,6 +111,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
+            onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
           >
             <motion.div
               ref={modalRef}
@@ -108,7 +119,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative w-full h-full flex flex-col max-w-[98vw] sm:max-w-[95vw] max-h-[98vh] sm:max-h-[95vh]"
+              className={`relative w-full flex flex-col bg-black/80 ${expanded ? "h-[100dvh] max-w-none" : "h-[96dvh] max-w-[98vw] sm:max-w-[95vw]"}`}
               onClick={(e) => e.stopPropagation()}
               style={{ willChange: 'opacity' }}
             >
@@ -119,22 +130,23 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 <button
                   ref={closeButtonRef}
                   onClick={onClose}
-                  className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                  className="min-w-11 min-h-11 flex items-center justify-center hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </button>
               </div>
 
-              <div className="flex-1 relative overflow-hidden">
+              <div className="flex-1 min-h-0 relative overflow-hidden">
                 <FlipbookViewer 
+                  key={pub.slug}
                   pdfUrl={asset(pub.pdfPath)} 
                   onFullscreen={handleFullscreen}
                   onAspectRatioDetected={setAspectRatio}
                 />
 
                 {/* Download button overlay */}
-                <div className="absolute top-4 right-4 z-20">
+                <div className="absolute bottom-4 right-2 z-20">
                   <a
                     href={asset(pub.pdfPath)}
                     download

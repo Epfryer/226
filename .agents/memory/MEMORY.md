@@ -1,3 +1,4 @@
 - [Dependency override verification](dependency-overrides.md) — npm can retain vulnerable nested versions after an override; verify the installed tree and lockfile.
 - [Security version compatibility](security-version-compatibility.md) — UUID security upgrades must preserve CommonJS support for existing storage HTTP dependencies.
 - [Experience priorities](experience-priorities.md) — preserve current functionality and flipbook behavior; improve desktop/mobile parity and separate optional features.
+- [Browser verification](browser-verification.md) — downloaded browser binaries may lack host libraries; distinguish Chromium emulation from cross-browser/device coverage.

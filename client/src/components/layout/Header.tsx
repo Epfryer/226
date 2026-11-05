@@ -1,27 +1,38 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { TypingAnimation } from "@/components/ui/typing-animation";
+import { useMobileNavigation } from "./use-mobile-navigation";
 
-export function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+export function Header({ white = false }: { white?: boolean }) {
   const { isProjectExpanded, shouldRevealHeader } = useProject();
+  const { isOpen, setIsOpen, buttonRef, menuRef } = useMobileNavigation(isProjectExpanded);
+  const reducedMotion = useReducedMotion();
   const [location] = useLocation();
-  const isAboutPage = location === "/about";
+  const isAboutPage = white || location === "/about";
+  const navigationHidden = isProjectExpanded && !shouldRevealHeader;
+  const linkClass = `hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? "text-white" : ""}`;
+  const links = [
+    ["/about", "About"],
+    ["/contact", "Contact"],
+    ["/projects", "Projects"],
+    ["/publications", "Publications"],
+    ["/studio", "Studio"],
+  ];
 
   const headerStyle = {
-    opacity: isProjectExpanded && !shouldRevealHeader ? 0 : 1,
-    transform: isProjectExpanded && !shouldRevealHeader ? 'translateX(-100px)' : 'none',
+    opacity: navigationHidden ? 0 : 1,
+    transform: navigationHidden && !reducedMotion ? 'translateX(-100px)' : 'none',
+    visibility: navigationHidden ? "hidden" as const : "visible" as const,
   };
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full p-6">
+    <header className="portfolio-header pointer-events-none fixed top-0 left-0 z-50 w-full p-6 md:w-48">
       <div>
         <div className="flex items-center justify-between md:block">
           <motion.div 
-            className={`ml-2 text-2xl font-bold inline-block md:ml-0 ${isAboutPage ? 'text-white' : ''}`}
+            className={`pointer-events-auto ml-2 text-2xl font-bold inline-block md:ml-0 ${isAboutPage ? 'text-white' : ''}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -35,7 +46,7 @@ export function Header() {
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-light ${isAboutPage ? 'text-white' : ''}`}>Designed by</span>
                   <span className={`text-base ${isAboutPage ? 'text-white' : ''}`}>
-                    <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />
+                    {reducedMotion ? "Ethan Fryer" : <TypingAnimation text="Ethan Fryer" speed={50} delay={200} />}
                   </span>
                 </div>
               ) : (
@@ -57,8 +68,13 @@ export function Header() {
             </Link>
           </motion.div>
           <button 
-            className="md:hidden relative z-10"
-            onClick={() => setIsOpen(!isOpen)}
+            ref={buttonRef}
+            type="button"
+            className={`pointer-events-auto md:hidden relative z-10 min-h-11 min-w-11 flex items-center justify-center ${isAboutPage ? "text-white" : ""}`}
+            aria-label={isOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setIsOpen((open) => !open)}
             style={headerStyle}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -66,51 +82,31 @@ export function Header() {
         </div>
 
         <div 
-          className="hidden md:block mt-6"
+          className="pointer-events-auto hidden md:block mt-6"
           style={headerStyle}
         >
-          <nav className="flex flex-col space-y-4 text-sm">
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
-              About
-            </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
-              Contact
-            </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/projects">
-              Projects
-            </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/publications">
-              Publications
-            </Link>
-            <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
-              Studio
-            </Link>
+          <nav aria-label="Primary navigation" className="flex flex-col space-y-4 text-sm">
+            {links.map(([href, label]) => (
+              <Link key={href} className={linkClass} href={href} aria-current={location === href ? "page" : undefined}>{label}</Link>
+            ))}
           </nav>
         </div>
 
-        {isOpen && !isProjectExpanded && (
           <div
-            className={`absolute top-16 left-6 right-6 ${isAboutPage ? 'bg-transparent' : 'bg-white'} py-4 px-6 md:hidden`}
+            ref={menuRef}
+            id="mobile-navigation"
+            hidden={!isOpen || isProjectExpanded}
+            className={`pointer-events-auto absolute top-20 left-6 right-6 max-h-[calc(100dvh-6rem)] overflow-y-auto ${isAboutPage ? 'bg-[#050505]' : 'bg-white'} py-4 px-6 md:hidden`}
           >
-            <nav className="flex flex-col space-y-4">
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/about">
-                About
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/contact">
-                Contact
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/projects">
-                Projects
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/publications">
-                Publications
-              </Link>
-              <Link className={`hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? 'text-white' : ''}`} href="/studio">
-                Studio
-              </Link>
+            <nav aria-label="Mobile navigation" className="flex flex-col space-y-4">
+              {links.map(([href, label]) => (
+                <Link key={href} className={linkClass} href={href} aria-current={location === href ? "page" : undefined} onClick={() => {
+                  setIsOpen(false);
+                  buttonRef.current?.focus();
+                }}>{label}</Link>
+              ))}
             </nav>
           </div>
-        )}
       </div>
     </header>
   );

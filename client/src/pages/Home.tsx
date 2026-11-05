@@ -91,17 +91,13 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col gap-4 sm:flex-row"
             >
-              <Link href="/studio">
-                <a className="inline-flex items-center justify-center gap-2 border border-black bg-black px-6 py-3 text-sm uppercase tracking-[0.2em] text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
+              <Link href="/studio" className="inline-flex items-center justify-center gap-2 border border-black bg-black px-6 py-3 text-sm uppercase tracking-[0.2em] text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
                   Enter the Studio
                   <ArrowRight size={16} />
-                </a>
               </Link>
-              <Link href="/publications">
-                <a className="inline-flex items-center justify-center gap-2 border border-black/20 px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:border-black">
+              <Link href="/publications" className="inline-flex items-center justify-center gap-2 border border-black/20 px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:border-black">
                   View Publications
                   <ArrowUpRight size={16} />
-                </a>
               </Link>
             </motion.div>
           </div>
@@ -139,11 +135,9 @@ export default function Home() {
               <p className="text-xs uppercase tracking-[0.3em] text-black/50">Selected work</p>
               <h2 className="text-3xl font-semibold tracking-[-0.03em] md:text-5xl">Projects that set the tone.</h2>
             </div>
-            <Link href="/projects">
-              <a className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-black/70 transition hover:text-black">
+            <Link href="/projects" className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-black/70 transition hover:text-black">
                 Browse the archive
                 <ArrowRight size={15} />
-              </a>
             </Link>
           </div>
 
@@ -159,6 +153,8 @@ export default function Home() {
               >
                 <div className="aspect-[4/5] overflow-hidden bg-black/5">
                   <img
+                    loading="lazy"
+                    decoding="async"
                     src={project!.image}
                     alt={project!.title}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
@@ -251,11 +247,9 @@ export default function Home() {
           </div>
 
           <div className="mt-10">
-            <Link href="/studio">
-              <a className="inline-flex items-center gap-2 border border-white bg-white px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:bg-transparent hover:text-white">
+            <Link href="/studio" className="inline-flex items-center gap-2 border border-white bg-white px-6 py-3 text-sm uppercase tracking-[0.2em] text-black transition duration-300 hover:-translate-y-0.5 hover:bg-transparent hover:text-white">
                 Preview the studio shop
                 <ArrowRight size={16} />
-              </a>
             </Link>
           </div>
         </div>
@@ -278,23 +272,17 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-col gap-4 self-end">
-            <Link href="/about">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
+            <Link href="/about" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 About the practice
                 <ArrowUpRight size={16} />
-              </a>
             </Link>
-            <Link href="/contact">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
+            <Link href="/contact" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Contact / collaborate
                 <ArrowUpRight size={16} />
-              </a>
             </Link>
-            <Link href="/studio">
-              <a className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
+            <Link href="/studio" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Enter studio + shop
                 <ArrowUpRight size={16} />
-              </a>
             </Link>
           </div>
         </div>

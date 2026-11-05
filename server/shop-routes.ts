@@ -2,6 +2,7 @@
 import { type Express } from "express";
 import { getPrintfulClient } from "./printful";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { validateCart } from "./cart-validation";
 
 function isPrintfulConfigured(): boolean {
   return !!process.env.PRINTFUL_API_KEY;
@@ -36,6 +37,13 @@ export function registerShopRoutes(app: Express) {
   }
 
   const printful = getPrintfulClient();
+  app.post("/api/shop/cart/validate", async (req, res) => {
+    try {
+      res.json({ items: await validateCart(req.body.items, id => printful.getSyncVariant(id)) });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Unable to validate cart" });
+    }
+  });
 
   // Get all products
   app.get("/api/shop/products", async (req, res) => {
@@ -237,7 +245,7 @@ export function registerShopRoutes(app: Express) {
   // Create Stripe checkout session
   app.post("/api/shop/checkout", async (req, res) => {
     try {
-      const { items, shippingAddress } = req.body as {
+      const { items: submittedItems, shippingAddress } = req.body as {
         items: CartItem[];
         shippingAddress?: {
           name: string;
@@ -250,9 +258,10 @@ export function registerShopRoutes(app: Express) {
         };
       };
 
-      if (!items || items.length === 0) {
+      if (!submittedItems || submittedItems.length === 0) {
         return res.status(400).json({ error: "No items in cart" });
       }
+      const items = await validateCart(submittedItems, id => printful.getSyncVariant(id));
 
       const stripe = await getUncachableStripeClient();
       

@@ -1,4 +1,7 @@
 node_modules
+client/public/pdfjs/cmaps/
+client/public/pdfjs/standard_fonts/
+client/public/pdfjs/wasm/
 dist
 .DS_Store
 server/public

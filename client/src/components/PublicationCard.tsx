@@ -12,7 +12,7 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
     <motion.button
       layoutId={pub.slug}
       onClick={() => onOpen(pub)}
-      className="group relative overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 transition hover:shadow-xl w-fit"
+      className="group relative max-w-full overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 transition hover:shadow-xl w-fit"
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       aria-label={`Open ${pub.title}`}
@@ -23,8 +23,9 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
           <img
             src={pub.coverPath}
             alt={pub.title}
-            loading="eager"
-            className="h-full w-auto"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-auto max-w-full object-contain"
             width={1200}
             height={1600}
           />

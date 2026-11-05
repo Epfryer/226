@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
+import { readCart, saveCart } from "@/lib/cart-storage";
+import { useDialogFocus } from "@/hooks/use-dialog-focus";
 
 type Category = "ALL" | "GARMENTS" | "GRAPHICS" | "OBJECTS" | "STUDIES";
 
@@ -820,6 +822,7 @@ function StudioMobileSheet({
   onClose: () => void;
   onAddToCart: (item: CartItem) => void;
 }) {
+  const dialogRef = useDialogFocus(isOpen, onClose);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
@@ -941,6 +944,10 @@ function StudioMobileSheet({
           />
           <motion.div
             className="fixed bottom-0 left-0 right-0 bg-background z-50 lg:hidden rounded-t-2xl max-h-[90vh] overflow-y-auto"
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Product details"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -1076,6 +1083,7 @@ function CartDrawer({
   onCheckout: () => void;
   isCheckingOut?: boolean;
 }) {
+  const dialogRef = useDialogFocus(isOpen, onClose);
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
   useEffect(() => {
@@ -1102,6 +1110,10 @@ function CartDrawer({
           />
           <motion.div
             className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background z-50 shadow-xl"
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Shopping cart"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -1201,7 +1213,8 @@ export default function Studio() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("ALL");
   const [selectedProduct, setSelectedProduct] = useState<StudioProduct | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(readCart);
+  useEffect(() => { saveCart(cart); }, [cart]);
   const [cartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -1220,6 +1233,7 @@ export default function Studio() {
       fetch(`/api/shop/checkout/${sessionId}/verify`)
         .then(res => res.json())
         .then(data => {
+          if (!data.success) throw new Error("Order not yet verified");
           if (data.success) {
             if (trackedPurchase.current !== sessionId) {
               trackedPurchase.current = sessionId;
@@ -1236,8 +1250,8 @@ export default function Studio() {
         .catch(err => {
           console.error('Error verifying checkout:', err);
           toast({
-            title: "Payment Received",
-            description: "Your payment was successful. We're processing your order.",
+            title: "Order verification unavailable",
+            description: "We couldn't verify your order. Check your payment confirmation before trying again.",
           });
         })
         .finally(() => {
@@ -1345,12 +1359,24 @@ export default function Studio() {
     trackEvent("checkout_started", checkoutData);
     setIsCheckingOut(true);
     try {
+      const validation = await fetch("/api/shop/cart/validate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart }),
+      });
+      const validated = await validation.json();
+      if (!validation.ok) throw new Error(validated.error || "Unable to check current availability");
+      const currentItems: CartItem[] = validated.items;
+      if (currentItems.some((item, index) => item.price !== cart[index]?.price)) {
+        setCart(currentItems);
+        toast({ title: "Prices updated", description: "Please review your cart and proceed to checkout again." });
+        return;
+      }
       const response = await fetch('/api/shop/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ items: cart }),
+        body: JSON.stringify({ items: currentItems }),
       });
       
       if (!response.ok) {
@@ -1370,7 +1396,7 @@ export default function Studio() {
       console.error('Checkout error:', error);
       toast({
         title: "Checkout Error",
-        description: "There was a problem starting checkout. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem starting checkout. Please try again.",
         variant: "destructive",
       });
     } finally {

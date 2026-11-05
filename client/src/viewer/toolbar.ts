@@ -21,6 +21,7 @@ export function mountToolbar(host: HTMLElement, actions: Actions): ToolbarApi {
   bar.className = "fv-toolbar";
   bar.innerHTML = `
     <button data-act="prev" aria-label="Previous page">◀</button>
+    <button data-act="next" aria-label="Next page">▶</button>
     <div class="fv-sep"></div>
     <button data-act="zoomOut" aria-label="Zoom out">－</button>
     <button data-act="zoomIn" aria-label="Zoom in">＋</button>
@@ -39,6 +40,7 @@ export function mountToolbar(host: HTMLElement, actions: Actions): ToolbarApi {
   };
 
   const unbindPrev = bind("prev", () => actions.onPrev());
+  const unbindNext = bind("next", () => actions.onNext());
   const unbindZoomOut = bind("zoomOut", () => actions.onZoomOut());
   const unbindZoomIn = bind("zoomIn", () => actions.onZoomIn());
   const unbindReset = bind("reset", () => actions.onReset());
@@ -52,7 +54,7 @@ export function mountToolbar(host: HTMLElement, actions: Actions): ToolbarApi {
     bar.classList.add("show");
     if (idle) window.clearTimeout(idle);
     idle = window.setTimeout(() => {
-      bar.classList.remove("show");
+      if (!bar.contains(document.activeElement)) bar.classList.remove("show");
     }, 1800);
   };
 
@@ -61,6 +63,7 @@ export function mountToolbar(host: HTMLElement, actions: Actions): ToolbarApi {
     ["pointerdown", show],
     ["wheel", show],
     ["keydown", show],
+    ["focusin", show],
   ];
 
   events.forEach(([event, handler]) => {
@@ -73,6 +76,7 @@ export function mountToolbar(host: HTMLElement, actions: Actions): ToolbarApi {
     element: bar,
     destroy: () => {
       unbindPrev();
+      unbindNext();
       unbindZoomOut();
       unbindZoomIn();
       unbindReset();
