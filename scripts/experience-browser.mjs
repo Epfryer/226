@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { verifyGlassReader, waitForReader } from "./reader-checks.mjs";
 const { chromium, firefox, webkit } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 const base = process.env.TEST_BASE_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`;
 
@@ -34,6 +35,7 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       await page.route("**/api/publications",r=>r.fulfill({json:{publications:[{slug:"test",title:"Test publication",year:"2026",filename:"test.pdf",pdfPath:"/api/publications/test.pdf",coverPath:""}]}}));
       await page.route("**/api/publications/test.pdf",r=>r.fulfill({contentType:"application/pdf",body:pdfFixture()}));
       await page.route("**/api/shop/products",r=>r.fulfill({json:{result:[]}}));
+      if (!process.env.TEST_READER_ONLY) {
       for(const path of ["/","/about","/projects","/contact","/publications","/studio"]) {
         await page.goto(base+path);
         await page.locator("main").first().waitFor();
@@ -56,34 +58,32 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       await page.route("**/api/shop/checkout/test-session/verify",r=>r.fulfill({json:{success:true}}));
       await page.goto(base+"/studio?success=true&session_id=test-session");
       await page.waitForFunction(()=>localStorage.getItem("def-studio-cart-v1")==="[]");
+      }
       await page.goto(base+"/publications?doc=test");
       await page.getByRole("dialog").waitFor();
-      await page.waitForFunction(()=>[...document.querySelectorAll("canvas")].some(c=>c.width>0),null,{timeout:30000});
-      await page.getByRole("button",{name:"Next page",exact:true}).click();
-      await page.waitForTimeout(1100);
-      const stored=await page.evaluate(()=>Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")));
-      assert(stored>1,"Next page must actually advance");
-      await page.getByRole("button",{name:"Zoom in",exact:true}).click();
-      await page.getByRole("button",{name:"Fit to page",exact:true}).click();
-      await page.setViewportSize({width:900,height:600});
-      await page.waitForTimeout(700);
-      await page.keyboard.press("Escape");
-      await page.getByRole("dialog").waitFor({state:"hidden"});
-      await page.getByRole("button",{name:/Open Test publication/}).click();
-      await page.waitForFunction(()=>document.querySelector(".fv-toolbar"));
-      assert.equal(await page.evaluate(()=>Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf"))),stored);
-      await page.keyboard.press("Escape");
-      await page.getByRole("dialog").waitFor({state:"hidden"});
+      await verifyGlassReader(page,name,width);
       await page.evaluate(()=>sessionStorage.setItem("pdf-page-/api/publications/test.pdf","27"));
       await page.getByRole("button",{name:/Open Test publication/}).click();
-      await page.waitForFunction(()=>document.querySelector(".fv-toolbar"));
+      await waitForReader(page);
       for(let i=0;i<4;i++) { await page.keyboard.press("ArrowRight"); await page.waitForTimeout(900); }
       const last=await page.evaluate(()=>Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")));
       assert(last>=29 && last<=30,"Last-page navigation must remain bounded");
       await page.keyboard.press("Escape");
       await page.getByRole("dialog").waitFor({state:"hidden"});
+      // A failed PDF is recoverable without closing the new full-window reader.
+      await page.route("**/api/publications/test.pdf",r=>r.fulfill({status:503,body:"Temporarily unavailable"}));
+      await page.getByRole("button",{name:/Open Test publication/}).click();
+      await page.getByText("Failed to Load PDF",{exact:true}).waitFor();
+      await page.route("**/api/publications/test.pdf",async r=>{
+        await new Promise(resolve=>setTimeout(resolve,500));
+        await r.fulfill({contentType:"application/pdf",body:pdfFixture()});
+      });
+      await page.getByRole("button",{name:"Try Again",exact:true}).click();
+      await waitForReader(page);
+      await page.getByRole("button",{name:"Close publication"}).click();
+      await page.getByRole("dialog").waitFor({state:"hidden"});
       assert.equal(errors.length,0,errors.join("\n"));
-      console.log(`PASS ${name} ${width}: routes, overflow, links, cart, PDF deep-link/next/zoom/resize/close`);
+      console.log(`PASS ${name} ${width}: glass viewport, unclipped zoom, pan, keyboard/focus, pinch (Chromium phone), resize, reading recovery, boundaries, PDF error/retry${process.env.TEST_READER_ONLY ? "" : ", routes and cart"}`);
       await context.close();
     }
   } catch(error) { failures.push(`${name}: ${error.message}`); console.error(failures.at(-1)); }

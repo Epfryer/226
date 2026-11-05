@@ -11,7 +11,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import "@/viewer/flipbook.css";
 import { enhanceZoom, ZoomState } from "@/viewer/enhanceZoom";
-import { mountToolbar } from "@/viewer/toolbar";
 import { useReducedMotion } from "framer-motion";
 
 // Use local PDF.js worker for better reliability and version consistency
@@ -40,7 +39,6 @@ const pdfOptions = {
 
 interface FlipbookViewerProps {
   pdfUrl: string;
-  onFullscreen?: () => void;
   onAspectRatioDetected?: (aspectRatio: number) => void;
 }
 
@@ -200,7 +198,7 @@ async function renderPage(
   }
 }
 
-export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: FlipbookViewerProps) {
+export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewerProps) {
   const reduceMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -244,7 +242,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   const viewerSurfaceRef = useRef<HTMLDivElement>(null);
   const pageLayerRef = useRef<HTMLDivElement>(null);
   const zoomApiRef = useRef<ReturnType<typeof enhanceZoom> | null>(null);
-  const toolbarRef = useRef<ReturnType<typeof mountToolbar> | null>(null);
   const zoomAnimationFrameRef = useRef<number>();
   const lastZoomRatioRef = useRef(1);
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
@@ -343,28 +340,6 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     }
   }, [pdfUrl]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isFlipbookReady || !bookRef.current?.pageFlip) return;
-      if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable=true]")) return;
-
-      try {
-        if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          bookRef.current.pageFlip().flipPrev();
-        } else if (e.key === "ArrowRight") {
-          e.preventDefault();
-          bookRef.current.pageFlip().flipNext();
-        }
-      } catch (error) {
-        console.warn("Error during keyboard navigation:", error);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFlipbookReady]);
-
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -449,21 +424,21 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   useEffect(() => {
     if (!pdfAspectRatio || !containerSize.width || !containerSize.height) return;
 
-    const padding = isMobile ? 8 : 16;
-    const availableHeight = Math.max(40, containerSize.height - (padding * 2) - 110);
-    const availableWidth = containerSize.width - (padding * 2);
+    // Fit the spread once; zoom transforms this layer, never an inset viewport.
+    // Leave breathing room for the overlaid title/close and page/download controls.
+    const availableHeight = Math.max(40, containerSize.height - 128);
+    const availableWidth = Math.max(40, containerSize.width - 32);
 
     const containerAspectRatio = availableWidth / availableHeight;
-    const scaleFactor = isMobile ? 0.90 : 0.85;
 
     let displayWidth: number;
     let displayHeight: number;
 
     if (pdfAspectRatio * 2 > containerAspectRatio) {
-      displayWidth = availableWidth * scaleFactor / 2;
+      displayWidth = availableWidth / 2;
       displayHeight = displayWidth / pdfAspectRatio;
     } else {
-      displayHeight = availableHeight * scaleFactor;
+      displayHeight = availableHeight;
       displayWidth = displayHeight * pdfAspectRatio;
     }
 
@@ -706,6 +681,37 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
   }, [isFlipbookReady]);
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isFlipbookReady || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable=true]")) return;
+      const zoom = zoomApiRef.current;
+      if (event.key === "0") {
+        event.preventDefault();
+        zoom?.reset();
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        zoom?.zoomIn();
+      } else if (event.key === "-") {
+        event.preventDefault();
+        zoom?.zoomOut();
+      } else if (event.shiftKey && event.key.startsWith("Arrow")) {
+        event.preventDefault();
+        zoom?.panBy(
+          event.key === "ArrowLeft" ? 80 : event.key === "ArrowRight" ? -80 : 0,
+          event.key === "ArrowUp" ? 80 : event.key === "ArrowDown" ? -80 : 0
+        );
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        zoom?.reset();
+        if (event.key === "ArrowLeft") goToPrevPage();
+        else goToNextPage();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFlipbookReady, goToNextPage, goToPrevPage]);
+
+  useEffect(() => {
     if (!isFlipbookReady || !pageWidth || !pageHeight) return;
 
     const surface = viewerSurfaceRef.current;
@@ -718,6 +724,8 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     const apply = (state: ZoomState) => {
       pageLayer.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
       pageLayer.style.transformOrigin = "center center";
+      surface.dataset.zoom = String(state.scale / state.fit);
+      surface.style.cursor = state.scale > state.fit * 1.02 ? "grab" : "";
 
       const ratio = state.fit > 0 ? state.scale / state.fit : 1;
       if (Math.abs(ratio - lastZoomRatioRef.current) < 0.01) {
@@ -734,30 +742,24 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
     const computeFit = () => {
       const viewerRect = surface.getBoundingClientRect();
-      const layerRect = pageLayer.getBoundingClientRect();
-      if (!viewerRect.width || !viewerRect.height || !layerRect.width || !layerRect.height) {
+      // offset dimensions are untransformed: a resize while zoomed must not
+      // treat the enlarged bounding rect as the book's natural fit size.
+      if (!viewerRect.width || !viewerRect.height) {
         return 1;
       }
       const fit = Math.min(
-        viewerRect.width / layerRect.width,
-        viewerRect.height / layerRect.height,
+        viewerRect.width / (pageWidth * 2),
+        viewerRect.height / pageHeight,
         1
       );
       return Number.isFinite(fit) && fit > 0 ? fit : 1;
     };
 
-    const zoomApi = enhanceZoom(surface, apply, computeFit(), { min: 0.5, max: 4, dblStep: 2 });
-    zoomApiRef.current = zoomApi;
-
-    const toolbar = mountToolbar(surface, {
-      onPrev: () => goToPrevPage(),
-      onNext: () => goToNextPage(),
-      onZoomIn: () => zoomApi.zoomIn(),
-      onZoomOut: () => zoomApi.zoomOut(),
-      onReset: () => zoomApi.reset(),
-      onFullscreen: onFullscreen ? () => onFullscreen() : undefined,
+    const zoomApi = enhanceZoom(surface, apply, computeFit(), {
+      min: 1, max: 4, dblStep: 2,
+      getContentSize: () => ({ width: pageWidth * 2, height: pageHeight }),
     });
-    toolbarRef.current = toolbar;
+    zoomApiRef.current = zoomApi;
 
     const handleResize = () => {
       const nextFit = computeFit();
@@ -776,16 +778,14 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
         cancelAnimationFrame(zoomAnimationFrameRef.current);
         zoomAnimationFrameRef.current = undefined;
       }
-      toolbar.destroy();
       zoomApi.destroy();
       surface.classList.remove("fv-root");
       pageLayer.classList.remove("fv-pageLayer");
       zoomApiRef.current = null;
-      toolbarRef.current = null;
       setZoomLevel(1);
       lastZoomRatioRef.current = 1;
     };
-  }, [isFlipbookReady, pageWidth, pageHeight, pdfUrl, onFullscreen, goToNextPage, goToPrevPage]);
+  }, [isFlipbookReady, pageWidth, pageHeight, pdfUrl]);
 
   const handleRetry = () => {
     setError(null);
@@ -898,14 +898,13 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
     <div 
       ref={containerRef} 
       className="pdf-viewer-container relative flex items-center justify-center h-full w-full overflow-hidden"
-      style={{
-        contain: 'size layout paint'
-      }}
+      aria-describedby="reader-instructions"
     >
       {error ? (
         renderErrorState()
       ) : (
         <Document
+          className="fv-document"
           key={`pdf-${documentKey}`}
           file={pdfUrl}
           options={pdfOptions}
@@ -949,7 +948,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                 >
                   <div
                     ref={pageLayerRef}
-                    className="relative flex items-center justify-center"
+                    className="relative flex shrink-0 items-center justify-center"
                     style={{
                       width: pageWidth * 2,
                       height: pageHeight,
@@ -1092,7 +1091,7 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
 
       {!loading && !error && totalPages > 0 && (
         <>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 py-1.5 sm:py-2 rounded-full whitespace-nowrap">
+          <div className="fv-position" role="status" aria-live="polite" aria-atomic="true">
             {currentPage === 1
               ? `Page 1 of ${totalPages}`
               : totalPages === 1
@@ -1102,9 +1101,15 @@ export function FlipbookViewer({ pdfUrl, onFullscreen, onAspectRatioDetected }: 
                   : `Pages ${currentPage}-${currentPage + 1} of ${totalPages}`}
           </div>
 
-          <p className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-white/70 text-center">
-            Drag from a page corner to flip • Pinch or Ctrl/⌘ + Scroll to zoom • Toolbar auto-hides
+          <p id="reader-instructions" className="sr-only">
+            Drag a page corner or use Left and Right arrows to turn pages.
+            Pinch, double-click or Control/Command and scroll to zoom.
+            Drag to pan when zoomed. Plus and Minus zoom, Shift and arrow keys pan,
+            and 0 resets the view. Escape closes the publication.
           </p>
+          <button type="button" className="fv-keyboard-reset" onClick={() => zoomApiRef.current?.reset()} aria-keyshortcuts="0">
+            Reset zoom
+          </button>
         </>
       )}
       

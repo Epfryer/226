@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Download } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Download, X } from "lucide-react";
 import type { Publication } from "@/data/publications";
 import { FlipbookViewer } from "./FlipbookViewer";
 import { asset } from "@/utils/asset";
 import { trackEvent } from "@/lib/analytics";
+import "../viewer/reader-shell.css";
 
 interface PdfModalProps {
   open: boolean;
@@ -14,155 +16,125 @@ interface PdfModalProps {
 
 export function PdfModal({ open, pub, onClose }: PdfModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const onCloseRef = useRef(onClose);
+  const prefersReducedMotion = useReducedMotion();
+  const isReady = open && Boolean(pub);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    setAspectRatio(null);
-  }, [pub]);
+    if (!isReady) return;
 
-  useEffect(() => {
-    if (!open) return;
     const previousOverflow = document.body.style.overflow;
-    let focusTimer: ReturnType<typeof setTimeout>;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.getAttribute("aria-hidden") !== "true");
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (!first || !last) {
+        event.preventDefault();
+        dialogRef.current.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key === "Tab" && modalRef.current) {
-        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
-        );
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            lastElement?.focus();
-            e.preventDefault();
-          }
-        } else {
-          if (document.activeElement === lastElement) {
-            firstElement?.focus();
-            e.preventDefault();
-          }
-        }
-      }
-    };
-
-    if (open) {
-      previousActiveElementRef.current = document.activeElement as HTMLElement;
-
-      focusTimer = setTimeout(() => {
-        closeButtonRef.current?.focus();
-      }, 100);
-
-      document.addEventListener("keydown", handleEscape);
-      document.addEventListener("keydown", handleTab);
-      document.body.style.overflow = "hidden";
-    }
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("keydown", handleTab);
-      clearTimeout(focusTimer);
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
-
-      if (previousActiveElementRef.current) {
+      if (previousActiveElementRef.current?.isConnected) {
         previousActiveElementRef.current.focus();
       }
     };
-  }, [open, onClose]);
-
-  const [expanded, setExpanded] = useState(false);
-  const handleFullscreen = useCallback(() => {
-    const element = modalRef.current;
-    if (document.fullscreenElement) {
-      void document.exitFullscreen().catch(() => setExpanded(false));
-    } else if (element?.requestFullscreen) {
-      void element.requestFullscreen().catch(() => setExpanded(value => !value));
-    } else {
-      setExpanded(value => !value);
-    }
-  }, []);
+  }, [isReady]);
 
   if (!pub) return null;
 
+  const motionDuration = prefersReducedMotion ? 0 : 0.24;
+  const pdfUrl = asset(pub.pdfPath);
+
   return (
-    <AnimatePresence>
-      {open && (
-        <>
+    createPortal(
+      <AnimatePresence>
+        {open && (
           <motion.div
+            className="reader-shell"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-xl z-50"
-            onClick={onClose}
-            aria-hidden="true"
-          />
-
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-            onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+            transition={{ duration: motionDuration, ease: "easeOut" }}
           >
-            <motion.div
-              ref={modalRef}
-              initial={{ opacity: 0, scale: 1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className={`relative w-full flex flex-col bg-black/80 ${expanded ? "h-[100dvh] max-w-none" : "h-[96dvh] max-w-[98vw] sm:max-w-[95vw]"}`}
-              onClick={(e) => e.stopPropagation()}
-              style={{ willChange: 'opacity' }}
+            <div className="reader-shell__veil" aria-hidden="true" />
+
+            <div
+              ref={dialogRef}
+              className="reader-shell__dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reader-title"
+              tabIndex={-1}
             >
-              <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex-shrink-0">
-                <h2 id="modal-title" className="text-sm sm:text-lg md:text-xl font-semibold text-white drop-shadow-lg truncate mr-2">
-                  {pub.title} ({pub.year})
-                </h2>
-                <button
-                  ref={closeButtonRef}
-                  onClick={onClose}
-                  className="min-w-11 min-h-11 flex items-center justify-center hover:bg-white/10 rounded-full transition-all flex-shrink-0"
-                  aria-label="Close modal"
-                >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </button>
+              <h2 id="reader-title" className="reader-shell__title">
+                {pub.title} <span>{pub.year}</span>
+              </h2>
+
+              <div className="reader-shell__viewer">
+                <FlipbookViewer key={pub.slug} pdfUrl={pdfUrl} />
               </div>
 
-              <div className="flex-1 min-h-0 relative overflow-hidden">
-                <FlipbookViewer 
-                  key={pub.slug}
-                  pdfUrl={asset(pub.pdfPath)} 
-                  onFullscreen={handleFullscreen}
-                  onAspectRatioDetected={setAspectRatio}
-                />
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={onClose}
+                className="reader-shell__control reader-shell__close"
+                aria-label="Close publication"
+                title="Close publication"
+              >
+                <X aria-hidden="true" />
+              </button>
 
-                {/* Download button overlay */}
-                <div className="absolute bottom-4 right-2 z-20">
-                  <a
-                    href={asset(pub.pdfPath)}
-                    download
-                    onClick={() => trackEvent("publication_download_clicked", { publication: pub.slug })}
-                    className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-md text-white text-sm sm:text-base rounded-full hover:bg-white/20 transition-all border border-white/20"
-                  >
-                    <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Download PDF</span>
-                    <span className="sm:hidden">Download</span>
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+              <a
+                href={pdfUrl}
+                download
+                onClick={() =>
+                  trackEvent("publication_download_clicked", {
+                    publication: pub.slug,
+                  })
+                }
+                className="reader-shell__control reader-shell__download"
+                aria-label={`Download ${pub.title} as PDF`}
+              >
+                <Download aria-hidden="true" />
+                <span>Download PDF</span>
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+    )
   );
 }

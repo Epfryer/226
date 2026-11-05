@@ -1,50 +1,82 @@
-.fv-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
-
-.fv-toolbar {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 16px) + 8px);
-  left: 50%;
-  transform: translate(-50%, -6px);
+.fv-document {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.fv-document > .react-pdf__message {
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: color-mix(in srgb, #000 35%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  opacity: 0;
-  transition: opacity .18s, transform .18s;
-  z-index: 5;
+  justify-content: center;
 }
 
-.fv-toolbar.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
+/* This is the viewport, not the fitted spread's bounding box. */
+.fv-root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  touch-action: none;
 }
 
-.fv-toolbar:focus-within { opacity: 1; transform: translate(-50%, 0); }
-.fv-toolbar button { min-width: 44px; min-height: 44px; }
-.fv-toolbar button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
-@media (max-width: 600px) {
-  .fv-toolbar { gap: 2px; padding: 4px; max-width: calc(100% - 8px); }
-  .fv-sep { display: none; }
+.fv-pageLayer {
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+  will-change: transform;
+  transform-origin: center center;
 }
 
-.fv-toolbar button {
-  appearance: none; border: 0; border-radius: 10px; padding: 6px 10px;
-  font-size: 14px; line-height: 1; color: #fff; background: rgba(255, 255, 255, .08);
-  cursor: pointer;
+.fv-root .stf__parent { touch-action: none; }
+
+.fv-position {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 10;
+  pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: white;
+  background: rgb(20 24 29 / 75%);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
 }
 
-.fv-toolbar button:hover { background: rgba(255, 255, 255, .16); }
-
-.fv-sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .25); margin: 0 4px; }
-
-.fv-hint { margin-left: 8px; font-size: 12px; color: rgba(255, 255, 255, .8); display: none; }
-
-@media (hover: hover) and (pointer: fine) {
-  .fv-hint { display: block; }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fv-position {
+    background: rgb(20 24 29 / 38%);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
 }
 
-.fv-pageLayer { will-change: transform; transform-origin: 0 0; position: relative; }
+/* No command bar: this single alternative is shown only on keyboard focus. */
+.fv-keyboard-reset {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.fv-keyboard-reset:focus {
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  padding: 10px 16px;
+  overflow: visible;
+  clip-path: none;
+  color: white;
+  background: #20262d;
+  border-radius: 999px;
+  outline: 2px solid white;
+  outline-offset: 3px;
+  z-index: 30;
+}

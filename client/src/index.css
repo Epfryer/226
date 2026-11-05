@@ -63,9 +63,9 @@
     display: none; /* Chrome, Safari and Opera */
   }
 
-  /* PDF Viewer - prevent aspect ratio distortion and ensure proper containment */
+  /* Only the full-viewport reader clips zoom; no inner paint containment. */
   .pdf-viewer-container {
-    contain: size layout paint;
+    contain: size layout;
   }
   
   .pdf-page canvas {
