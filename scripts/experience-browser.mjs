@@ -25,9 +25,10 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
   if (process.env.TEST_BROWSER && name !== process.env.TEST_BROWSER) continue;
   let browser;
   try {
-    browser=await engine.launch({headless:true, ...(name === "chromium" && process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {})});
+    const executablePath=process.env[`${name.toUpperCase()}_PATH`];
+    browser=await engine.launch({headless:true, ...(executablePath ? {executablePath} : {})});
     for(const width of [390,1440]) {
-      const context=await browser.newContext({viewport:{width,height:900},hasTouch:width===390});
+      const context=await browser.newContext({viewport:{width,height:900},hasTouch:width===390,ignoreHTTPSErrors:process.env.TEST_IGNORE_HTTPS_ERRORS==="1"});
       const page=await context.newPage();
       const errors=[];page.on("pageerror",e=>errors.push(e.message));
       await page.route("**/api/publications",r=>r.fulfill({json:{publications:[{slug:"test",title:"Test publication",year:"2026",filename:"test.pdf",pdfPath:"/api/publications/test.pdf",coverPath:""}]}}));
@@ -35,7 +36,7 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       await page.route("**/api/shop/products",r=>r.fulfill({json:{result:[]}}));
       for(const path of ["/","/about","/projects","/contact","/publications","/studio"]) {
         await page.goto(base+path);
-        await page.locator("main").waitFor();
+        await page.locator("main").first().waitFor();
         await page.waitForTimeout(400);
         assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${name} ${width} overflow ${path}`);
         assert.equal(await page.locator("a a").count(),0);
