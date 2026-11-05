@@ -1,1 +1,2 @@
 - [Dependency override verification](dependency-overrides.md) — npm can retain vulnerable nested versions after an override; verify the installed tree and lockfile.
+- [Security version compatibility](security-version-compatibility.md) — UUID security upgrades must preserve CommonJS support for existing storage HTTP dependencies.
