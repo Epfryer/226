@@ -1,0 +1,1 @@
+- [Dependency override verification](dependency-overrides.md) — npm can retain vulnerable nested versions after an override; verify the installed tree and lockfile.
