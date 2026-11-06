@@ -1,445 +1,184 @@
-
-import { type Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { z } from "zod";
 import { getPrintfulClient } from "./printful";
-import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { getUncachableStripeClient } from "./stripeClient";
 import { validateCart } from "./cart-validation";
+import { shopPool, withOrderLock } from "./shop-store";
+import { cents, normalizeRates, publicOrder, recipientSchema, type ShopItem, type ShippingRate } from "./shop-domain";
+import { shopRuntime } from "./shop-runtime";
 
-function isPrintfulConfigured(): boolean {
-  return !!process.env.PRINTFUL_API_KEY;
+function owner(req: Request, res: Response): string {
+  const headerToken = req.get("X-Shop-Token");
+  const value = headerToken || req.headers.cookie?.split(";").map(c => c.trim()).find(c => c.startsWith("shop_owner="))?.slice(11);
+  const token = value && /^[a-f0-9]{64}$/.test(value) ? value : randomBytes(32).toString("hex");
+  if (token !== value) res.append("Set-Cookie", `shop_owner=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+  return createHash("sha256").update(token).digest("hex");
 }
 
-interface CartItem {
-  syncVariantId: number;
-  variantId: number;
-  name: string;
-  color: string;
-  size: string;
-  price: number;
-  quantity: number;
-  image: string;
+export function trustedOrigin(req: Request) {
+  const domains = [process.env.REPLIT_DEV_DOMAIN, ...(process.env.REPLIT_DOMAINS?.split(",") || [])].filter(Boolean);
+  const origin = req.headers.origin;
+  if (!origin || !domains.some(domain => origin === `https://${domain}`)) throw new Error("Untrusted checkout origin");
+  return origin;
 }
+function guarded(req: Request, res: Response, next: NextFunction) {
+  try { trustedOrigin(req); next(); } catch { res.status(403).json({ error: "This request must originate from the store website." }); }
+}
+const rateLimits = new Map<string, { count: number; until: number }>();
+function throttle(req: Request, res: Response, next: NextFunction) {
+  const key = `${req.ip}:${req.path}`;
+  const now = Date.now();
+  if (rateLimits.size > 5000) rateLimits.forEach((value, key) => { if (value.until < now) rateLimits.delete(key); });
+  const bucket = rateLimits.get(key);
+  if (!bucket || bucket.until < now) rateLimits.set(key, { count: 1, until: now + 60000 });
+  else if (++bucket.count > 15) { res.status(429).json({ error: "Please wait a minute before trying again." }); return; }
+  next();
+}
+const asyncRoute = (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response) => {
+  fn(req, res).catch((error: any) => {
+    console.error("[Shop] Request failed", req.path, error.code || error.type || "request_error");
+    res.status(400).json({ error: error instanceof z.ZodError ? error.issues[0]?.message : "Unable to complete this step. Please check your details and try again." });
+  });
+};
 
-export function registerShopRoutes(app: Express) {
-  // Check if Printful is configured
-  if (!isPrintfulConfigured()) {
-    console.warn("[Shop] Printful not configured - shop routes will return empty results");
-    
-    // Register placeholder routes that return empty results
-    app.get("/api/shop/products", (req, res) => {
-      res.json({ code: 200, result: [], message: "Shop not configured" });
-    });
-    
-    app.get("/api/shop/products/:id", (req, res) => {
-      res.status(404).json({ error: "Shop not configured" });
-    });
-    
-    return;
+async function stripePrice(stripe: Awaited<ReturnType<typeof getUncachableStripeClient>>, item: ShopItem) {
+  // Stripe is the source of truth for its product and price IDs. Printful remains the fulfillment catalog.
+  const productId = `pf_variant_${item.syncVariantId}`;
+  let product;
+  try { product = await stripe.products.retrieve(productId); }
+  catch (error: any) {
+    if (error.code !== "resource_missing") throw error;
+    product = await stripe.products.create({
+      id: productId, name: item.name, ...(item.image ? { images: [item.image] } : {}),
+      metadata: { printful_sync_variant_id: String(item.syncVariantId) },
+    }, { idempotencyKey: `shop-product-${item.syncVariantId}` });
   }
+  const lookupKey = `${productId}_usd_${cents(item.price)}`;
+  const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+  if (prices.data[0]) return prices.data[0].id;
+  const price = await stripe.prices.create({
+    product: product.id, currency: "usd", unit_amount: cents(item.price), tax_behavior: "exclusive", lookup_key: lookupKey,
+  }, { idempotencyKey: lookupKey });
+  return price.id;
+}
 
-  const printful = getPrintfulClient();
-  app.post("/api/shop/cart/validate", async (req, res) => {
-    try {
-      res.json({ items: await validateCart(req.body.items, id => printful.getSyncVariant(id)) });
-    } catch (error) {
-      res.status(400).json({ error: error instanceof Error ? error.message : "Unable to validate cart" });
-    }
-  });
-
-  // Get all products
-  app.get("/api/shop/products", async (req, res) => {
-    try {
-      const products = await printful.getProducts();
-      res.json(products);
-    } catch (error: any) {
-      console.error("Error fetching products:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch products",
-        message: error.message 
-      });
-    }
-  });
-
-  // Get single product
-  app.get("/api/shop/products/:id", async (req, res) => {
-    try {
-      const productId = parseInt(req.params.id);
-      console.log(`[Shop] Fetching product details for ID: ${productId}`);
-      const product = await printful.getProduct(productId);
-      console.log(`[Shop] Product ${productId} response:`, JSON.stringify(product, null, 2));
-      console.log(`[Shop] Variants count:`, product?.result?.sync_variants?.length || 0);
-      res.json(product);
-    } catch (error: any) {
-      console.error(`[Shop] Error fetching product ${req.params.id}:`, error);
-      res.status(500).json({ 
-        error: "Failed to fetch product",
-        message: error.message 
-      });
-    }
-  });
-
-  // Get catalog products (Printful's product catalog)
-  app.get("/api/shop/catalog", async (req, res) => {
-    try {
-      const { category_id, offset, limit } = req.query;
-      const params: any = {};
-      
-      if (category_id) params.category_id = parseInt(category_id as string);
-      if (offset) params.offset = parseInt(offset as string);
-      if (limit) params.limit = parseInt(limit as string);
-      
-      const catalog = await printful.getCatalogProducts(params);
-      res.json(catalog);
-    } catch (error: any) {
-      console.error("Error fetching catalog:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch catalog",
-        message: error.message 
-      });
-    }
-  });
-
-  // Get catalog variant
-  app.get("/api/shop/catalog/variant/:id", async (req, res) => {
-    try {
-      const variantId = parseInt(req.params.id);
-      const variant = await printful.getCatalogVariant(variantId);
-      res.json(variant);
-    } catch (error: any) {
-      console.error("Error fetching variant:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch variant",
-        message: error.message 
-      });
-    }
-  });
-
-  // Calculate shipping
-  app.post("/api/shop/shipping/calculate", async (req, res) => {
-    try {
-      const shippingRates = await printful.calculateShipping(req.body);
-      res.json(shippingRates);
-    } catch (error: any) {
-      console.error("Error calculating shipping:", error);
-      res.status(500).json({ 
-        error: "Failed to calculate shipping",
-        message: error.message 
-      });
-    }
-  });
-
-  // Create order
-  app.post("/api/shop/orders", async (req, res) => {
-    try {
-      const order = await printful.createOrder(req.body);
-      res.json(order);
-    } catch (error: any) {
-      console.error("Error creating order:", error);
-      res.status(500).json({ 
-        error: "Failed to create order",
-        message: error.message 
-      });
-    }
-  });
-
-  // Get orders
-  app.get("/api/shop/orders", async (req, res) => {
-    try {
-      const { status, offset, limit } = req.query;
-      const params: any = {};
-      
-      if (status) params.status = status as string;
-      if (offset) params.offset = parseInt(offset as string);
-      if (limit) params.limit = parseInt(limit as string);
-      
-      const orders = await printful.getOrders(params);
-      res.json(orders);
-    } catch (error: any) {
-      console.error("Error fetching orders:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch orders",
-        message: error.message 
-      });
-    }
-  });
-
-  // Get single order
-  app.get("/api/shop/orders/:id", async (req, res) => {
-    try {
-      const order = await printful.getOrder(req.params.id);
-      res.json(order);
-    } catch (error: any) {
-      console.error("Error fetching order:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch order",
-        message: error.message 
-      });
-    }
-  });
-
-  // Confirm order
-  app.post("/api/shop/orders/:id/confirm", async (req, res) => {
-    try {
-      const result = await printful.confirmOrder(req.params.id);
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error confirming order:", error);
-      res.status(500).json({ 
-        error: "Failed to confirm order",
-        message: error.message 
-      });
-    }
-  });
-
-  // Webhook endpoint (for Printful to send updates)
-  app.post("/api/shop/webhook", async (req, res) => {
-    try {
-      console.log("Printful webhook received:", req.body);
-      
-      // Handle different webhook types
-      const { type, data } = req.body;
-      
-      switch (type) {
-        case 'package_shipped':
-          console.log("Package shipped:", data);
-          break;
-        case 'package_returned':
-          console.log("Package returned:", data);
-          break;
-        case 'order_failed':
-          console.log("Order failed:", data);
-          break;
-        case 'order_canceled':
-          console.log("Order canceled:", data);
-          break;
-        case 'product_synced':
-          console.log("Product synced:", data);
-          break;
-        default:
-          console.log("Unknown webhook type:", type);
+export function registerShopRoutes(app: Express, services = {
+  getStripe: getUncachableStripeClient, getPrintful: getPrintfulClient, runtime: shopRuntime,
+}) {
+  const printful = () => services.getPrintful();
+  const checkoutReady = (_req: Request, res: Response, next: NextFunction) => {
+    if (!services.runtime.ready) { res.status(503).json({ error: services.runtime.message }); return; }
+    next();
+  };
+  app.use("/api/shop", (_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
+  app.get("/api/shop/status", (_req, res) => res.json(services.runtime));
+  app.get("/api/shop/products", asyncRoute(async (_req, res) => {
+    const response = await printful().getProducts();
+    res.json(response);
+  }));
+  app.get("/api/shop/products/:id", asyncRoute(async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    res.json(await printful().getProduct(id));
+  }));
+  app.post("/api/shop/cart/validate", guarded, throttle, asyncRoute(async (req, res) => {
+    res.json({ items: await validateCart(req.body.items, id => printful().getSyncVariant(id)) });
+  }));
+  app.post("/api/shop/quote", guarded, throttle, checkoutReady, asyncRoute(async (req, res) => {
+    const recipient = recipientSchema.parse(req.body.recipient);
+    const items = await validateCart(req.body.items, id => printful().getSyncVariant(id));
+    const rates = normalizeRates(await printful().calculateShipping({
+      recipient, items: items.map(item => ({ variant_id: item.variantId, quantity: item.quantity })), currency: "USD",
+    }));
+    const subtotal = items.reduce((sum, item) => sum + cents(item.price) * item.quantity, 0);
+    const id = randomUUID();
+    const expiresAt = new Date(Date.now() + 15 * 60000);
+    await shopPool.query(`INSERT INTO shop_orders (id,owner_hash,recipient,items,shipping_rates,subtotal,expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)`, [id, owner(req, res), recipient, JSON.stringify(items), JSON.stringify(rates), subtotal, expiresAt]);
+    res.json({ quoteId: id, expiresAt, items, subtotal: subtotal / 100, shippingRates: rates });
+  }));
+  app.post("/api/shop/checkout", guarded, throttle, checkoutReady, asyncRoute(async (req, res) => {
+    const { quoteId, shippingId } = z.object({ quoteId: z.string().uuid(), shippingId: z.string().min(1).max(100) }).parse(req.body);
+    const ownerHash = owner(req, res);
+    const result = await withOrderLock(quoteId, async (client, order) => {
+      if (order.owner_hash !== ownerHash) { res.status(404).json({ error: "Quote not found" }); return; }
+      if (new Date(order.expires_at) < new Date()) { res.status(409).json({ error: "Your shipping quote expired. Please request a new quote." }); return; }
+      const stripe = await services.getStripe();
+      if (order.stripe_session_id) {
+        const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+        if (session.status !== "open") { res.status(409).json({ error: "Checkout is already completed or expired." }); return; }
+        if (order.shipping_id !== shippingId) { res.status(409).json({ error: "Shipping was already selected. Please request a new quote to change it." }); return; }
+        res.json({ url: session.url, sessionId: session.id }); return true;
       }
-      
-      res.status(200).json({ success: true });
-    } catch (error: any) {
-      console.error("Error processing webhook:", error);
-      res.status(500).json({ 
-        error: "Failed to process webhook",
-        message: error.message 
+      if (order.shipping_id && order.shipping_id !== shippingId) {
+        res.status(409).json({ error: "Shipping was already selected. Request a new quote to change it." }); return;
+      }
+      const rate = (order.shipping_rates as ShippingRate[]).find(r => r.id === shippingId);
+      if (!rate) throw new Error("Invalid shipping service");
+      const estimate = await printful().estimateOrder({
+        recipient: order.recipient,
+        items: (order.items as ShopItem[]).map(i => ({ sync_variant_id: i.syncVariantId, quantity: i.quantity })),
+        shipping: shippingId,
       });
-    }
-  });
-
-  // Get Stripe publishable key for frontend
-  app.get("/api/shop/stripe-key", async (req, res) => {
-    try {
-      const publishableKey = await getStripePublishableKey();
-      res.json({ publishableKey });
-    } catch (error: any) {
-      console.error("Error getting Stripe key:", error);
-      res.status(500).json({ 
-        error: "Failed to get Stripe key",
-        message: error.message 
-      });
-    }
-  });
-
-  // Create Stripe checkout session
-  app.post("/api/shop/checkout", async (req, res) => {
-    try {
-      const { items: submittedItems, shippingAddress } = req.body as {
-        items: CartItem[];
-        shippingAddress?: {
-          name: string;
-          email: string;
-          address1: string;
-          city: string;
-          state_code: string;
-          country_code: string;
-          zip: string;
-        };
+      if (cents(estimate.result?.costs?.total) > order.subtotal + cents(rate.rate)) {
+        res.status(409).json({ error: "This order cannot be fulfilled at the quoted price. Please contact the store owner." }); return;
+      }
+      // Revalidate the exact selected variants and prices immediately before accepting payment.
+      const items = await validateCart(order.items, id => printful().getSyncVariant(id));
+      if (JSON.stringify(items.map(i => [i.syncVariantId, i.price, i.quantity])) !==
+        JSON.stringify((order.items as ShopItem[]).map(i => [i.syncVariantId, i.price, i.quantity]))) {
+        res.status(409).json({ error: "Product prices changed. Close checkout and request a new quote." }); return;
+      }
+      const recipient = order.recipient;
+      const address = {
+        line1: recipient.address1, line2: recipient.address2, city: recipient.city,
+        state: recipient.state_code, country: recipient.country_code, postal_code: recipient.zip,
       };
-
-      if (!submittedItems || submittedItems.length === 0) {
-        return res.status(400).json({ error: "No items in cart" });
-      }
-      const items = await validateCart(submittedItems, id => printful.getSyncVariant(id));
-
-      const stripe = await getUncachableStripeClient();
-      
-      // Create line items for Stripe checkout
-      const lineItems = items.map(item => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: item.name,
-            description: `${item.color} / ${item.size}`,
-            images: item.image ? [item.image] : [],
-            metadata: {
-              syncVariantId: item.syncVariantId.toString(),
-              variantId: item.variantId.toString(),
-              color: item.color,
-              size: item.size,
-            }
-          },
-          unit_amount: Math.round(item.price * 100),
-        },
-        quantity: item.quantity,
-      }));
-
-      // Get host for success/cancel URLs
-      const host = req.headers.origin || `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
-      
-      // Create checkout session
+      // Address is collected on our site and fixed to this quote. Stripe cannot change the shipping destination.
+      const customer = await stripe.customers.create({
+        name: recipient.name, email: recipient.email, address,
+        shipping: { name: recipient.name, address },
+      }, { idempotencyKey: `shop-customer-${quoteId}` });
+      const lineItems = [];
+      for (const item of items) lineItems.push({ price: await stripePrice(stripe, item), quantity: item.quantity });
+      const shippingAmount = cents(rate.rate);
+      await client.query("UPDATE shop_orders SET shipping_id=$2,shipping_amount=$3,expected_amount=subtotal+$3 WHERE id=$1", [quoteId, shippingId, shippingAmount]);
+      const origin = trustedOrigin(req);
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: lineItems,
-        mode: 'payment',
-        shipping_address_collection: {
-          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'IE', 'PT', 'PL', 'CZ', 'JP', 'KR', 'SG', 'HK', 'NZ'],
-        },
-        shipping_options: [
-          {
-            shipping_rate_data: {
-              type: 'fixed_amount',
-              fixed_amount: { amount: 499, currency: 'usd' },
-              display_name: 'Standard Shipping',
-              delivery_estimate: {
-                minimum: { unit: 'business_day', value: 5 },
-                maximum: { unit: 'business_day', value: 10 },
-              },
-            },
-          },
-          {
-            shipping_rate_data: {
-              type: 'fixed_amount',
-              fixed_amount: { amount: 999, currency: 'usd' },
-              display_name: 'Express Shipping',
-              delivery_estimate: {
-                minimum: { unit: 'business_day', value: 2 },
-                maximum: { unit: 'business_day', value: 5 },
-              },
-            },
-          },
-        ],
-        success_url: `${host}/studio?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${host}/studio?canceled=true`,
-        metadata: {
-          cartItems: JSON.stringify(items.map(i => ({
-            syncVariantId: i.syncVariantId,
-            variantId: i.variantId,
-            name: i.name,
-            color: i.color,
-            size: i.size,
-            quantity: i.quantity,
-          }))),
-        },
-      });
-
+        customer: customer.id, mode: "payment", payment_method_types: ["card"],
+        client_reference_id: quoteId,
+        line_items: lineItems, automatic_tax: { enabled: true },
+        shipping_options: [{ shipping_rate_data: {
+          type: "fixed_amount", fixed_amount: { amount: shippingAmount, currency: "usd" },
+          display_name: rate.name, tax_behavior: "exclusive",
+          ...(rate.minDeliveryDays && rate.maxDeliveryDays ? { delivery_estimate: {
+            minimum: { unit: "business_day", value: rate.minDeliveryDays },
+            maximum: { unit: "business_day", value: rate.maxDeliveryDays },
+          } } : {}),
+        } }],
+        payment_intent_data: { shipping: { name: recipient.name, address }, metadata: { shop_order_id: quoteId } },
+        success_url: `${origin}/studio?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/studio?canceled=true`,
+        expires_at: Math.floor(new Date(order.created_at).getTime() / 1000) + 3600,
+        metadata: { shop_order_id: quoteId },
+      }, { idempotencyKey: `shop-checkout-${quoteId}` });
+      await client.query(`UPDATE shop_orders SET stripe_session_id=$2,shipping_id=$3,shipping_amount=$4,
+        expected_amount=subtotal+$4,status='awaiting_payment',test_mode=$5,updated_at=now() WHERE id=$1`,
+      [quoteId, session.id, shippingId, shippingAmount, !session.livemode]);
       res.json({ url: session.url, sessionId: session.id });
-    } catch (error: any) {
-      console.error("Error creating checkout session:", error);
-      res.status(500).json({ 
-        error: "Failed to create checkout session",
-        message: error.message 
-      });
-    }
-  });
-
-  // Verify checkout session and create Printful order
-  app.get("/api/shop/checkout/:sessionId/verify", async (req, res) => {
-    try {
-      const { sessionId } = req.params;
-      const stripe = await getUncachableStripeClient();
-      
-      const session = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['line_items', 'customer_details'],
-      }) as any;
-
-      if (session.payment_status !== 'paid') {
-        return res.status(400).json({ error: "Payment not completed" });
-      }
-
-      // Parse cart items from metadata with full variant details
-      interface CartItemMeta {
-        syncVariantId: number;
-        variantId: number;
-        name: string;
-        color: string;
-        size: string;
-        quantity: number;
-      }
-      
-      const cartItems: CartItemMeta[] = JSON.parse(session.metadata?.cartItems || '[]');
-      
-      if (cartItems.length === 0) {
-        return res.status(400).json({ error: "No items found in order" });
-      }
-      
-      // Extract shipping address - try multiple possible locations
-      let shippingAddress = session.shipping_details?.address;
-      let shippingName = session.shipping_details?.name;
-      
-      // Fallback to customer_details if shipping_details not available
-      if (!shippingAddress && session.customer_details?.address) {
-        shippingAddress = session.customer_details.address;
-        shippingName = session.customer_details.name;
-      }
-      
-      // Check for collected_information (newer Stripe API)
-      if (!shippingAddress && session.collected_information?.shipping_details?.address) {
-        shippingAddress = session.collected_information.shipping_details.address;
-        shippingName = session.collected_information.shipping_details.name;
-      }
-      
-      if (!shippingAddress || !shippingAddress.line1) {
-        console.error("No valid shipping address found in session:", sessionId);
-        return res.status(400).json({ 
-          error: "No shipping address provided",
-          details: "Please contact support with your order confirmation."
-        });
-      }
-
-      // Create Printful order with full variant details
-      const orderItems = cartItems.map((item) => ({
-        sync_variant_id: item.syncVariantId,
-        quantity: item.quantity,
-      }));
-
-      console.log("Creating Printful order with items:", orderItems);
-      console.log("Shipping to:", shippingAddress);
-
-      const printfulOrder = await printful.createOrder({
-        recipient: {
-          name: shippingName || session.customer_details?.name || 'Customer',
-          address1: shippingAddress.line1,
-          city: shippingAddress.city || '',
-          state_code: shippingAddress.state || '',
-          country_code: shippingAddress.country || 'US',
-          zip: shippingAddress.postal_code || '',
-          email: session.customer_details?.email || '',
-        },
-        items: orderItems,
-      });
-
-      console.log("Printful order created:", printfulOrder);
-
-      res.json({ 
-        success: true, 
-        order: printfulOrder,
-        session: {
-          id: session.id,
-          status: session.payment_status,
-          total: session.amount_total,
-        }
-      });
-    } catch (error: any) {
-      console.error("Error verifying checkout:", error);
-      
-      // Return more detailed error for debugging
-      res.status(500).json({ 
-        error: "Failed to verify checkout",
-        message: error.message,
-        details: "Your payment was received. If your order doesn't appear, please contact support."
-      });
-    }
+      return true;
+    });
+    if (!res.headersSent && result === undefined) res.status(409).json({ error: "Checkout is being prepared. Please try again shortly." });
+  }));
+  // Read-only: a return URL never creates or confirms a physical order.
+  app.get("/api/shop/checkout/:sessionId/verify", throttle, asyncRoute(async (req, res) => {
+    if (!/^cs_(test_|live_)?[a-zA-Z0-9]+$/.test(req.params.sessionId)) { res.status(404).json({ error: "Order not found" }); return; }
+    const result = await shopPool.query("SELECT * FROM shop_orders WHERE stripe_session_id=$1 AND owner_hash=$2", [req.params.sessionId, owner(req, res)]);
+    if (!result.rows[0]) { res.status(404).json({ error: "Order not found. Please use the browser that started checkout." }); return; }
+    res.json(publicOrder(result.rows[0]));
+  }));
+  // No public order management or unverified webhook receiver. Owner operations belong in Printful's dashboard.
+  app.all(["/api/shop/orders", "/api/shop/orders/*", "/api/shop/webhook"], (_req, res) => {
+    res.status(403).json({ error: "Order management is not available through this public website." });
   });
 }

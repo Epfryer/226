@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { ReplitConnectors } from "@replit/connectors-sdk";
 
 let connectionSettings: any;
 
@@ -27,28 +28,42 @@ async function getCredentials() {
     headers: {
       'Accept': 'application/json',
       'X_REPLIT_TOKEN': xReplitToken
-    }
+    },
+    signal: AbortSignal.timeout(10000),
   });
-
+  if (!response.ok) throw new Error("Stripe connection unavailable");
   const data = await response.json();
   
   connectionSettings = data.items?.[0];
 
-  if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
+  const settings = connectionSettings?.settings;
+  if (!(settings?.secret_key || settings?.secret)) {
     throw new Error(`Stripe ${targetEnvironment} connection not found`);
   }
 
   return {
-    publishableKey: connectionSettings.settings.publishable,
-    secretKey: connectionSettings.settings.secret,
+    publishableKey: settings.publishable_key || settings.publishable,
+    secretKey: settings.secret_key || settings.secret,
   };
 }
 
 export async function getUncachableStripeClient() {
-  const { secretKey } = await getCredentials();
-
-  return new Stripe(secretKey, {
+  // Provider authentication stays at the connector proxy. The key below is not a credential.
+  const connectors = new ReplitConnectors();
+  return new Stripe("connector-authenticated", {
     apiVersion: '2025-08-27.basil',
+    maxNetworkRetries: 2,
+    timeout: 20000,
+    httpClient: Stripe.createFetchHttpClient(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const target = new URL(String(url));
+      const headers: Record<string, string> = {};
+      new Headers(init?.headers).forEach((value, name) => {
+        if (!["authorization", "host", "content-length"].includes(name)) headers[name] = value;
+      });
+      return connectors.proxy("stripe", `${target.pathname}${target.search}`, {
+        method: init?.method, headers, body: init?.body, signal: init?.signal,
+      });
+    }),
   });
 }
 
@@ -75,7 +90,9 @@ export async function getStripeSync() {
         max: 2,
       },
       stripeSecretKey: secretKey,
+      stripeApiVersion: "2025-08-27.basil",
     });
+    stripeSync.stripe = await getUncachableStripeClient();
   }
   return stripeSync;
 }

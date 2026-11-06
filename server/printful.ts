@@ -19,6 +19,7 @@ class PrintfulClient {
     this.client = axios.create({
       baseURL: PRINTFUL_API_BASE,
       headers,
+      timeout: 20000,
     });
   }
 
@@ -89,9 +90,12 @@ class PrintfulClient {
 
   // Create order
   async createOrder(orderData: {
+    external_id?: string;
+    shipping?: string;
     recipient: {
       name: string;
       address1: string;
+      address2?: string;
       city: string;
       country_code: string;
       state_code?: string;
@@ -132,13 +136,28 @@ class PrintfulClient {
 
   // Get order by ID
   async getOrder(orderId: number | string) {
-    const response = await this.client.get(`/orders/@${orderId}`);
+    const response = await this.client.get(`/orders/${encodeURIComponent(String(orderId))}`);
+    return response.data;
+  }
+
+  async getOrderByExternalId(externalId: string) {
+    try {
+      const response = await this.client.get(`/orders/@${encodeURIComponent(externalId)}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) return null;
+      throw error; // Never create a second order after a timeout or an authorization failure.
+    }
+  }
+
+  async estimateOrder(orderData: unknown) {
+    const response = await this.client.post("/orders/estimate-costs", orderData);
     return response.data;
   }
 
   // Confirm order for fulfillment
   async confirmOrder(orderId: number | string) {
-    const response = await this.client.post(`/orders/@${orderId}/confirm`);
+    const response = await this.client.post(`/orders/${encodeURIComponent(String(orderId))}/confirm`);
     return response.data;
   }
 

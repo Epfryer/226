@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/analytics";
 import { readCart, saveCart } from "@/lib/cart-storage";
 import { useDialogFocus } from "@/hooks/use-dialog-focus";
+import ShopCheckout from "@/components/ShopCheckout";
 
 type Category = "ALL" | "GARMENTS" | "GRAPHICS" | "OBJECTS" | "STUDIES";
 
@@ -1072,8 +1073,7 @@ function CartDrawer({
   onClose,
   onUpdateQuantity,
   onRemoveItem,
-  onCheckout,
-  isCheckingOut
+  onCheckout
 }: {
   cart: CartItem[];
   isOpen: boolean;
@@ -1081,7 +1081,6 @@ function CartDrawer({
   onUpdateQuantity: (syncVariantId: number, quantity: number) => void;
   onRemoveItem: (syncVariantId: number) => void;
   onCheckout: () => void;
-  isCheckingOut?: boolean;
 }) {
   const dialogRef = useDialogFocus(isOpen, onClose);
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -1194,10 +1193,9 @@ function CartDrawer({
                   </div>
                   <Button
                     onClick={onCheckout}
-                    disabled={isCheckingOut}
                     className="w-full uppercase tracking-wide text-xs h-12"
                   >
-                    {isCheckingOut ? "Processing..." : "Proceed to Checkout"}
+                    Proceed to Checkout
                   </Button>
                 </div>
               )}
@@ -1216,8 +1214,8 @@ export default function Studio() {
   const [cart, setCart] = useState<CartItem[]>(readCart);
   useEffect(() => { saveCart(cart); }, [cart]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [returnSessionId, setReturnSessionId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("session_id"));
   const trackedPurchase = useRef<string | null>(null);
   
   const { toast } = useToast();
@@ -1225,45 +1223,22 @@ export default function Studio() {
   
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    const sessionId = urlParams.get('session_id');
+    const sessionId = urlParams.get("session_id");
     const canceled = urlParams.get('canceled');
-    
-    if (success === 'true' && sessionId) {
-      fetch(`/api/shop/checkout/${sessionId}/verify`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) throw new Error("Order not yet verified");
-          if (data.success) {
-            if (trackedPurchase.current !== sessionId) {
-              trackedPurchase.current = sessionId;
-              trackEvent("purchase_verified");
-            }
-            setCart([]);
-            setOrderSuccess(true);
-            toast({
-              title: "Order Placed!",
-              description: "Thank you for your purchase. Your order is being processed.",
-            });
-          }
-        })
-        .catch(err => {
-          console.error('Error verifying checkout:', err);
-          toast({
-            title: "Order verification unavailable",
-            description: "We couldn't verify your order. Check your payment confirmation before trying again.",
-          });
-        })
-        .finally(() => {
-          window.history.replaceState({}, '', '/studio');
-        });
-    } else if (canceled === 'true') {
+    if (sessionId) {
+      setReturnSessionId(sessionId);
+      setCheckoutOpen(true);
+      setCartOpen(false);
+    }
+    if (canceled === 'true') {
       trackEvent("checkout_canceled");
       toast({
         title: "Checkout Canceled",
         description: "Your checkout was canceled. Your cart items are still saved.",
       });
-      window.history.replaceState({}, '', '/studio');
+      urlParams.delete("canceled");
+      const query = urlParams.toString();
+      window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
     }
   }, [toast]);
 
@@ -1348,7 +1323,7 @@ export default function Studio() {
     setCart(prev => prev.filter(item => item.syncVariantId !== syncVariantId));
   }, []);
   
-  const handleCheckout = useCallback(async () => {
+  const handleCheckout = useCallback(() => {
     if (cart.length === 0) return;
     
     const checkoutData = {
@@ -1357,52 +1332,36 @@ export default function Studio() {
       currency: "USD",
     };
     trackEvent("checkout_started", checkoutData);
-    setIsCheckingOut(true);
+    setCartOpen(false);
+    setCheckoutOpen(true);
+  }, [cart]);
+
+  const handlePaid = useCallback((submittedItems: CartItem[]) => {
+    let alreadyTracked = trackedPurchase.current === returnSessionId;
     try {
-      const validation = await fetch("/api/shop/cart/validate", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart }),
+      alreadyTracked ||= sessionStorage.getItem(`shop-purchase-tracked:${returnSessionId}`) === "true";
+    } catch { /* The in-memory guard remains available. */ }
+    if (alreadyTracked) return;
+    setCart(current => {
+      const purchased = new Map(submittedItems.map(item => [item.syncVariantId, item.quantity]));
+      return current.flatMap(item => {
+        const remaining = item.quantity - (purchased.get(item.syncVariantId) || 0);
+        if (remaining <= 0) return [];
+        purchased.delete(item.syncVariantId);
+        return [{ ...item, quantity: remaining }];
       });
-      const validated = await validation.json();
-      if (!validation.ok) throw new Error(validated.error || "Unable to check current availability");
-      const currentItems: CartItem[] = validated.items;
-      if (currentItems.some((item, index) => item.price !== cart[index]?.price)) {
-        setCart(currentItems);
-        toast({ title: "Prices updated", description: "Please review your cart and proceed to checkout again." });
-        return;
+    });
+    if (returnSessionId && trackedPurchase.current !== returnSessionId) {
+      try {
+        sessionStorage.setItem(`shop-purchase-tracked:${returnSessionId}`, "true");
+        sessionStorage.removeItem(`shop-checkout:${returnSessionId}`);
+      } catch {
+        // The in-memory guard still prevents duplicate events during this visit.
       }
-      const response = await fetch('/api/shop/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items: currentItems }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-      
-      const data = await response.json();
-      
-      if (data.url) {
-        trackEvent("checkout_redirected", checkoutData);
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (error) {
-      trackEvent("checkout_failed");
-      console.error('Checkout error:', error);
-      toast({
-        title: "Checkout Error",
-        description: error instanceof Error ? error.message : "There was a problem starting checkout. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCheckingOut(false);
+      if (!alreadyTracked) trackEvent("purchase_verified");
+      trackedPurchase.current = returnSessionId;
     }
-  }, [cart, toast]);
+  }, [returnSessionId]);
 
   return (
     <div className="min-h-screen pt-20 pb-16">
@@ -1499,7 +1458,13 @@ export default function Studio() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={handleCheckout}
-        isCheckingOut={isCheckingOut}
+      />
+      <ShopCheckout
+        isOpen={checkoutOpen || Boolean(returnSessionId)}
+        cart={cart}
+        sessionId={returnSessionId}
+        onClose={() => { setCheckoutOpen(false); setReturnSessionId(null); }}
+        onPaid={handlePaid}
       />
     </div>
   );

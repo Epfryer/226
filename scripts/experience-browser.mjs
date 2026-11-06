@@ -49,13 +49,13 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       await page.getByRole("button",{name:/cart/i}).first().click();
       await page.getByRole("dialog",{name:"Shopping cart"}).waitFor();
       assert(await page.getByText("Saved print").isVisible());
-      await page.route("**/api/shop/cart/validate",r=>r.fulfill({json:{items:[{syncVariantId:1,variantId:2,name:"Saved print",quantity:2,price:30,color:"Black",size:"A4",image:""}]}}));
+      await page.route("**/api/shop/status",r=>r.fulfill({json:{ready:true,testMode:true,message:"Test checkout only."}}));
       await page.getByRole("button",{name:"Proceed to Checkout"}).click();
-      await page.getByText("Prices updated",{exact:true}).waitFor();
-      assert(await page.getByText("$60.00",{exact:true}).count()>0);
+      await page.getByRole("heading",{name:"Shipping details",exact:true}).waitFor();
       await page.keyboard.press("Escape");
-      await page.getByRole("dialog",{name:"Shopping cart"}).waitFor({state:"hidden"});
-      await page.route("**/api/shop/checkout/test-session/verify",r=>r.fulfill({json:{success:true}}));
+      await page.getByRole("heading",{name:"Shipping details",exact:true}).waitFor({state:"hidden"});
+      await page.evaluate(()=>sessionStorage.setItem("shop-checkout:test-session",JSON.stringify([{syncVariantId:1,quantity:2}])));
+      await page.route("**/api/shop/checkout/test-session/verify",r=>r.fulfill({json:{success:true,paid:true,status:"test_paid",testMode:true,message:"Test payment verified. No physical order was placed."}}));
       await page.goto(base+"/studio?success=true&session_id=test-session");
       await page.waitForFunction(()=>localStorage.getItem("def-studio-cart-v1")==="[]");
       }

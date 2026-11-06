@@ -1,9 +1,12 @@
 export async function validateCart(items: unknown, getVariant: (id: number) => Promise<any>) {
-  if (!Array.isArray(items) || items.length > 30) throw new Error("Invalid cart");
+  if (!Array.isArray(items) || !items.length || items.length > 30) throw new Error("Invalid cart");
+  const seen = new Set<number>();
   const result = [];
   for (const item of items) {
     if (!Number.isSafeInteger(item?.syncVariantId) || item.syncVariantId <= 0 ||
         !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 99) throw new Error("Invalid cart quantity");
+    if (seen.has(item.syncVariantId)) throw new Error("Duplicate cart variant");
+    seen.add(item.syncVariantId);
     const response = await getVariant(item.syncVariantId);
     const variant = response?.result?.sync_variant;
     const price = Number(variant?.retail_price);

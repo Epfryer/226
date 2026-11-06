@@ -140,11 +140,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/order", async (req, res) => {
-    await createPaypalOrder(req, res);
+    res.status(410).json({ error: "Use the store's validated checkout to purchase products." });
   });
 
   app.post("/order/:orderID/capture", async (req, res) => {
-    await capturePaypalOrder(req, res);
+    res.status(410).json({ error: "Use the store's validated checkout to purchase products." });
   });
   
   // Endpoint to check PayPal availability
