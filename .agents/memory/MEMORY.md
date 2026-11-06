@@ -2,3 +2,4 @@
 - [Security version compatibility](security-version-compatibility.md) — UUID security upgrades must preserve CommonJS support for existing storage HTTP dependencies.
 - [Experience priorities](experience-priorities.md) — preserve current functionality and flipbook behavior; improve desktop/mobile parity and separate optional features.
 - [Browser verification](browser-verification.md) — downloaded browser binaries may lack host libraries; distinguish Chromium emulation from cross-browser/device coverage.
+- [Shop payment goals](shop-payment-goals.md) — user wants website-based Printful purchases with only profit reaching their account; explain settlement tradeoffs before changes.
