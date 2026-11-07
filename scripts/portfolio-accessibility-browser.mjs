@@ -51,7 +51,7 @@ try {
     assert.equal(await academic.getAttribute("aria-pressed"), "false");
     assert.equal(await all.getAttribute("aria-pressed"), "true");
     await page.getByRole("button", { name: "Expand Corp0rate-Circus", exact: true }).waitFor();
-    const titles = await page.getByRole("button", { name: /^Expand / }).evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label")));
+    const titles = await page.getByRole("button", { name: /^Expand / }).allTextContents();
     assert.equal(titles.length, 9);
 
     for (const [index, text] of titles.entries()) {

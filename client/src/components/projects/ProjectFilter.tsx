@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import type { Project } from "@/lib/projects";
 
 interface ProjectFilterProps {
   categories: string[];
@@ -13,26 +14,28 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
   }, [activeCategory, onCategoryChange]);
 
   return (
-    <div className="project-filter-list">
+    <div className="w-full flex justify-center px-4"> {/* Added container with full width */}
+      <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto"> {/* Added max-width and auto margins */}
         <Button
-          variant="ghost"
+          variant={!activeCategory ? "default" : "outline"}
           aria-pressed={activeCategory === null}
           onClick={() => handleClick(null)}
-          className={`project-filter-button${activeCategory === null ? " is-active" : ""}`}
+          className="transition-all"
         >
           All
         </Button>
         {categories.map((category) => (
           <Button
             key={category}
-            variant="ghost"
+            variant={category === activeCategory ? "default" : "outline"}
             aria-pressed={category === activeCategory}
             onClick={() => handleClick(category)}
-            className={`project-filter-button${category === activeCategory ? " is-active" : ""}`}
+            className="transition-all"
           >
             {category}
           </Button>
         ))}
+      </div>
     </div>
   );
 }
