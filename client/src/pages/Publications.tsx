@@ -78,7 +78,8 @@ export default function Publications() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    // Keep the server-provided list visible while enabling the reader.
+    setLoading(!readPublicPageData()?.publications);
     setLoadError(false);
     fetchPublications().then((pubs) => {
       if (!active) return;

@@ -76,23 +76,8 @@ export async function fetchPublications(): Promise<Publication[]> {
     return PUBLICATIONS;
   } catch (error) {
     console.error('Error fetching publications:', error);
-    // Fallback to static data if API fails
-    PUBLICATIONS = [
-      {
-        slug: "ethan-fryer-hybrid-urbanism",
-        title: "Hybrid Urbanism",
-        year: "2025",
-        pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
-        ...getPublicationCover("/publications/EthanFryer_Hybrid-Urbanism.jpg")
-      },
-      {
-        slug: "5th-year-selected-works",
-        title: "5th Year Selected Works",
-        year: "2024",
-        pdfPath: "/api/publications/EthanFryer_5thYear_SelectedWorks.pdf",
-        ...getPublicationCover("/publications/EthanFryer_5thYear_SelectedWorks.jpg")
-      }
-    ];
-    return PUBLICATIONS;
+    // Surface the real failure instead of inventing a partial catalog with
+    // different document slugs from the server-rendered publication list.
+    throw error;
   }
 }

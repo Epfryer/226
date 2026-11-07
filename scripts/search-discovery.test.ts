@@ -98,7 +98,7 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
       assert.equal(response.status, 404, route);
       assert.match(await response.text(), /404 — Page not found/);
     }
-    for (const route of ["/api/unknown", "/assets/missing.js", "/missing.png"]) {
+    for (const route of ["/api", "/api/unknown", "/assets/missing.js", "/missing.png"]) {
       const response = await fetch(`${origin}${route}`);
       assert.equal(response.status, 404);
       assert.doesNotMatch(response.headers.get("content-type")!, /text\/html/);
@@ -106,6 +106,14 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
     const diagnostics = await fetch(`${origin}/diagnostics`);
     assert.equal(diagnostics.status, 200);
     assert.match(await diagnostics.text(), /noindex/);
+    for (const [route, status] of [["/projects", 200], ["/unknown", 404], ["/robots.txt", 200], ["/sitemap.xml", 200]] as const) {
+      const response = await fetch(`${origin}${route}`, { method: "HEAD" });
+      assert.equal(response.status, status);
+      assert.equal(await response.text(), "");
+    }
+    const unsupported = await fetch(`${origin}/projects`, { method: "POST" });
+    assert.equal(unsupported.status, 404);
+    assert.doesNotMatch(unsupported.headers.get("content-type")!, /text\/html/);
   } finally {
     await new Promise<void>(resolve => server.close(() => resolve()));
   }

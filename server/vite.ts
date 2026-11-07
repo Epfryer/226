@@ -61,7 +61,7 @@ export async function setupVite(app: Express, server: Server) {
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`)
       const pathname = new URL(url, "http://public.invalid").pathname;
-      if (!["GET", "HEAD"].includes(req.method) || pathname.startsWith("/api/") || pathname.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(pathname)) {
+      if (!["GET", "HEAD"].includes(req.method) || pathname === "/api" || pathname.startsWith("/api/") || pathname.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(pathname)) {
         res.status(404).type("text/plain").send("Resource not found");
         return;
       }
@@ -91,7 +91,7 @@ export function serveStatic(app: Express, distPath = path.resolve(__dirname, "pu
   app.use("*", async (req, res, next) => {
     try {
       const pathname = new URL(req.originalUrl, "http://public.invalid").pathname;
-      if (!["GET", "HEAD"].includes(req.method) || pathname.startsWith("/api/") || pathname.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(pathname)) {
+      if (!["GET", "HEAD"].includes(req.method) || pathname === "/api" || pathname.startsWith("/api/") || pathname.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(pathname)) {
         res.status(404).type("text/plain").send("Resource not found");
         return;
       }
