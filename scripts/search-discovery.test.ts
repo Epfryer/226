@@ -7,6 +7,7 @@ import { renderPublicResponse } from "../server/public-render";
 import { serveStatic } from "../server/vite";
 import { projects } from "../client/src/lib/projects";
 import { findProject, projectPath, publicRoutes } from "../client/src/lib/public-routes";
+import { deliveryImage } from "../client/src/lib/responsive-images";
 
 const template = fs.readFileSync("client/index.html", "utf8");
 const publication = { slug: "research", title: "Architecture Research", year: "2025", pdfPath: "/api/publications/Research.pdf", coverPath: "/publications/Research.jpg" };
@@ -32,8 +33,8 @@ test("every project has a working encoded detail URL, description, image sequenc
     const { html, status } = await renderPublicResponse(template, href, services);
     assert.equal(status, 200);
     assert.match(html, /<h1>/);
-    assert.ok(html.includes(project.image));
-    for (const image of project.images) assert.ok(html.includes(image));
+    assert.ok(html.includes(deliveryImage(project.image, 640)));
+    for (const image of project.images) assert.ok(html.includes(deliveryImage(image, 640)));
     assert.ok(html.includes(`<link data-site-metadata rel="canonical" href="https://ethanfryer.com${href}"`));
     titles.add(html.match(/<title[^>]*>(.*?)<\/title>/)?.[1]);
   }

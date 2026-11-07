@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { MotionConfig } from "framer-motion";
+import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -44,6 +44,7 @@ function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <LazyMotion features={domAnimation}>
       <PageMetadata />
       <QueryClientProvider client={queryClient}>
         <ProjectProvider>
@@ -68,6 +69,7 @@ function App() {
         <Toaster />
         </ProjectProvider>
       </QueryClientProvider>
+      </LazyMotion>
     </MotionConfig>
   );
 }

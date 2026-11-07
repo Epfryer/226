@@ -2,14 +2,15 @@ import { projects, type Project } from "../lib/projects";
 import { findProject, projectPath, publicRoutes } from "../lib/public-routes";
 import type { PublicPageData } from "../lib/public-page-data";
 import { getPageMetadata } from "../lib/site-metadata";
+import { responsiveImageProps } from "../lib/responsive-images";
 
 function ProjectContent({ project, detail = false }: { project: Project; detail?: boolean }) {
   return <article>
     {detail ? <h1>{project.title}</h1> : <h2><a href={projectPath(project)}>{project.title}</a></h2>}
     <p>{project.year} · {project.category} · {project.location}</p>
-    <img src={project.image} alt={project.imageAlt} width="640" loading="lazy" />
+    <img {...responsiveImageProps(project.image, "(min-width: 768px) 640px, 100vw")} alt={project.imageAlt} width="640" loading="lazy" decoding="async" />
     <p>{project.description}</p>
-    {detail && project.images.map((src, index) => <img key={src} src={src} alt={project.imageAlts[index] || `${project.title} — view ${index + 1}`} width="640" loading="lazy" />)}
+    {detail && project.images.map((src, index) => <img key={src} {...responsiveImageProps(src, "(min-width: 768px) 640px, 100vw")} alt={project.imageAlts[index] || `${project.title} — view ${index + 1}`} width="640" loading="lazy" decoding="async" />)}
   </article>;
 }
 

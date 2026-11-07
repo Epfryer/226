@@ -32,8 +32,6 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       const context=await browser.newContext({viewport:{width,height:900},hasTouch:width===390,ignoreHTTPSErrors:process.env.TEST_IGNORE_HTTPS_ERRORS==="1"});
       const page=await context.newPage();
       const errors=[];page.on("pageerror",e=>errors.push(e.message));
-      await page.route("**/api/publications",r=>r.fulfill({json:{publications:[{slug:"test",title:"Test publication",year:"2026",filename:"test.pdf",pdfPath:"/api/publications/test.pdf",coverPath:""}]}}));
-      await page.route("**/api/publications/test.pdf",r=>r.fulfill({contentType:"application/pdf",body:pdfFixture()}));
       await page.route("**/api/shop/products",r=>r.fulfill({json:{result:[]}}));
       if (!process.env.TEST_READER_ONLY) {
       for(const path of ["/","/about","/projects","/contact","/publications","/studio"]) {
@@ -59,22 +57,29 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       await page.goto(base+"/studio?success=true&session_id=test-session");
       await page.waitForFunction(()=>localStorage.getItem("def-studio-cart-v1")==="[]");
       }
-      await page.goto(base+"/publications?doc=test");
+      // Publications now bootstraps from the server-rendered catalog. Choose an
+      // actual catalog entry, but intercept its PDF so no large file is needed.
+      await page.goto(base+"/publications");
+      const publication = await page.evaluate(() => JSON.parse(document.getElementById("public-page-data").textContent).publications?.[0]);
+      assert(publication, "Reader checks require a publication in the rendered catalog");
+      const pdfUrl = new URL(publication.pdfPath, base).href;
+      await page.route(pdfUrl,r=>r.fulfill({contentType:"application/pdf",body:pdfFixture()}));
+      await page.goto(base+"/publications?doc="+encodeURIComponent(publication.slug));
       await page.getByRole("dialog").waitFor();
-      await verifyGlassReader(page,name,width);
-      await page.evaluate(()=>sessionStorage.setItem("pdf-page-/api/publications/test.pdf","27"));
-      await page.getByRole("button",{name:/Open Test publication/}).click();
+      await verifyGlassReader(page,name,width,publication);
+      await page.evaluate(pdfPath=>sessionStorage.setItem("pdf-page-"+pdfPath,"27"),publication.pdfPath);
+      await page.getByRole("link",{name:"Open "+publication.title,exact:true}).click();
       await waitForReader(page);
       for(let i=0;i<4;i++) { await page.keyboard.press("ArrowRight"); await page.waitForTimeout(900); }
-      const last=await page.evaluate(()=>Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")));
+      const last=await page.evaluate(pdfPath=>Number(sessionStorage.getItem("pdf-page-"+pdfPath)),publication.pdfPath);
       assert(last>=29 && last<=30,"Last-page navigation must remain bounded");
       await page.keyboard.press("Escape");
       await page.getByRole("dialog").waitFor({state:"hidden"});
       // A failed PDF is recoverable without closing the new full-window reader.
-      await page.route("**/api/publications/test.pdf",r=>r.fulfill({status:503,body:"Temporarily unavailable"}));
-      await page.getByRole("button",{name:/Open Test publication/}).click();
+      await page.route(pdfUrl,r=>r.fulfill({status:503,body:"Temporarily unavailable"}));
+      await page.getByRole("link",{name:"Open "+publication.title,exact:true}).click();
       await page.getByText("Failed to Load PDF",{exact:true}).waitFor();
-      await page.route("**/api/publications/test.pdf",async r=>{
+      await page.route(pdfUrl,async r=>{
         await new Promise(resolve=>setTimeout(resolve,500));
         await r.fulfill({contentType:"application/pdf",body:pdfFixture()});
       });

@@ -1,8 +1,9 @@
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { projects } from "@/lib/projects";
 import { projectPath } from "@/lib/public-routes";
+import { responsiveImageProps } from "@/lib/responsive-images";
 
 const featuredProjects = [
   projects.find((project) => project.id === "thesis"),
@@ -72,7 +73,7 @@ export default function Home() {
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="max-w-4xl space-y-6"
@@ -110,7 +111,7 @@ export default function Home() {
             className="border border-black/10 bg-[#f4f1ea] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.08)] md:p-8"
           >
             <div className="space-y-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-black/50">Studio note</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-black/65">Studio note</p>
               <p className="text-2xl font-medium leading-tight md:text-3xl">
                 Architect at heart. Building a studio where work, writing, and objects can live in the same ecosystem.
               </p>
@@ -156,7 +157,7 @@ export default function Home() {
                   <img
                     loading="lazy"
                     decoding="async"
-                    src={project!.image}
+                    {...responsiveImageProps(project!.image, "(min-width: 1280px) 360px, (min-width: 768px) 30vw, 100vw")}
                     alt={project!.title}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
                   />

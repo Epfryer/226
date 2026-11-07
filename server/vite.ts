@@ -9,6 +9,7 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 import { registerCrawlerRoutes, renderPublicResponse, publicContentServices } from "./public-render";
+import compression from "compression";
 
 const viteLogger = createLogger();
 
@@ -84,8 +85,18 @@ export function serveStatic(app: Express, distPath = path.resolve(__dirname, "pu
 
   // Do not let express.static bypass route metadata for "/" or "/index.html".
   const template = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
+  // Apply only to the public document/assets, after API and signed webhook routes.
+  // Range responses must retain their original byte representation.
+  app.use(compression({
+    filter: (req, res) => !req.headers.range && compression.filter(req, res),
+  }));
   registerCrawlerRoutes(app);
   app.get("/index.html", (_req, res) => res.redirect(301, "/"));
+  app.use("/assets", express.static(path.resolve(distPath, "assets"), {
+    index: false,
+    maxAge: "1y",
+    immutable: true,
+  }));
   app.use(express.static(distPath, { index: false }));
 
   app.use("*", async (req, res, next) => {

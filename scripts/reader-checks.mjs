@@ -7,7 +7,14 @@ export async function waitForReader(page) {
   }, null, { timeout: 45000 });
 }
 
-export async function verifyGlassReader(page, browserName, width) {
+export async function verifyGlassReader(page, browserName, width, publication = { pdfPath: "/api/publications/test.pdf", title: "Test publication" }) {
+  const storageKey = "pdf-page-" + publication.pdfPath;
+  const readPage = () => page.evaluate(key => Number(sessionStorage.getItem(key)), storageKey);
+  const waitForPage = (previous, forward = false) => page.waitForFunction(
+    ({ key, previous, forward }) => forward ? Number(sessionStorage.getItem(key)) > previous : Number(sessionStorage.getItem(key)) === previous,
+    { key: storageKey, previous, forward },
+  );
+  const openButton = page.getByRole("link", { name: "Open " + publication.title, exact: true });
   await waitForReader(page);
   const zoom = () => page.locator(".fv-root").getAttribute("data-zoom").then(Number);
   const bounds = await page.locator(".reader-shell__viewer").boundingBox();
@@ -27,19 +34,19 @@ export async function verifyGlassReader(page, browserName, width) {
   assert(await page.getByRole("button", { name: "Close publication" }).evaluate(el => el === document.activeElement));
 
   await page.keyboard.press("ArrowRight");
-  await page.waitForFunction(() => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")) > 1);
+  await waitForPage(1, true);
   await page.waitForTimeout(950);
-  const stored = await page.evaluate(() => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")));
+  const stored = await readPage();
   const fitted = await page.locator(".fv-pageLayer").boundingBox();
   if (browserName === "chromium" && width === 1440) {
     await page.mouse.move(fitted.x + fitted.width - 12, fitted.y + 12);
     await page.mouse.down();
     await page.mouse.move(fitted.x + 20, fitted.y + 24, { steps: 16 });
     await page.mouse.up();
-    await page.waitForFunction(previous => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")) > previous, stored);
+    await waitForPage(stored, true);
     await page.waitForTimeout(950);
     await page.keyboard.press("ArrowLeft");
-    await page.waitForFunction(previous => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")) === previous, stored);
+    await waitForPage(stored);
     await page.waitForTimeout(950);
   }
   for (let i = 0; i < 5; i++) await page.keyboard.press("+");
@@ -58,7 +65,7 @@ export async function verifyGlassReader(page, browserName, width) {
   await page.mouse.move(viewport.width / 2 - 100, viewport.height / 2 + 90, { steps: 8 });
   await page.mouse.up();
   assert.notEqual(await page.locator(".fv-pageLayer").getAttribute("style"), before, "Drag pans enlarged pages");
-  assert.equal(await page.evaluate(() => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf"))), stored, "Pan must not turn a page");
+  assert.equal(await readPage(), stored, "Pan must not turn a page");
   await page.keyboard.press("0");
   assert.equal(await zoom(), 1);
   await page.mouse.dblclick(viewport.width / 2, viewport.height / 2);
@@ -85,7 +92,7 @@ export async function verifyGlassReader(page, browserName, width) {
     await touch([[80, 450], [310, 450]]);
     await touch([]);
     assert(await zoom() > 1.2, "Emulated two-touch pinch zooms the document");
-    assert.equal(await page.evaluate(() => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf"))), stored, "Pinch must not turn a page");
+    assert.equal(await readPage(), stored, "Pinch must not turn a page");
     await cdp.detach();
     await page.keyboard.press("0");
     const swipe = await page.context().newCDPSession(page);
@@ -94,10 +101,10 @@ export async function verifyGlassReader(page, browserName, width) {
       await swipe.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: 450, id: 0 }] });
     }
     await swipe.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await page.waitForFunction(previous => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")) > previous, stored);
+    await waitForPage(stored, true);
     await page.waitForTimeout(950);
     await page.keyboard.press("ArrowLeft");
-    await page.waitForFunction(previous => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf")) === previous, stored);
+    await waitForPage(stored);
     await page.waitForTimeout(950);
     await swipe.detach();
   }
@@ -111,10 +118,10 @@ export async function verifyGlassReader(page, browserName, width) {
   assert(await page.getByRole("button", { name: "Close publication" }).isVisible());
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "hidden" });
-  await page.getByRole("button", { name: /Open Test publication/ }).click();
+  await openButton.click();
   await waitForReader(page);
-  assert.equal(await page.evaluate(() => Number(sessionStorage.getItem("pdf-page-/api/publications/test.pdf"))), stored);
+  assert.equal(await readPage(), stored);
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "hidden" });
-  assert(await page.getByRole("button", { name: /Open Test publication/ }).evaluate(el => el === document.activeElement), "Close returns focus to the publication");
+  assert(await openButton.evaluate(el => el === document.activeElement), "Close returns focus to the publication");
 }

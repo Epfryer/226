@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { motion, useAnimation } from "framer-motion"
+import { m as motion } from "framer-motion"
 
 interface TypingAnimationProps {
   text: string
@@ -18,12 +18,12 @@ export function TypingAnimation({
   delay = 0,
 }: TypingAnimationProps) {
   const [displayedText, setDisplayedText] = useState("")
-  const controls = useAnimation()
 
   useEffect(() => {
     let currentIndex = 0
+    let interval: ReturnType<typeof setInterval> | undefined
     const timer = setTimeout(() => {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         if (currentIndex <= text.length) {
           setDisplayedText(text.slice(0, currentIndex))
           currentIndex++
@@ -32,10 +32,12 @@ export function TypingAnimation({
         }
       }, speed)
 
-      return () => clearInterval(interval)
     }, delay)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
   }, [text, speed, delay])
 
   return (
