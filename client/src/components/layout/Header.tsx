@@ -1,18 +1,26 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useProject } from "@/context/ProjectContext";
 import { m as motion, useReducedMotion } from "framer-motion";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { useMobileNavigation } from "./use-mobile-navigation";
 
-export function Header({ white = false }: { white?: boolean }) {
+export function Header({ white = false, actions }: { white?: boolean; actions?: ReactNode }) {
   const { isProjectExpanded, shouldRevealHeader } = useProject();
   const { isOpen, setIsOpen, buttonRef, menuRef } = useMobileNavigation(isProjectExpanded);
   const reducedMotion = useReducedMotion();
   const [location] = useLocation();
-  const isProjectsPage = location.split("?")[0] === "/projects";
   const isAboutPage = white || location === "/about";
+  const path = location.split("?")[0];
+  const sectionLabel = path === "/" ? "Home"
+    : path === "/about" ? "About"
+    : path === "/contact" ? "Contact"
+    : path.startsWith("/project/") || path === "/projects" ? "Projects"
+    : path === "/publications" || path.startsWith("/publication/") ? "Publications"
+    : path === "/studio" || path.startsWith("/studio/") ? "Studio"
+    : "Home";
   const navigationHidden = isProjectExpanded && !shouldRevealHeader;
   const linkClass = `hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? "text-white" : ""}`;
   const links = [
@@ -24,6 +32,7 @@ export function Header({ white = false }: { white?: boolean }) {
   ];
   const projectsMenuRef = useRef<HTMLDivElement>(null);
   const projectsMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const suppressFocusOpen = useRef(false);
   const [projectsMenuOpen, setProjectsMenuOpen] = useState(false);
   const [projectsMenuPinned, setProjectsMenuPinned] = useState(false);
 
@@ -33,7 +42,7 @@ export function Header({ white = false }: { white?: boolean }) {
   }, [location]);
 
   useEffect(() => {
-    if (!isProjectsPage || !projectsMenuOpen) return;
+    if (!projectsMenuOpen) return;
     const closeOnOutsidePointer = (event: PointerEvent) => {
       if (!projectsMenuRef.current?.contains(event.target as Node)) {
         setProjectsMenuOpen(false);
@@ -45,7 +54,12 @@ export function Header({ white = false }: { white?: boolean }) {
       event.preventDefault();
       setProjectsMenuOpen(false);
       setProjectsMenuPinned(false);
-      projectsMenuButtonRef.current?.focus();
+      if (document.activeElement !== projectsMenuButtonRef.current) {
+        suppressFocusOpen.current = true;
+        projectsMenuButtonRef.current?.focus();
+      } else {
+        suppressFocusOpen.current = false;
+      }
     };
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     document.addEventListener("keydown", closeOnEscape);
@@ -53,7 +67,7 @@ export function Header({ white = false }: { white?: boolean }) {
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isProjectsPage, projectsMenuOpen]);
+  }, [projectsMenuOpen]);
 
   const headerStyle = {
     opacity: navigationHidden ? 0 : 1,
@@ -62,9 +76,9 @@ export function Header({ white = false }: { white?: boolean }) {
   };
 
   return (
-    <header className={`portfolio-header pointer-events-none fixed top-0 left-0 z-50 w-full p-6 ${isProjectsPage ? "md:w-full" : "md:w-48"}`}>
-      <div className={isProjectsPage ? "md:flex md:items-start md:gap-8" : undefined}>
-        <div className={`flex items-center justify-between ${isProjectsPage ? "md:justify-start md:gap-8" : "md:block"}`}>
+    <header className="portfolio-header pointer-events-none fixed top-0 left-0 z-50 w-full p-6">
+      <div className="md:flex md:items-start md:gap-8">
+        <div className="flex items-center justify-between md:justify-start md:gap-8">
           <motion.div 
             className={`pointer-events-auto ml-2 text-2xl font-bold inline-block md:ml-0 ${isAboutPage ? 'text-white' : ''}`}
             initial={{ opacity: 0 }}
@@ -115,10 +129,10 @@ export function Header({ white = false }: { white?: boolean }) {
           </button>
         </div>
 
-        {isProjectsPage ? (
           <div
             ref={projectsMenuRef}
             className="projects-nav-menu pointer-events-auto relative hidden md:inline-block"
+            style={headerStyle}
             onPointerEnter={() => setProjectsMenuOpen(true)}
             onPointerLeave={() => {
               if (!projectsMenuPinned && !projectsMenuRef.current?.contains(document.activeElement)) {
@@ -126,6 +140,10 @@ export function Header({ white = false }: { white?: boolean }) {
               }
             }}
             onFocus={(event) => {
+              if (suppressFocusOpen.current) {
+                suppressFocusOpen.current = false;
+                return;
+              }
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setProjectsMenuOpen(true);
             }}
             onBlur={(event) => {
@@ -140,7 +158,7 @@ export function Header({ white = false }: { white?: boolean }) {
               type="button"
               className="projects-nav-toggle min-h-11 px-1 text-[11px] uppercase tracking-[.16em] pl-[4px] pr-[4px] ml-[-29px] mr-[-29px]"
               aria-expanded={projectsMenuOpen}
-              aria-label="Projects navigation"
+              aria-label={`${sectionLabel} navigation`}
               aria-controls="projects-primary-navigation"
               aria-haspopup="true"
               onClick={() => {
@@ -149,13 +167,13 @@ export function Header({ white = false }: { white?: boolean }) {
                 setProjectsMenuPinned(nextOpen);
               }}
             >
-              Projects <span aria-hidden="true">{projectsMenuOpen ? "−" : "+"}</span>
+              {sectionLabel} <span aria-hidden="true">{projectsMenuOpen ? "−" : "+"}</span>
             </button>
             <nav
               id="projects-primary-navigation"
-              aria-label="Primary navigation"
+              aria-label={`${sectionLabel} navigation links`}
               hidden={!projectsMenuOpen}
-              className="projects-nav-panel absolute left-0 top-full min-w-44 py-3"
+              className={`projects-nav-panel absolute left-0 top-full min-w-44 py-3 ${isAboutPage ? "projects-nav-panel--dark" : ""}`}
             >
               {links.map(([href, label]) => (
                 <Link
@@ -173,16 +191,9 @@ export function Header({ white = false }: { white?: boolean }) {
               ))}
             </nav>
           </div>
-        ) : <div 
-          className="pointer-events-auto hidden md:block mt-6"
-          style={headerStyle}
-        >
-          <nav aria-label="Primary navigation" className="flex flex-col space-y-4 text-sm">
-            {links.map(([href, label]) => (
-              <Link key={href} className={linkClass} href={href} aria-current={location === href ? "page" : undefined}>{label}</Link>
-            ))}
-          </nav>
-        </div>}
+        <div>
+          {actions && <div className="pointer-events-auto absolute right-16 top-5 md:right-6">{actions}</div>}
+        </div>
 
           <div
             ref={menuRef}

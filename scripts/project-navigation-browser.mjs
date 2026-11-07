@@ -40,7 +40,7 @@ try {
       await mobile.getByRole("link", { name: "Contact", exact: true }).click();
     }
     await page.waitForURL(/\/contact$/);
-    assert.equal(await page.locator("main").evaluate(element => getComputedStyle(element).paddingLeft), width >= 768 ? "192px" : "0px", "Other routes retain their existing layout");
+    assert.equal(await page.locator("main").evaluate(element => getComputedStyle(element).paddingLeft), "0px", "Every route uses the compact navigation layout");
     await page.goto(base + "/projects");
     const row = page.locator("[data-project-id]").first();
     await row.getByRole("button", { name: /^Expand/ }).first().click();

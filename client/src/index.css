@@ -29,20 +29,19 @@
 
 @media (min-width: 768px) {
   .portfolio-main,
-  .portfolio-shell > footer {
-    padding-left: 12rem;
-  }
-}
-
-.portfolio-shell--projects .portfolio-main,
-.portfolio-shell--projects > footer {
-  padding-left: 0;
+  .portfolio-shell > footer { padding-left: 0; }
 }
 
 .projects-nav-panel {
   background: rgba(255, 255, 255, .97);
   border-bottom: 1px solid #dededb;
   box-shadow: 0 12px 28px rgba(25, 25, 25, .07);
+}
+
+.projects-nav-panel--dark {
+  background: rgba(5, 5, 5, .98);
+  border-bottom-color: rgba(255, 255, 255, .24);
+  color: #fff;
 }
 
 .projects-nav-toggle span {
