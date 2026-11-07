@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import { useId, useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { ProjectCarousel } from "./ProjectCarousel";
-import { useProject } from "@/context/ProjectContext";
-import { projectPath } from "@/lib/public-routes";
+import { responsiveImageProps } from "@/lib/responsive-images";
 
 interface ProjectCardProps {
   project: Project;
@@ -15,24 +14,21 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
   const panelId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded } = useProject();
 
   useEffect(() => {
-    setProjectExpanded(isExpanded);
-
-    if (isExpanded && cardRef.current) {
+    if (isExpanded && cardRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const cardElement = cardRef.current;
       const viewportHeight = window.innerHeight;
       const cardRect = cardElement.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
+      const targetY = Math.max(0, scrollTop + cardRect.top - Math.min(120, viewportHeight * 0.14));
 
       window.scrollTo({
         top: targetY,
         behavior: 'smooth'
       });
     }
-  }, [isExpanded, setProjectExpanded]);
+  }, [isExpanded]);
 
   const handleExpand = () => {
     onExpand(isExpanded ? null : project.id);
@@ -42,89 +38,68 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
     <motion.div 
       ref={cardRef}
       layout="position"
-      className={`relative w-full overflow-hidden mb-4 ${
-        isExpanded ? 'project-card-expanded' : ''
-      }`}
+      className={`project-archive-card${isExpanded ? " is-expanded" : ""}`}
       initial={false}
     >
-      <motion.div 
-        layout="position"
-        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-none' : 'max-w-3xl'
-        }`}
-      >
+      <div className="project-archive-card-content">
         <button
           type="button"
           onClick={handleExpand}
           aria-expanded={isExpanded}
           aria-controls={panelId}
           aria-label={`${isExpanded ? "Collapse" : "Expand"} ${project.title}`}
-          className={isExpanded
-            ? "relative z-10 mx-4 mb-3 min-h-11 px-4 py-2 border border-black rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-            : "absolute inset-0 z-10 w-full cursor-pointer rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:-outline-offset-4"}
+          aria-describedby={`${panelId}-caption`}
+          className="project-archive-trigger"
         >
-          {isExpanded ? "Collapse project" : <span className="sr-only">Expand {project.title}</span>}
+          <span className="project-archive-image-wrap">
+            <img
+              {...responsiveImageProps(project.image, "(max-width: 640px) 92vw, (max-width: 1024px) 48vw, 36vw")}
+              alt={project.imageAlt}
+              className="project-archive-image"
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+          <span id={`${panelId}-caption`} className="project-archive-caption">
+            <span className="project-archive-caption-main">
+              <span className="project-archive-title">{project.title}</span>
+              <span className="project-archive-location">{project.location}</span>
+            </span>
+            <span className="project-archive-caption-meta">
+              <span>{project.year}</span>
+              <span>{project.category}</span>
+            </span>
+            <span className="project-archive-action" aria-hidden="true">
+              {isExpanded ? "Collapse −" : "Open +"}
+            </span>
+          </span>
         </button>
-        {!isExpanded && (
-          <motion.div 
-            className="container mx-auto max-w-3xl px-4"
-            whileHover={{ scale: 0.99 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
-              <motion.div 
-                className="flex-1 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+        <div id={panelId} className="project-archive-expanded-panel" hidden={!isExpanded}>
+          {isExpanded && (
+            <div ref={carouselRef} className="project-archive-carousel">
+              <motion.div
+                className="project-archive-carousel-frame"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.35 }}
               >
-                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate transition-all duration-300 ease-in-out">
-                  {project.title}
-                </h3>
-                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate transition-all duration-300 ease-in-out">
-                  {project.location}
-                </p>
-              </motion.div>
-              <motion.div 
-                className="relative w-full md:w-[280px]"
-                whileHover={{ scale: 0.98 }}
-                transition={{ duration: 0.3 }}
-              >
-                <img
-                  src={project.image}
-                  alt={project.imageAlt}
-                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
+                <ProjectCarousel
+                  images={[
+                    { src: project.image, alt: project.imageAlt },
+                    ...project.images.map((src, index) => ({ src, alt: project.imageAlts[index] }))
+                  ]}
+                  initialSlide={{
+                    title: project.title,
+                    description: project.description,
+                    year: project.year.toString(),
+                    category: project.category
+                  }}
                 />
               </motion.div>
             </div>
-          </motion.div>
-        )}
-        <div id={panelId} hidden={!isExpanded}>
-          {isExpanded && (
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
-            <motion.div 
-              className="h-[80vh] max-h-[800px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ProjectCarousel 
-                images={[
-                  { src: project.image, alt: project.imageAlt },
-                  ...project.images.map((src, index) => ({ src, alt: project.imageAlts[index] }))
-                ]}
-                initialSlide={{
-                  title: project.title,
-                  description: project.description,
-                  year: project.year.toString(),
-                  category: project.category
-                }}
-              />
-            </motion.div>
-          </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

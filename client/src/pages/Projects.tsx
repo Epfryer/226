@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { ProjectFilter } from "@/components/projects/ProjectFilter";
 import { projects } from "@/lib/projects";
 import { trackEvent } from "@/lib/analytics";
+import "./projects-archive.css";
 
 export default function Projects() {
+  const reduceMotion = useReducedMotion();
   const [location] = useLocation();
   const urlCategory = new URLSearchParams(location.split("?")[1]).get("category");
   const [activeCategory, setActiveCategory] = useState<string | null>(urlCategory);
@@ -25,21 +27,24 @@ export default function Projects() {
   );
 
   return (
-    <div className="pt-32">
+    <div className="project-archive">
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="mx-auto px-0"
+        className="project-archive-inner"
       >
-        <div className="mb-8 px-6 md:px-10 lg:px-16">
-          <p className="text-xs uppercase tracking-[0.3em] text-black/50">Project archive</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-5xl">Selected works and ongoing studies.</h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-black/65 md:text-lg">
-            Browse the evolving body of work — academic projects, competitions, speculative proposals, and architectural studies.
+        <header className="project-archive-header">
+          <div className="project-archive-heading">
+            <p className="project-archive-kicker">Ethan Fryer <span>/</span> Project archive</p>
+            <h1>Projects &amp; spatial studies</h1>
+          </div>
+          <p className="project-archive-count" aria-live="polite">
+            <span>{filteredProjects.length.toString().padStart(2, "0")}</span>
+            <span>works</span>
           </p>
-        </div>
+        </header>
 
-        <div className="flex justify-center mb-12">
+        <nav className="project-archive-filters" aria-label="Filter projects by category">
           <ProjectFilter
             categories={categories}
             activeCategory={activeCategory}
@@ -48,14 +53,15 @@ export default function Projects() {
               trackEvent("project_category_selected", { category: category || "all" });
             }}
           />
-        </div>
+        </nav>
 
         <AnimatePresence mode="wait">
           <motion.div
             key={activeCategory || "all"}
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={reduceMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.2 }}
           >
             <ProjectGrid projects={filteredProjects} />
           </motion.div>
