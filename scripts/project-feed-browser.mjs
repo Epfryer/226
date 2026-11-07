@@ -59,6 +59,10 @@ try {
     const factsBounds = await a.locator(".project-ribbon-facts").boundingBox();
     const firstImageBounds = await a.locator(".project-ribbon-slide").first().boundingBox();
     const descriptionBounds = await a.locator(".project-ribbon-panel-slide--description").boundingBox();
+    if (width >= 768) {
+      assert(firstImageBounds.width >= width * .58, "Opened artwork is a large in-page image, not a small preview");
+      assert(descriptionBounds.x + descriptionBounds.width <= width + 2, "Facts, first image, and description fit together on desktop");
+    }
     assert(factsBounds.x + factsBounds.width <= firstImageBounds.x + 2, "Project facts are left of the first image");
     assert(descriptionBounds.x >= firstImageBounds.x + firstImageBounds.width - 2, "Description is right of the first image");
     assert(Math.abs(factsBounds.y - firstImageBounds.y) < 15, "Facts and artwork share a horizontal row");

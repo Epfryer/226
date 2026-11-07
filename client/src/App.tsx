@@ -40,6 +40,7 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAboutPage = location === "/about";
+  const isProjectsPage = location.split("?")[0] === "/projects";
   const isStudioPage = location === "/studio" || location.startsWith("/studio/");
 
   return (
@@ -48,7 +49,7 @@ function App() {
       <PageMetadata />
       <QueryClientProvider client={queryClient}>
         <ProjectProvider>
-        <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
+        <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""} ${isProjectsPage ? "portfolio-shell--projects" : ""}`}>
           {!isStudioPage && (isAboutPage ? <WhiteHeader /> : <Header />)}
           <main className={`flex-1 ${isStudioPage ? "" : "portfolio-main"}`}>
             <Suspense fallback={

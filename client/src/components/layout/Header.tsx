@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useProject } from "@/context/ProjectContext";
 import { m as motion, useReducedMotion } from "framer-motion";
 import { TypingAnimation } from "@/components/ui/typing-animation";
@@ -10,6 +11,7 @@ export function Header({ white = false }: { white?: boolean }) {
   const { isOpen, setIsOpen, buttonRef, menuRef } = useMobileNavigation(isProjectExpanded);
   const reducedMotion = useReducedMotion();
   const [location] = useLocation();
+  const isProjectsPage = location.split("?")[0] === "/projects";
   const isAboutPage = white || location === "/about";
   const navigationHidden = isProjectExpanded && !shouldRevealHeader;
   const linkClass = `hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? "text-white" : ""}`;
@@ -20,6 +22,38 @@ export function Header({ white = false }: { white?: boolean }) {
     ["/publications", "Publications"],
     ["/studio", "Studio"],
   ];
+  const projectsMenuRef = useRef<HTMLDivElement>(null);
+  const projectsMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const [projectsMenuOpen, setProjectsMenuOpen] = useState(false);
+  const [projectsMenuPinned, setProjectsMenuPinned] = useState(false);
+
+  useEffect(() => {
+    setProjectsMenuOpen(false);
+    setProjectsMenuPinned(false);
+  }, [location]);
+
+  useEffect(() => {
+    if (!isProjectsPage || !projectsMenuOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!projectsMenuRef.current?.contains(event.target as Node)) {
+        setProjectsMenuOpen(false);
+        setProjectsMenuPinned(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setProjectsMenuOpen(false);
+      setProjectsMenuPinned(false);
+      projectsMenuButtonRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isProjectsPage, projectsMenuOpen]);
 
   const headerStyle = {
     opacity: navigationHidden ? 0 : 1,
@@ -28,9 +62,9 @@ export function Header({ white = false }: { white?: boolean }) {
   };
 
   return (
-    <header className="portfolio-header pointer-events-none fixed top-0 left-0 z-50 w-full p-6 md:w-48">
-      <div>
-        <div className="flex items-center justify-between md:block">
+    <header className={`portfolio-header pointer-events-none fixed top-0 left-0 z-50 w-full p-6 ${isProjectsPage ? "md:w-full" : "md:w-48"}`}>
+      <div className={isProjectsPage ? "md:flex md:items-start md:gap-8" : undefined}>
+        <div className={`flex items-center justify-between ${isProjectsPage ? "md:justify-start md:gap-8" : "md:block"}`}>
           <motion.div 
             className={`pointer-events-auto ml-2 text-2xl font-bold inline-block md:ml-0 ${isAboutPage ? 'text-white' : ''}`}
             initial={{ opacity: 0 }}
@@ -81,7 +115,65 @@ export function Header({ white = false }: { white?: boolean }) {
           </button>
         </div>
 
-        <div 
+        {isProjectsPage ? (
+          <div
+            ref={projectsMenuRef}
+            className="projects-nav-menu pointer-events-auto relative hidden md:inline-block"
+            onPointerEnter={() => setProjectsMenuOpen(true)}
+            onPointerLeave={() => {
+              if (!projectsMenuPinned && !projectsMenuRef.current?.contains(document.activeElement)) {
+                setProjectsMenuOpen(false);
+              }
+            }}
+            onFocus={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setProjectsMenuOpen(true);
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setProjectsMenuOpen(false);
+                setProjectsMenuPinned(false);
+              }
+            }}
+          >
+            <button
+              ref={projectsMenuButtonRef}
+              type="button"
+              className="projects-nav-toggle min-h-11 px-1 text-[11px] uppercase tracking-[.16em]"
+              aria-expanded={projectsMenuOpen}
+              aria-label="Projects navigation"
+              aria-controls="projects-primary-navigation"
+              aria-haspopup="true"
+              onClick={() => {
+                const nextOpen = !projectsMenuOpen || !projectsMenuPinned;
+                setProjectsMenuOpen(nextOpen);
+                setProjectsMenuPinned(nextOpen);
+              }}
+            >
+              Projects <span aria-hidden="true">{projectsMenuOpen ? "−" : "+"}</span>
+            </button>
+            <nav
+              id="projects-primary-navigation"
+              aria-label="Primary navigation"
+              hidden={!projectsMenuOpen}
+              className="projects-nav-panel absolute left-0 top-full min-w-44 py-3"
+            >
+              {links.map(([href, label]) => (
+                <Link
+                  key={href}
+                  className={`${linkClass} block py-2`}
+                  href={href}
+                  aria-current={location === href ? "page" : undefined}
+                  onClick={() => {
+                    setProjectsMenuOpen(false);
+                    setProjectsMenuPinned(false);
+                  }}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        ) : <div 
           className="pointer-events-auto hidden md:block mt-6"
           style={headerStyle}
         >
@@ -90,7 +182,7 @@ export function Header({ white = false }: { white?: boolean }) {
               <Link key={href} className={linkClass} href={href} aria-current={location === href ? "page" : undefined}>{label}</Link>
             ))}
           </nav>
-        </div>
+        </div>}
 
           <div
             ref={menuRef}
