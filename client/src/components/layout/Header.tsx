@@ -192,7 +192,7 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
             </nav>
           </div>
         <div>
-          {actions && <div className="pointer-events-auto absolute right-16 top-5 md:right-6">{actions}</div>}
+          {actions && <div className="pointer-events-auto absolute right-20 top-5 md:right-6">{actions}</div>}
         </div>
 
           <div

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/modules';
@@ -19,6 +19,7 @@ interface ProjectCarouselProps {
   images: ProjectImage[];
   onSlideChange?: (index: number) => void;
   compact?: boolean;
+  mediaZoom?: number;
   initialIndex?: number;
   leadingPanel?: ReactNode;
   descriptionPanel?: ReactNode;
@@ -30,7 +31,7 @@ interface ProjectCarouselProps {
   };
 }
 
-export function ProjectCarousel({ images, onSlideChange, initialSlide, compact = false, initialIndex = 0, leadingPanel, descriptionPanel }: ProjectCarouselProps) {
+export function ProjectCarousel({ images, onSlideChange, initialSlide, compact = false, mediaZoom = 1, initialIndex = 0, leadingPanel, descriptionPanel }: ProjectCarouselProps) {
   const reducedMotion = useReducedMotion();
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<ProjectImage | null>(null);
@@ -48,6 +49,12 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide, compact =
     if (slideIndex <= 1 || (hasDescriptionPanel && slideIndex === 2)) return 0;
     return Math.max(0, slideIndex - (hasDescriptionPanel ? 2 : 1));
   };
+  useLayoutEffect(() => {
+    const swiper = swiperRef.current;
+    if (!compact || !swiper || swiper.destroyed) return;
+    swiper.update();
+    swiper.slideTo(initialIndex === 0 ? 0 : imageSlideIndex(initialIndex), 0, false);
+  }, [mediaZoom]);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     const imageIndex = compact ? activeImageIndex(swiper.activeIndex) : swiper.activeIndex;

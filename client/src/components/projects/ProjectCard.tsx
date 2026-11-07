@@ -3,6 +3,9 @@ import type { Project } from "@/lib/projects";
 import { responsiveImageProps } from "@/lib/responsive-images";
 import { projectImageDimensions } from "@/lib/project-image-dimensions";
 import { ProjectCarousel } from "./ProjectCarousel";
+import { useProjectMediaZoom } from "@/hooks/use-project-media-zoom";
+import { usePreviewScrollMotion } from "@/hooks/use-preview-scroll-motion";
+import type { CSSProperties } from "react";
 
 interface ProjectCardProps {
   project: Project;
@@ -10,14 +13,18 @@ interface ProjectCardProps {
   onExpand: (id: string, expanded: boolean) => void;
   slideIndex: number;
   onSlideChange: (index: number) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
 }
 
-export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlideChange }: ProjectCardProps) {
+export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlideChange, zoom, onZoomChange }: ProjectCardProps) {
+  const { mediaRef, update: updateZoom } = useProjectMediaZoom(isExpanded, zoom, onZoomChange);
   const coverDimensions = projectImageDimensions[project.id];
   const panelId = useId();
   const titleId = useId();
   const rowRef = useRef<HTMLElement>(null);
   const previewRef = useRef<HTMLButtonElement>(null);
+  usePreviewScrollMotion(previewRef, isExpanded);
   const closeRef = useRef<HTMLButtonElement>(null);
   const anchor = useRef<{ top: number; closing: boolean } | null>(null);
 
@@ -52,7 +59,7 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
   }, [isExpanded]);
 
   return (
-    <article ref={rowRef} className="project-feed-row" data-project-id={project.id} data-expanded={isExpanded} aria-labelledby={titleId}>
+    <article ref={rowRef} className="project-feed-row" data-project-id={project.id} data-expanded={isExpanded} data-project-zoom={zoom.toFixed(3)} aria-labelledby={titleId}>
       {!isExpanded && <div className="project-feed-label">
         <img className="project-feed-thumbnail" {...responsiveImageProps(project.image, "28px")} alt="" width={28} height={28} loading="lazy" />
         <h2 id={titleId} className="project-feed-title">
@@ -73,9 +80,10 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
       <div id={panelId} className="project-feed-details" hidden={!isExpanded} role="region" aria-labelledby={titleId}>
         {isExpanded && (
           <>
-            <div className="project-feed-gallery">
+            <div ref={mediaRef} className="project-feed-gallery" style={{ "--project-media-zoom": zoom } as CSSProperties}>
               <ProjectCarousel
                 compact
+                mediaZoom={zoom}
                 initialIndex={slideIndex}
                 onSlideChange={onSlideChange}
                 leadingPanel={
@@ -92,6 +100,12 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
                       {project.category && <li>{project.category}</li>}
                       {project.metadata.filter(Boolean).map((fact, index) => <li key={`${index}-${fact}`}>{fact}</li>)}
                     </ul>
+                    <div className="project-zoom-controls" aria-label={`${project.title} media zoom`}>
+                      <button type="button" aria-label={`Zoom out ${project.title}`} disabled={zoom <= .75} onClick={() => updateZoom(zoom - .05)}>−</button>
+                      <span aria-live="polite" aria-label="Project zoom level">{Math.round(zoom * 100)}%</span>
+                      <button type="button" aria-label={`Zoom in ${project.title}`} disabled={zoom >= 1} onClick={() => updateZoom(zoom + .05)}>+</button>
+                    </div>
+                    <p className="project-zoom-hint">Alt + scroll to resize artwork</p>
                     <button ref={closeRef} className="project-feed-close" type="button" aria-label={`Close ${project.title}`} aria-controls={panelId} onClick={() => toggle(false)}>
                       Close <span aria-hidden="true">×</span>
                     </button>

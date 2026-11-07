@@ -21,6 +21,7 @@ type ZoomApi = {
   zoomIn: (center?: { x: number; y: number }) => void;
   zoomOut: (center?: { x: number; y: number }) => void;
   getState: () => ZoomState;
+  restore: (snapshot: { ratio: number; x: number; y: number }, fit?: number) => void;
   panBy: (dx: number, dy: number) => void;
   destroy: () => void;
 };
@@ -241,6 +242,13 @@ export function enhanceZoom(
 
   return {
     reset,
+    restore(snapshot, fit = state.fit) {
+      state.fit = Math.max(.001, fit);
+      state.scale = state.fit * clamp(snapshot.ratio, state.min, state.max);
+      state.x = snapshot.x;
+      state.y = snapshot.y;
+      applyBounded();
+    },
     panBy,
     zoomIn(center) {
       const rect = el.getBoundingClientRect();

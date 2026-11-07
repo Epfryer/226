@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import type { Project } from "@/lib/projects";
 
 interface ProjectFilterProps {
   categories: string[];

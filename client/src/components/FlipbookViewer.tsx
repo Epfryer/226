@@ -37,9 +37,19 @@ const pdfOptions = {
   enableXfa: true                   // Enable XFA form rendering
 };
 
+export interface FlipbookSnapshot {
+  page: number;
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
 interface FlipbookViewerProps {
   pdfUrl: string;
   onAspectRatioDetected?: (aspectRatio: number) => void;
+  initialState?: FlipbookSnapshot;
+  onStateChange?: (state: FlipbookSnapshot) => void;
+  embedded?: boolean;
 }
 
 // Updated pixel budget - conservative for iOS stability
@@ -198,7 +208,7 @@ async function renderPage(
   }
 }
 
-export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewerProps) {
+export function FlipbookViewer({ pdfUrl, onAspectRatioDetected, initialState, onStateChange, embedded = false }: FlipbookViewerProps) {
   const reduceMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -215,6 +225,7 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
   // Restore page position from sessionStorage on mount
   const getStorageKey = () => `pdf-page-${pdfUrl}`;
   const readPage = () => {
+    if (initialState?.page && initialState.page > 0) return initialState.page;
     try {
       const page = Number(sessionStorage.getItem(getStorageKey()));
       return Number.isSafeInteger(page) && page > 0 ? page : 1;
@@ -225,6 +236,11 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
   };
 
   const [currentPage, setCurrentPage] = useState(readPage);
+  const snapshotRef = useRef<FlipbookSnapshot>(initialState || { page: currentPage, zoom: 1, panX: 0, panY: 0 });
+  const onStateChangeRef = useRef(onStateChange);
+  const pageNumberRef = useRef(currentPage);
+  onStateChangeRef.current = onStateChange;
+  pageNumberRef.current = currentPage;
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +295,8 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
   useEffect(() => {
     if (currentPage > 0) {
       savePage(currentPage);
+      snapshotRef.current = { ...snapshotRef.current, page: currentPage };
+      onStateChangeRef.current?.(snapshotRef.current);
     }
   }, [currentPage, pdfUrl]);
 
@@ -683,6 +701,7 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isFlipbookReady || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (embedded && !containerRef.current?.contains(document.activeElement)) return;
       if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable=true]")) return;
       const zoom = zoomApiRef.current;
       if (event.key === "0") {
@@ -709,7 +728,7 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFlipbookReady, goToNextPage, goToPrevPage]);
+  }, [isFlipbookReady, goToNextPage, goToPrevPage, embedded]);
 
   useEffect(() => {
     if (!isFlipbookReady || !pageWidth || !pageHeight) return;
@@ -728,6 +747,15 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
       surface.style.cursor = state.scale > state.fit * 1.02 ? "grab" : "";
 
       const ratio = state.fit > 0 ? state.scale / state.fit : 1;
+      snapshotRef.current = {
+        page: pageNumberRef.current,
+        zoom: ratio,
+        panX: state.x / (pageWidth * 2 * state.fit),
+        panY: state.y / (pageHeight * state.fit),
+      };
+      surface.dataset.panX = String(snapshotRef.current.panX);
+      surface.dataset.panY = String(snapshotRef.current.panY);
+      onStateChangeRef.current?.(snapshotRef.current);
       if (Math.abs(ratio - lastZoomRatioRef.current) < 0.01) {
         return;
       }
@@ -755,24 +783,35 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
       return Number.isFinite(fit) && fit > 0 ? fit : 1;
     };
 
+    const saved = { ...snapshotRef.current };
     const zoomApi = enhanceZoom(surface, apply, computeFit(), {
       min: 1, max: 4, dblStep: 2,
       getContentSize: () => ({ width: pageWidth * 2, height: pageHeight }),
     });
     zoomApiRef.current = zoomApi;
+    const restore = (snapshot: FlipbookSnapshot) => {
+      const fit = computeFit();
+      zoomApi.restore({
+        ratio: snapshot.zoom,
+        x: snapshot.panX * pageWidth * 2 * fit,
+        y: snapshot.panY * pageHeight * fit,
+      }, fit);
+    };
+    restore(saved);
 
     const handleResize = () => {
-      const nextFit = computeFit();
-      const state = zoomApi.getState();
-      state.fit = nextFit;
-      zoomApi.reset();
+      if (!surface.clientWidth || !surface.clientHeight) return;
+      restore({ ...snapshotRef.current });
     };
+    const surfaceResize = new ResizeObserver(handleResize);
+    surfaceResize.observe(surface);
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      surfaceResize.disconnect();
       window.removeEventListener("orientationchange", handleResize);
       if (zoomAnimationFrameRef.current) {
         cancelAnimationFrame(zoomAnimationFrameRef.current);
@@ -898,6 +937,15 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
     <div 
       ref={containerRef} 
       className="pdf-viewer-container relative flex items-center justify-center h-full w-full overflow-hidden"
+      tabIndex={embedded ? 0 : undefined}
+      aria-label={embedded ? "Publication book reader" : undefined}
+      data-reader-page={currentPage}
+      data-reader-zoom={zoomLevel.toFixed(3)}
+      onPointerDownCapture={(event) => {
+        if (embedded && event.target instanceof Element && !event.target.closest("button, a, input")) {
+          containerRef.current?.focus({ preventScroll: true });
+        }
+      }}
       aria-describedby="reader-instructions"
     >
       {error ? (
@@ -1014,6 +1062,7 @@ export function FlipbookViewer({ pdfUrl, onAspectRatioDetected }: FlipbookViewer
                     return (
                       <div
                         key={`page_${pageNum}`}
+                        data-pdf-page={pageNum}
                         className="pdf-page bg-white shadow-lg overflow-hidden relative"
                         style={{ 
                           width: pageWidth, 
