@@ -29,6 +29,17 @@
   outline-offset: 4px;
 }
 
+.studio-item:focus-visible {
+  outline: 3px solid hsl(var(--foreground));
+  outline-offset: 4px;
+}
+
+@media (forced-colors: active) {
+  .studio-item:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;

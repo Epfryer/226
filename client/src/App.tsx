@@ -26,7 +26,7 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/projects" component={Projects} />
       <Route path="/publications" component={Publications} />
-      <Route path="/studio" component={Studio} />
+      <Route path="/studio/:productId?" component={Studio} />
       <Route path="/diagnostics" component={Diagnostics} />
       <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
@@ -37,7 +37,7 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAboutPage = location === "/about";
-  const isStudioPage = location === "/studio";
+  const isStudioPage = location === "/studio" || location.startsWith("/studio/");
 
   return (
     <MotionConfig reducedMotion="user">

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypingAnimation } from "@/components/ui/typing-animation";
@@ -249,7 +249,7 @@ function StudioSidebar({
                   : "text-muted-foreground hover:text-foreground pl-0"
                 }
               `}
-              aria-selected={selectedCategory === category}
+              aria-pressed={selectedCategory === category}
             >
               {category}
             </button>
@@ -284,7 +284,7 @@ function StudioMobileCategories({
                 : "bg-transparent text-muted-foreground border-muted hover:border-foreground hover:text-foreground"
               }
             `}
-            aria-selected={selectedCategory === category}
+            aria-pressed={selectedCategory === category}
           >
             {category}
           </button>
@@ -308,11 +308,13 @@ function StudioGridItem({
   const isLarge = index % 5 === 0 || index % 7 === 0;
 
   return (
-    <motion.button
+    <motion.a
+      href={`/studio/${product.id}`}
+      aria-label={`View ${product.name}`}
+      aria-current={isSelected ? "true" : undefined}
       className={`
         studio-item relative group cursor-pointer text-left w-full
         ${isLarge ? "row-span-2" : ""}
-        focus:outline-none
       `}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -321,7 +323,11 @@ function StudioGridItem({
         ease: "easeOut",
         delay: Math.min(index * 0.05, 0.4)
       }}
-      onClick={() => onSelect(product)}
+      onClick={(event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        onSelect(product);
+      }}
       whileHover={{ y: -3 }}
     >
       <div className={`
@@ -344,7 +350,7 @@ function StudioGridItem({
           </span>
         </div>
       </div>
-    </motion.button>
+    </motion.a>
   );
 }
 
@@ -417,6 +423,7 @@ function ColorSwatch({
       style={{ backgroundColor: hex }}
       title={color.name}
       aria-label={`Select ${color.name} color`}
+      aria-pressed={isSelected}
     >
       {isSelected && (
         <span className={`absolute inset-0 flex items-center justify-center ${isLight ? "text-black" : "text-white"}`}>
@@ -452,6 +459,7 @@ function SizeButton({
         }
       `}
       aria-label={`Select size ${size}${!isAvailable ? " (unavailable)" : ""}`}
+      aria-pressed={isSelected}
     >
       {size}
     </button>
@@ -1208,6 +1216,9 @@ function CartDrawer({
 }
 
 export default function Studio() {
+  const [, navigate] = useLocation();
+  const [, routeParams] = useRoute("/studio/:productId?");
+  const productId = routeParams?.productId;
   const [selectedCategory, setSelectedCategory] = useState<Category>("ALL");
   const [selectedProduct, setSelectedProduct] = useState<StudioProduct | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -1267,28 +1278,43 @@ export default function Studio() {
   }, [products, selectedCategory]);
 
   useEffect(() => {
-    if (filteredProducts.length > 0 && !selectedProduct) {
+    if (!productId && filteredProducts.length > 0 && !selectedProduct) {
       setSelectedProduct(filteredProducts[0]);
     }
-  }, [filteredProducts, selectedProduct]);
+  }, [filteredProducts, selectedProduct, productId]);
+
+  // The URL restores the same detail panel/sheet on reload and browser navigation.
+  useEffect(() => {
+    if (!productId) {
+      setMobileSheetOpen(false);
+      return;
+    }
+    const product = products.find(item => String(item.id) === productId);
+    setSelectedProduct(product || null);
+    if (product) setSelectedCategory(product.category || "ALL");
+    setMobileSheetOpen(!!product && !isDesktop);
+  }, [productId, products, isDesktop]);
 
   const handleCategoryChange = useCallback((category: Category) => {
     trackEvent("shop_category_selected", { category });
     setSelectedCategory(category);
     setSelectedProduct(null);
-  }, []);
+    navigate("/studio");
+  }, [navigate]);
 
   const handleSelectProduct = useCallback((product: StudioProduct) => {
     trackEvent("product_selected", { product_id: product.id, category: product.category || "ALL" });
     setSelectedProduct(product);
+    navigate(`/studio/${product.id}`);
     if (!isDesktop) {
       setMobileSheetOpen(true);
     }
-  }, [isDesktop]);
+  }, [isDesktop, navigate]);
 
   const handleCloseMobileSheet = useCallback(() => {
     setMobileSheetOpen(false);
-  }, []);
+    navigate("/studio");
+  }, [navigate]);
   
   const handleAddToCart = useCallback((item: CartItem) => {
     trackEvent("add_to_cart", { variant_id: item.syncVariantId, price: item.price, quantity: 1, currency: "USD" });
@@ -1418,6 +1444,11 @@ export default function Studio() {
           />
 
           <main className="flex-1 min-w-0" role="main" aria-label="Product gallery">
+            {productId && !isLoading && !error && !products.some(product => String(product.id) === productId) && (
+              <p role="status" className="mb-6">
+                Product not found. <Link href="/studio" className="underline">Browse all Studio products</Link>.
+              </p>
+            )}
             <AnimatePresence mode="wait">
               <motion.div
                 key={selectedCategory}
