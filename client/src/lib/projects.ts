@@ -5,7 +5,9 @@ export interface Project {
   year: number;
   description: string;
   image: string;
+  imageAlt: string;
   images: string[]; // Add this array for multiple images
+  imageAlts: string[];
   category: string;
   metadata: string[];
 }
@@ -13,6 +15,19 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: "Corp0rate-Circus",
+    imageAlt: "Corp0rate-Circus: collage of tilted towers, advertising signs, a classical statue, and a yellow taxi.",
+    imageAlts: [
+      "Corp0rate-Circus: tower and tent form studies above a rocky island section.",
+      "Corp0rate-Circus: dark island silhouettes with a central opening and sheer cliffs.",
+      "Corp0rate-Circus: cutaway perspectives of a stacked tower on a flared tent-like base.",
+      "Corp0rate-Circus: illustrated breakdown of the tower, base, lobby, market, and performance spaces.",
+      "Corp0rate-Circus: monochrome collages of a skeletal tower and layered public spaces.",
+      "Corp0rate-Circus: section collage combining ramps, platforms, and fragmented landscape imagery.",
+      "Corp0rate-Circus: contrasting monochrome landscape fragments and colorful commercial tower collages.",
+      "Corp0rate-Circus: restaurant scenes mixing classical figures, advertising, and fast-food imagery.",
+      "Corp0rate-Circus: dining-room and waterfront collages with oversized fast-food logos.",
+      "Corp0rate-Circus: social-media post showing an ornate table setting with a caption about architecture and wealth."
+    ],
     title: "Corp0rate-Circus",
     location: "Capri, Italy",
     year: 2023,
@@ -35,6 +50,17 @@ export const projects: Project[] = [
   },
   {
     id: "OASIS & LOOM",
+    imageAlt: "Oasis & Loom: aerial rendering of a curved, timber-framed pavilion inserted between downtown buildings.",
+    imageAlts: [
+      "Oasis & Loom: aerial site plan with an oval pavilion and green pedestrian paths.",
+      "Oasis & Loom: existing street photographs beside a site section with neighboring buildings and trees.",
+      "Oasis & Loom: section rendering through the pavilion's curved timber roof and lower level.",
+      "Oasis & Loom: circular floor plans and diagrams developing a looped building form.",
+      "Oasis & Loom: sectional perspective, overhead site view, and interior studies of the timber structure.",
+      "Oasis & Loom: interior stair and hall renderings beside photographs of curved study models.",
+      "Oasis & Loom: pale wireframe perspective of intersecting curved roof ribs.",
+      "Oasis & Loom: studio exhibition of drawings, presentation boards, and physical models."
+    ],
     title: "OASIS & LOOM",
     location: "Blacksburg, Virginia",
     year: 2022,
@@ -55,6 +81,16 @@ export const projects: Project[] = [
   },
   {
     id: "SCULPTURE OF HOME",
+    imageAlt: "Sculpture of Home: forest elevation with a circular opening above a sunken sculpture court.",
+    imageAlts: [
+      "Sculpture of Home: physical model with an exposed blue roof frame over a curved basin.",
+      "Sculpture of Home: elongated floor plan, forest site plan, and section through a sculpture niche.",
+      "Sculpture of Home: colored forest elevation with a blue glazed pavilion above a dark concrete basin.",
+      "Sculpture of Home: sketchbook studies of the circular opening, trees, and sunken sculpture court.",
+      "Sculpture of Home: design sketches and a shaded forest elevation of the two-level pavilion.",
+      "Sculpture of Home: exhibition drawings and photographs of a curved timber study model.",
+      "Sculpture of Home: dancer sculpture reference beside a close-up view through the timber model."
+    ],
     title: "SCULPTURE OF HOME",
     location: "Berlin, Germany",
     year: 2021,
@@ -74,6 +110,13 @@ export const projects: Project[] = [
   },
   {
     id: "BIKE HUB",
+    imageAlt: "Bike Hub squared: cyclists approach a low pavilion and sunken courtyard on Cowgill Lawn.",
+    imageAlts: [
+      "Bike Hub squared: courtyard rendering with curved concrete seating and a timber-finned upper pavilion.",
+      "Bike Hub squared: interior cafe rendering beside a circular program diagram and building section.",
+      "Bike Hub squared: bicycle-inspired circular form diagrams and stepped building section.",
+      "Bike Hub squared: competition boards combining courtyard renderings, bicycle diagrams, and sections."
+    ],
     title: "BIKE HUB^2",
     location: "Cowgill Lawn,Virginia",
     year: 2023,
@@ -90,6 +133,46 @@ export const projects: Project[] = [
   },
   {
     id: "Behind The Curtain",
+    imageAlt: "Behind the Curtain: aerial photograph along Milwaukee Avenue toward the Chicago skyline.",
+    imageAlts: [
+      "Behind the Curtain: concept collage of a crowd facing a raised curtain between music venues.",
+      "Behind the Curtain: project background with Chicago context maps and neighborhood diagrams.",
+      "Behind the Curtain: historical neighborhood analysis with maps and photographs of local venues and murals.",
+      "Behind the Curtain: performance-space references and missing-middle housing analysis.",
+      "Behind the Curtain: site diagrams and plan showing buildings arranged around courtyards.",
+      "Behind the Curtain: preliminary design studies using curtain shapes, overlapping circles, and massing diagrams.",
+      "Behind the Curtain: development sequence of building masses, roof forms, and courtyard plans.",
+      "Behind the Curtain: exploded program diagram separating housing, community, daycare, retail, and music spaces.",
+      "Behind the Curtain: street-level rendering of the curved music venue and public plaza.",
+      "Behind the Curtain: courtyard rendering of dark, rippling facades surrounding planted outdoor space.",
+      "Behind the Curtain: sidewalk view of timber-clad housing and an open passage toward the music venue.",
+      "Behind the Curtain: courtyard view of housing blocks with curved balconies and a red stair.",
+      "Behind the Curtain: Milwaukee Avenue perspective with housing framing a public entrance.",
+      "Behind the Curtain: backyard, center, and public stage perspectives comparing the three courtyard settings.",
+      "Behind the Curtain: sunset view across the development toward a large illuminated mural.",
+      "Behind the Curtain: public-to-private circulation diagram and individual apartment layouts.",
+      "Behind the Curtain: illuminated building cutaway showing stacked rooms and shared circulation.",
+      "Behind the Curtain: curtain-inspired facade details beside a furnished residential section.",
+      "Behind the Curtain: layered facade study and street elevation with trees and curved cladding.",
+      "Behind the Curtain: aerial site model and street elevation of the housing and music venue.",
+      "Behind the Curtain: enlarged furnished residential section beside floor plans.",
+      "Behind the Curtain: apartment plan variations and an exploded diagram of residential units.",
+      "Behind the Curtain: double-height lobby with a curved timber wall and patterned sunlight.",
+      "Behind the Curtain: human-scale design study with an illuminated section and facade details.",
+      "Behind the Curtain: sunlit lobby beneath a glazed roof and suspended circular ceiling elements.",
+      "Behind the Curtain: interior atrium with curved balconies, stairs, and patterned roof shadows.",
+      "Behind the Curtain: atrium perspective beside environmental site-analysis diagrams.",
+      "Behind the Curtain: life-safety floor plan showing circulation and exit routes.",
+      "Behind the Curtain: fire-protection floor plan with coverage zones.",
+      "Behind the Curtain: accessibility floor plan with routes through the housing complex.",
+      "Behind the Curtain: accessible apartment plan beside building-area and occupancy calculations.",
+      "Behind the Curtain: structural plan showing the column grid and curved building edge.",
+      "Behind the Curtain: parking plan with vehicle spaces and courtyard landscaping.",
+      "Behind the Curtain: mechanical systems floor plan with service routes.",
+      "Behind the Curtain: electrical floor plan with lighting and power symbols.",
+      "Behind the Curtain: plumbing floor plan with fixture and pipe locations.",
+      "Behind the Curtain: tabulated building-code and project compliance information."
+    ],
     title: "Behind The Curtain",
     location: " Milwaukee Ave,Chicago",
     year: 2024,
@@ -139,6 +222,27 @@ export const projects: Project[] = [
   },
   {
     id: "thesis",
+    imageAlt: "The 78: urban interior rendering with elevated bridges, planted terraces, and a glazed canopy.",
+    imageAlts: [
+      "The 78: aerial Chicago skyline view with a tall illuminated tower.",
+      "The 78: overhead master plan of intersecting bridges and buildings beside rail infrastructure.",
+      "The 78: riverside elevation of layered buildings linked by elevated circulation.",
+      "The 78: close exterior view of stacked glazed volumes and planted bridge decks.",
+      "The 78: oblique exterior rendering of interconnected blocks beneath sweeping elevated routes.",
+      "The 78: tall building section with repeated curved floor connections and a circulation diagram.",
+      "The 78: detailed vertical section showing stacked floors and structural connections.",
+      "The 78: paired views from a shaded opening toward a glazed courtyard and lawn.",
+      "The 78: twisting tower study beside a cutaway through stacked interior spaces.",
+      "The 78: left portion of a circular, terraced floor plan around a central hall.",
+      "The 78: right portion of the circular floor plan with adjoining circulation and rooms.",
+      "The 78: Chicago riverfront at sunset with a steel bridge and skyline towers.",
+      "The 78: planted waterfront edge beneath stacked buildings and tall arched openings.",
+      "The 78: sectional perspective through layered public spaces and a long-span roof.",
+      "The 78: building section beside an aerial rendering of a sloped roof overlooking the river.",
+      "The 78: aerial master-plan view of connected blocks, bridges, and landscaped terraces.",
+      "The 78: aerial riverfront perspective with a broad sloping roof and elevated walkways.",
+      "The 78: closing text contrasting an ideal animated portfolio with the static PDF format."
+    ],
     title: "The 78",
     location: "Southside, Chciago",
     year: 2025,
@@ -169,6 +273,11 @@ export const projects: Project[] = [
   },
   {
     id: "AIA Comp",
+    imageAlt: "AIA Virginia BauthHaus: public bath presentation with modular pod plans and an illuminated street pavilion.",
+    imageAlts: [
+      "AIA Virginia BauthHaus: cutaway axonometric of a private bathing pod above its floor plan.",
+      "AIA Virginia BauthHaus: hanging sign reading Coming Soon."
+    ],
     title: "AIA Virgina BauthHaus",
     location: "Alexandria, Virginia",
     year: 2025,
@@ -183,6 +292,11 @@ export const projects: Project[] = [
   },
   {
     id: "Chicago Stu",
+    imageAlt: "4th Year Competition: Behind the Curtain presentation board with site plans, housing sections, and courtyard renderings.",
+    imageAlts: [
+      "4th Year Competition: expanded Behind the Curtain board showing apartment plans, facade studies, and courtyard perspectives.",
+      "4th Year Competition: studio presentation photograph beside architectural drawings and models."
+    ],
   title: "4th Year Competition",
   location: "Milwaukee Ave,Chicago",
   year: 2025,
@@ -197,6 +311,11 @@ export const projects: Project[] = [
 },
 {
   id: "International Comp",
+  imageAlt: "House of Light & Shadows: Teranova collage combining a desert dwelling, observatory, lunar landscape, and starry sky.",
+  imageAlts: [
+    "House of Light & Shadows: Teranova presentation linking an earth-sheltered home and a telescope beneath a moonlit sky.",
+    "House of Light & Shadows: hanging sign reading Coming Soon."
+  ],
   title: "House Of light & Shadows",
   location: "New Mexico",
   year: 2025,

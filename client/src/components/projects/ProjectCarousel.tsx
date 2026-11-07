@@ -2,14 +2,20 @@ import { useCallback, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
 import 'swiper/css/free-mode';
 
+interface ProjectImage {
+  src: string;
+  alt: string;
+}
+
 interface ProjectCarouselProps {
-  images: string[];
+  images: ProjectImage[];
   onSlideChange?: (index: number) => void;
   initialSlide: {
     title: string;
@@ -21,17 +27,22 @@ interface ProjectCarouselProps {
 
 export function ProjectCarousel({ images, onSlideChange, initialSlide }: ProjectCarouselProps) {
   const swiperRef = useRef<SwiperType>();
-  const [zoomImage, setZoomImage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [zoomImage, setZoomImage] = useState<ProjectImage | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLImageElement>(null);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
+    setCurrentIndex(swiper.activeIndex);
+    setAtStart(swiper.isBeginning);
+    setAtEnd(swiper.isEnd);
     onSlideChange?.(swiper.activeIndex);
   }, [onSlideChange]);
 
-  const handleImageDoubleClick = (e: React.MouseEvent<HTMLImageElement>, image: string) => {
+  const handleImageDoubleClick = (e: React.MouseEvent<HTMLImageElement>, image: ProjectImage) => {
     if (zoomImage) {
       setZoomImage(null);
       setScale(1);
@@ -67,7 +78,22 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
 
   return (
     <>
-      <div className="relative w-full h-full">
+      <section aria-label={`${initialSlide.title} gallery`} aria-roledescription="carousel" className="relative w-full h-full flex flex-col">
+        <div className="flex shrink-0 items-center justify-center gap-4 px-4 pb-3">
+          <Button type="button" variant="outline" disabled={atStart}
+            aria-label={`Previous image in ${initialSlide.title}`}
+            onClick={() => swiperRef.current?.slidePrev()}>
+            Previous
+          </Button>
+          <p className="text-sm" role="status" aria-live="polite" aria-atomic="true">
+            Image {currentIndex + 1} of {images.length}
+          </p>
+          <Button type="button" variant="outline" disabled={atEnd}
+            aria-label={`Next image in ${initialSlide.title}`}
+            onClick={() => swiperRef.current?.slideNext()}>
+            Next
+          </Button>
+        </div>
         <Swiper
           modules={[Navigation, Scrollbar, FreeMode, A11y, Mousewheel]}
           slidesPerView="auto"
@@ -75,8 +101,13 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           centeredSlides={false}
           scrollbar={false}
           navigation={false}
-          className="w-full h-full project-carousel"
+          className="w-full flex-1 min-h-0 project-carousel"
           onSlideChange={handleSlideChange}
+          onProgress={(swiper) => {
+            setAtStart(swiper.isBeginning);
+            setAtEnd(swiper.isEnd);
+          }}
+          onResize={handleSlideChange}
           initialSlide={0}
           allowTouchMove={true}
           simulateTouch={true}
@@ -93,6 +124,7 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           grabCursor={true}
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
+            handleSlideChange(swiper);
           }}
           breakpoints={{
             320: {
@@ -122,8 +154,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
               </div>
               <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh]">
                 <img
-                  src={images[0]}
-                  alt={`Slide 1`}
+                  src={images[0].src}
+                  alt={images[0].alt}
                   className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
                   loading="eager"
                   onDoubleClick={(e) => handleImageDoubleClick(e, images[0])}
@@ -140,8 +172,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             >
               <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh]">
                 <img
-                  src={image}
-                  alt={`Slide ${index + 2}`}
+                  src={image.src}
+                  alt={image.alt}
                   className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
                   loading="lazy"
                   onDoubleClick={(e) => handleImageDoubleClick(e, image)}
@@ -150,21 +182,22 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
             </SwiperSlide>
           ))}
         </Swiper>
-      </div>
+      </section>
 
       <Dialog open={!!zoomImage} onOpenChange={resetZoom}>
         <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] p-0">
+          <DialogTitle className="sr-only">{initialSlide.title} — enlarged image</DialogTitle>
           <div className="w-full h-full flex items-center justify-center bg-black/90">
             <img
               ref={imageRef}
-              src={zoomImage || ''}
-              alt="Zoomed view"
+              src={zoomImage?.src || ''}
+              alt={zoomImage?.alt || ''}
               style={{
                 transformOrigin: `${position.x}% ${position.y}%`,
                 transform: `scale(${scale})`,
               }}
               className="w-auto h-auto max-w-full max-h-full object-contain cursor-zoom-out transition-transform duration-200"
-              onDoubleClick={(e) => handleImageDoubleClick(e, zoomImage || '')}
+              onDoubleClick={(e) => zoomImage && handleImageDoubleClick(e, zoomImage)}
               onMouseMove={handleZoom}
             />
           </div>

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useId, useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { useProject } from "@/context/ProjectContext";
@@ -11,7 +11,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const panelId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const { setProjectExpanded } = useProject();
@@ -52,10 +52,21 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           isExpanded ? 'max-w-none' : 'max-w-3xl'
         }`}
       >
-        {!isExpanded ? (
+        <button
+          type="button"
+          onClick={handleExpand}
+          aria-expanded={isExpanded}
+          aria-controls={panelId}
+          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${project.title}`}
+          className={isExpanded
+            ? "relative z-10 mx-4 mb-3 min-h-11 px-4 py-2 border border-black rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            : "absolute inset-0 z-10 w-full cursor-pointer rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:-outline-offset-4"}
+        >
+          {isExpanded ? "Collapse project" : <span className="sr-only">Expand {project.title}</span>}
+        </button>
+        {!isExpanded && (
           <motion.div 
-            className="container mx-auto max-w-3xl px-4 cursor-pointer" 
-            onClick={handleExpand}
+            className="container mx-auto max-w-3xl px-4"
             whileHover={{ scale: 0.99 }}
             transition={{ duration: 0.3 }}
           >
@@ -80,13 +91,15 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
               >
                 <img
                   src={project.image}
-                  alt={project.title}
+                  alt={project.imageAlt}
                   className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
                 />
               </motion.div>
             </div>
           </motion.div>
-        ) : (
+        )}
+        <div id={panelId} hidden={!isExpanded}>
+          {isExpanded && (
           <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
             <motion.div 
               className="h-[80vh] max-h-[800px]"
@@ -95,8 +108,10 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
               transition={{ duration: 0.5 }}
             >
               <ProjectCarousel 
-                images={[project.image, ...project.images]} // Main image first, followed by additional images
-                onSlideChange={setCurrentIndex}
+                images={[
+                  { src: project.image, alt: project.imageAlt },
+                  ...project.images.map((src, index) => ({ src, alt: project.imageAlts[index] }))
+                ]}
                 initialSlide={{
                   title: project.title,
                   description: project.description,
@@ -106,7 +121,8 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
               />
             </motion.div>
           </div>
-        )}
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );

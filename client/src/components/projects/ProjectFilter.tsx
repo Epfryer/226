@@ -18,6 +18,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
       <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto"> {/* Added max-width and auto margins */}
         <Button
           variant={!activeCategory ? "default" : "outline"}
+          aria-pressed={activeCategory === null}
           onClick={() => handleClick(null)}
           className="transition-all"
         >
@@ -27,6 +28,7 @@ export function ProjectFilter({ categories, activeCategory, onCategoryChange }: 
           <Button
             key={category}
             variant={category === activeCategory ? "default" : "outline"}
+            aria-pressed={category === activeCategory}
             onClick={() => handleClick(category)}
             className="transition-all"
           >

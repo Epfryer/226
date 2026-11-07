@@ -36,10 +36,13 @@ function WhiteSocialLinks({ socials, className, ...props }: SocialLinksProps) {
   return (
     <div className={cn("flex items-center justify-center gap-0", className)} {...props}>
       {socials.map((social, index) => (
-        <div
+        <a
           key={index}
+          href={social.href}
+          target="_blank"
+          rel="noopener noreferrer"
           className={cn(
-            "relative cursor-pointer px-5 py-2 transition-opacity duration-200",
+            "relative cursor-pointer px-5 py-2 text-white transition-opacity duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4",
             hoveredSocial && hoveredSocial !== social.name ? "opacity-50" : "opacity-100"
           )}
           onMouseEnter={() => {
@@ -49,7 +52,6 @@ function WhiteSocialLinks({ socials, className, ...props }: SocialLinksProps) {
           onMouseLeave={() => setHoveredSocial(null)}
           onClick={() => {
             setClicked(true);
-            window.open(social.href, '_blank');
           }}
         >
           <span className="block text-lg font-medium text-white">{social.name}</span>
@@ -62,7 +64,7 @@ function WhiteSocialLinks({ socials, className, ...props }: SocialLinksProps) {
                 <motion.img
                   key={social.name}
                   src={social.image}
-                  alt={social.name}
+                  alt=""
                   className="size-16"
                   initial={{
                     y: -40,
@@ -77,7 +79,7 @@ function WhiteSocialLinks({ socials, className, ...props }: SocialLinksProps) {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </a>
       ))}
     </div>
   )
