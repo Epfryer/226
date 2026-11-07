@@ -138,7 +138,7 @@ export function Header({ white = false }: { white?: boolean }) {
             <button
               ref={projectsMenuButtonRef}
               type="button"
-              className="projects-nav-toggle min-h-11 px-1 text-[11px] uppercase tracking-[.16em]"
+              className="projects-nav-toggle min-h-11 px-1 text-[11px] uppercase tracking-[.16em] pl-[4px] pr-[4px] ml-[-29px] mr-[-29px]"
               aria-expanded={projectsMenuOpen}
               aria-label="Projects navigation"
               aria-controls="projects-primary-navigation"
