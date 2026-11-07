@@ -1,38 +1,28 @@
-import { motion, AnimatePresence } from "framer-motion";
 import { ProjectCard } from "./ProjectCard";
 import type { Project } from "@/lib/projects";
-import { useState } from "react";
+import "./project-feed.css";
 
 interface ProjectGridProps {
   projects: Project[];
+  expandedIds: ReadonlySet<string>;
+  slideIndices: Record<string, number>;
+  onExpandedChange: (id: string, expanded: boolean) => void;
+  onSlideChange: (id: string, index: number) => void;
 }
 
-export function ProjectGrid({ projects }: ProjectGridProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
+export function ProjectGrid({ projects, expandedIds, slideIndices, onExpandedChange, onSlideChange }: ProjectGridProps) {
   return (
-    <motion.div 
-      className="space-y-0"
-      layout
-    >
-      <AnimatePresence>
-        {projects.map((project) => (
-          <motion.div
-            key={project.id}
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ProjectCard 
-              project={project}
-              isExpanded={expandedId === project.id}
-              onExpand={(id) => setExpandedId(id)}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </motion.div>
+    <div className="project-feed" aria-label="Project feed">
+      {projects.map((project) => (
+        <ProjectCard
+          key={project.id}
+          project={project}
+          isExpanded={expandedIds.has(project.id)}
+          onExpand={onExpandedChange}
+          slideIndex={slideIndices[project.id] ?? 0}
+          onSlideChange={(index) => onSlideChange(project.id, index)}
+        />
+      ))}
+    </div>
   );
 }

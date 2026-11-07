@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { ProjectFilter } from "@/components/projects/ProjectFilter";
 import { projects } from "@/lib/projects";
@@ -10,6 +9,8 @@ export default function Projects() {
   const [location] = useLocation();
   const urlCategory = new URLSearchParams(location.split("?")[1]).get("category");
   const [activeCategory, setActiveCategory] = useState<string | null>(urlCategory);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [slideIndices, setSlideIndices] = useState<Record<string, number>>({});
 
   const categories = useMemo(
     () => Array.from(new Set(projects.map((project) => project.category))).sort(),
@@ -25,21 +26,16 @@ export default function Projects() {
   );
 
   return (
-    <div className="pt-32">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="mx-auto px-0"
-      >
-        <div className="mb-8 px-6 md:px-10 lg:px-16">
-          <p className="text-xs uppercase tracking-[0.3em] text-black/50">Project archive</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-5xl">Selected works and ongoing studies.</h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-black/65 md:text-lg">
+    <div className="project-archive">
+        <div className="project-archive-heading">
+          <p>Project archive</p>
+          <h1>Selected works and ongoing studies.</h1>
+          <p className="project-archive-intro">
             Browse the evolving body of work — academic projects, competitions, speculative proposals, and architectural studies.
           </p>
         </div>
 
-        <div className="flex justify-center mb-12">
+        <div className="project-archive-filters">
           <ProjectFilter
             categories={categories}
             activeCategory={activeCategory}
@@ -50,17 +46,21 @@ export default function Projects() {
           />
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeCategory || "all"}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <ProjectGrid projects={filteredProjects} />
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
+        <ProjectGrid
+          projects={filteredProjects}
+          expandedIds={expandedIds}
+          slideIndices={slideIndices}
+          onExpandedChange={(id, expanded) => {
+            setExpandedIds((current) => {
+              const next = new Set(current);
+              if (expanded) next.add(id);
+              else next.delete(id);
+              return next;
+            });
+            trackEvent(expanded ? "project_expanded" : "project_closed", { project_id: id });
+          }}
+          onSlideChange={(id, index) => setSlideIndices((current) => current[id] === index ? current : { ...current, [id]: index })}
+        />
     </div>
   );
 }

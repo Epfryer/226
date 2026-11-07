@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useReducedMotion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -17,6 +18,10 @@ interface ProjectImage {
 interface ProjectCarouselProps {
   images: ProjectImage[];
   onSlideChange?: (index: number) => void;
+  compact?: boolean;
+  initialIndex?: number;
+  leadingPanel?: ReactNode;
+  descriptionPanel?: ReactNode;
   initialSlide: {
     title: string;
     description: string;
@@ -25,38 +30,55 @@ interface ProjectCarouselProps {
   };
 }
 
-export function ProjectCarousel({ images, onSlideChange, initialSlide }: ProjectCarouselProps) {
+export function ProjectCarousel({ images, onSlideChange, initialSlide, compact = false, initialIndex = 0, leadingPanel, descriptionPanel }: ProjectCarouselProps) {
+  const reducedMotion = useReducedMotion();
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<ProjectImage | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [atStart, setAtStart] = useState(initialIndex === 0);
+  const [atEnd, setAtEnd] = useState(initialIndex >= images.length - 1);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLImageElement>(null);
+  const imageTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const draggedRef = useRef(false);
+  const hasDescriptionPanel = compact && !!descriptionPanel;
+  const imageSlideIndex = (index: number) => index === 0 ? 1 : index + (hasDescriptionPanel ? 2 : 1);
+  const activeImageIndex = (slideIndex: number) => {
+    if (slideIndex <= 1 || (hasDescriptionPanel && slideIndex === 2)) return 0;
+    return Math.max(0, slideIndex - (hasDescriptionPanel ? 2 : 1));
+  };
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
-    setCurrentIndex(swiper.activeIndex);
+    const imageIndex = compact ? activeImageIndex(swiper.activeIndex) : swiper.activeIndex;
+    setCurrentIndex(imageIndex);
     setAtStart(swiper.isBeginning);
     setAtEnd(swiper.isEnd);
-    onSlideChange?.(swiper.activeIndex);
-  }, [onSlideChange]);
+    onSlideChange?.(imageIndex);
+  }, [compact, hasDescriptionPanel, images.length, onSlideChange]);
 
-  const handleImageDoubleClick = (e: React.MouseEvent<HTMLImageElement>, image: ProjectImage) => {
-    if (zoomImage) {
-      setZoomImage(null);
-      setScale(1);
-      setPosition({ x: 0, y: 0 });
-      return;
+  const updateImageSize = (img: HTMLImageElement) => {
+    if (!img.naturalHeight) return;
+    img.closest<HTMLElement>(".swiper-slide")?.style.setProperty("--project-image-ratio", String(img.naturalWidth / img.naturalHeight));
+    const swiper = swiperRef.current;
+    if (swiper && !swiper.destroyed) {
+      // An image finishing its download must not snap a freely panned ribbon
+      // back to a slide boundary.
+      const translate = swiper.translate;
+      swiper.update();
+      swiper.setTranslate(translate);
+      swiper.updateProgress();
+      swiper.updateSlidesClasses();
     }
+  };
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-
+  const openImage = (image: ProjectImage, event: React.MouseEvent<HTMLButtonElement>) => {
+    // Keyboard activation has detail=0 and remains available after panning.
+    if (draggedRef.current && event.detail !== 0) return;
+    imageTriggerRef.current = event.currentTarget;
     setZoomImage(image);
-    setScale(2.5);
-    setPosition({ x, y });
+    setScale(1);
+    setPosition({ x: 50, y: 50 });
   };
 
   const handleZoom = (e: React.MouseEvent<HTMLImageElement>) => {
@@ -78,11 +100,15 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
 
   return (
     <>
-      <section aria-label={`${initialSlide.title} gallery`} aria-roledescription="carousel" className="relative w-full h-full flex flex-col">
-        <div className="flex shrink-0 items-center justify-center gap-4 px-4 pb-3">
+      <section aria-label={`${initialSlide.title} gallery`} aria-roledescription="carousel" className={`relative w-full h-full flex flex-col ${compact ? "project-carousel-compact" : ""}`}>
+        <div className="project-carousel-controls flex shrink-0 items-center justify-center gap-4 px-4 pb-3">
           <Button type="button" variant="outline" disabled={atStart}
             aria-label={`Previous image in ${initialSlide.title}`}
-            onClick={() => swiperRef.current?.slidePrev()}>
+            onClick={() => {
+              if (!swiperRef.current) return;
+              if (!compact) swiperRef.current.slidePrev();
+              else swiperRef.current.slideTo(currentIndex > 0 ? imageSlideIndex(currentIndex - 1) : 0, reducedMotion ? 0 : 260);
+            }}>
             Previous
           </Button>
           <p className="text-sm" role="status" aria-live="polite" aria-atomic="true">
@@ -90,28 +116,36 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           </p>
           <Button type="button" variant="outline" disabled={atEnd}
             aria-label={`Next image in ${initialSlide.title}`}
-            onClick={() => swiperRef.current?.slideNext()}>
+            onClick={() => {
+              if (!swiperRef.current) return;
+              if (!compact) swiperRef.current.slideNext();
+              else if (currentIndex < images.length - 1) swiperRef.current.slideTo(imageSlideIndex(currentIndex + 1), reducedMotion ? 0 : 260);
+            }}>
             Next
           </Button>
         </div>
         <Swiper
+          speed={reducedMotion ? 0 : 260}
           modules={[Navigation, Scrollbar, FreeMode, A11y, Mousewheel]}
           slidesPerView="auto"
-          spaceBetween={-1}
+          spaceBetween={compact ? 14 : -1}
           centeredSlides={false}
           scrollbar={false}
           navigation={false}
           className="w-full flex-1 min-h-0 project-carousel"
           onSlideChange={handleSlideChange}
           onProgress={(swiper) => {
-            setAtStart(swiper.isBeginning);
-            setAtEnd(swiper.isEnd);
+            const imageIndex = compact ? activeImageIndex(swiper.activeIndex) : swiper.activeIndex;
+            setAtStart(imageIndex === 0);
+            setAtEnd(imageIndex >= images.length - 1);
           }}
           onResize={handleSlideChange}
-          initialSlide={0}
+          initialSlide={Math.min(compact ? (initialIndex === 0 ? 0 : imageSlideIndex(initialIndex)) : initialIndex, compact ? images.length + Number(hasDescriptionPanel) : images.length - 1)}
           allowTouchMove={true}
+          onTouchStart={() => { draggedRef.current = false; }}
+          onSliderFirstMove={() => { draggedRef.current = true; }}
           simulateTouch={true}
-          mousewheel={false}
+          mousewheel={compact ? { forceToAxis: true, releaseOnEdges: true, sensitivity: 0.75 } : false}
           freeMode={{
             enabled: true,
             momentumBounce: false,
@@ -128,21 +162,41 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
           }}
           breakpoints={{
             320: {
-              slidesPerView: 1,
-              spaceBetween: 0
+              slidesPerView: compact ? "auto" : 1,
+              spaceBetween: compact ? 10 : 0
             },
             768: {
               slidesPerView: "auto",
-              spaceBetween: 0
+              spaceBetween: compact ? 14 : 0
             },
             1024: {
               slidesPerView: "auto",
-              spaceBetween: 0
+              spaceBetween: compact ? 14 : 0
             }
           }}
         >
           {/* First slide with text */}
-          <SwiperSlide className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full">
+          {compact ? <>
+            <SwiperSlide key="project-facts" className="project-ribbon-panel-slide project-ribbon-panel-slide--facts h-full" role="group" aria-roledescription="slide" aria-label={`${initialSlide.title} project facts`}>
+              <div className="project-ribbon-panel">{leadingPanel}</div>
+            </SwiperSlide>
+            <SwiperSlide key={`image-0-${images[0].src}`} className="project-ribbon-slide h-full" role="group" aria-roledescription="slide" aria-label={`Image 1 of ${images.length}`}>
+              <button type="button" className="project-carousel-image project-image-open relative flex items-center justify-center h-full" aria-label={`Open image 1 of ${initialSlide.title} full screen`} onClick={(event) => openImage(images[0], event)}>
+                <img src={images[0].src} alt={images[0].alt} className="project-ribbon-image h-full w-auto object-contain cursor-zoom-in" loading="eager" decoding="async"
+                  onLoad={(event) => updateImageSize(event.currentTarget)} />
+              </button>
+            </SwiperSlide>
+            {descriptionPanel && <SwiperSlide key="project-description" className="project-ribbon-panel-slide project-ribbon-panel-slide--description h-full" role="group" aria-roledescription="slide" aria-label={`${initialSlide.title} project description`}>
+              <div className="project-ribbon-panel">{descriptionPanel}</div>
+            </SwiperSlide>}
+            {images.slice(1).map((image, index) => (
+            <SwiperSlide key={`${index}-${image.src}`} className="project-ribbon-slide h-full">
+              <button type="button" className="project-carousel-image project-image-open relative flex items-center justify-center h-full" aria-label={`Open image ${index + 2} of ${initialSlide.title} full screen`} onClick={(event) => openImage(image, event)}>
+                <img src={image.src} alt={image.alt} className="project-ribbon-image h-full w-auto object-contain cursor-zoom-in" loading={index + 1 === initialIndex ? "eager" : "lazy"} decoding="async"
+                  onLoad={(event) => updateImageSize(event.currentTarget)} />
+              </button>
+            </SwiperSlide>
+          ))}</> : <SwiperSlide className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full">
             <div className="grid grid-cols-1 md:grid-cols-[1fr,2fr] gap-4 h-full">
               <div className="p-4 md:p-8">
                 <h3 className="text-xl font-semibold mb-3">{initialSlide.title}</h3>
@@ -152,42 +206,42 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                   <span>{initialSlide.category}</span>
                 </div>
               </div>
-              <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh]">
+              <button type="button" className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh] cursor-zoom-in" aria-label={`Open image 1 of ${initialSlide.title} full screen`} onClick={(event) => openImage(images[0], event)}>
                 <img
                   src={images[0].src}
                   alt={images[0].alt}
-                  className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
+                  className="w-full h-full object-contain"
                   loading="eager"
-                  onDoubleClick={(e) => handleImageDoubleClick(e, images[0])}
                 />
-              </div>
+              </button>
             </div>
-          </SwiperSlide>
+          </SwiperSlide>}
 
           {/* Rest of the slides */}
-          {images.slice(1).map((image, index) => (
+          {!compact && images.slice(1).map((image, index) => (
             <SwiperSlide
               key={index + 1}
               className="w-full sm:w-auto sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] h-full"
             >
-              <div className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh]">
+              <button type="button" className="relative flex items-center justify-center h-full min-h-[300px] max-h-[70vh] cursor-zoom-in" aria-label={`Open image ${index + 2} of ${initialSlide.title} full screen`} onClick={(event) => openImage(image, event)}>
                 <img
                   src={image.src}
                   alt={image.alt}
-                  className={`w-full h-full object-contain cursor-grab transition-all duration-300`}
+                  className="w-full h-full object-contain"
                   loading="lazy"
-                  onDoubleClick={(e) => handleImageDoubleClick(e, image)}
                 />
-              </div>
+              </button>
             </SwiperSlide>
           ))}
         </Swiper>
       </section>
 
       <Dialog open={!!zoomImage} onOpenChange={resetZoom}>
-        <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] p-0">
+        <DialogContent aria-describedby={undefined}
+          onCloseAutoFocus={(event) => { event.preventDefault(); imageTriggerRef.current?.focus({ preventScroll: true }); }}
+          className="project-image-fullscreen left-0 top-0 w-screen max-w-none h-[100dvh] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none sm:rounded-none border-0 bg-black p-0 shadow-none [&>button]:z-20 [&>button]:bg-white [&>button]:text-black [&>button]:p-2">
           <DialogTitle className="sr-only">{initialSlide.title} — enlarged image</DialogTitle>
-          <div className="w-full h-full flex items-center justify-center bg-black/90">
+          <div className="w-full h-full min-h-0 flex items-center justify-center bg-black">
             <img
               ref={imageRef}
               src={zoomImage?.src || ''}
@@ -196,8 +250,8 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
                 transformOrigin: `${position.x}% ${position.y}%`,
                 transform: `scale(${scale})`,
               }}
-              className="w-auto h-auto max-w-full max-h-full object-contain cursor-zoom-out transition-transform duration-200"
-              onDoubleClick={(e) => zoomImage && handleImageDoubleClick(e, zoomImage)}
+              className="w-full h-full object-contain cursor-zoom-in motion-safe:transition-transform motion-safe:duration-200"
+              onDoubleClick={() => setScale(value => value === 1 ? 2.5 : 1)}
               onMouseMove={handleZoom}
             />
           </div>

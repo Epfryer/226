@@ -1,130 +1,113 @@
-import { motion } from "framer-motion";
-import { useId, useRef, useEffect } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import type { Project } from "@/lib/projects";
+import { responsiveImageProps } from "@/lib/responsive-images";
+import { projectImageDimensions } from "@/lib/project-image-dimensions";
 import { ProjectCarousel } from "./ProjectCarousel";
-import { useProject } from "@/context/ProjectContext";
-import { projectPath } from "@/lib/public-routes";
 
 interface ProjectCardProps {
   project: Project;
   isExpanded: boolean;
-  onExpand: (id: string | null) => void;
+  onExpand: (id: string, expanded: boolean) => void;
+  slideIndex: number;
+  onSlideChange: (index: number) => void;
 }
 
-export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps) {
+export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlideChange }: ProjectCardProps) {
+  const coverDimensions = projectImageDimensions[project.id];
   const panelId = useId();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const { setProjectExpanded } = useProject();
+  const titleId = useId();
+  const rowRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const anchor = useRef<{ top: number; closing: boolean } | null>(null);
 
-  useEffect(() => {
-    setProjectExpanded(isExpanded);
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const measure = () => {
+      row.style.setProperty("--project-viewport-left", `${-row.getBoundingClientRect().left}px`);
+      row.style.setProperty("--project-viewport-width", `${document.documentElement.clientWidth}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    window.addEventListener("resize", measure);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
 
-    if (isExpanded && cardRef.current) {
-      const cardElement = cardRef.current;
-      const viewportHeight = window.innerHeight;
-      const cardRect = cardElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const targetY = scrollTop + cardRect.top - (viewportHeight - cardRect.height) / 2;
-
-      window.scrollTo({
-        top: targetY,
-        behavior: 'smooth'
-      });
-    }
-  }, [isExpanded, setProjectExpanded]);
-
-  const handleExpand = () => {
-    onExpand(isExpanded ? null : project.id);
+  const toggle = (expanded: boolean) => {
+    if (rowRef.current) anchor.current = { top: rowRef.current.getBoundingClientRect().top, closing: !expanded };
+    onExpand(project.id, expanded);
   };
 
+  // Compensate only for a deliberate activation, never for visibility or image loads.
+  useLayoutEffect(() => {
+    const pending = anchor.current;
+    if (!pending || !rowRef.current) return;
+    anchor.current = null;
+    const delta = rowRef.current.getBoundingClientRect().top - pending.top;
+    if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
+    if (pending.closing) previewRef.current?.focus({ preventScroll: true });
+    else closeRef.current?.focus({ preventScroll: true });
+  }, [isExpanded]);
+
   return (
-    <motion.div 
-      ref={cardRef}
-      layout="position"
-      className={`relative w-full overflow-hidden mb-4 ${
-        isExpanded ? 'project-card-expanded' : ''
-      }`}
-      initial={false}
-    >
-      <motion.div 
-        layout="position"
-        className={`w-full mx-auto transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-w-none' : 'max-w-3xl'
-        }`}
-      >
-        <button
-          type="button"
-          onClick={handleExpand}
-          aria-expanded={isExpanded}
-          aria-controls={panelId}
-          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${project.title}`}
-          className={isExpanded
-            ? "relative z-10 mx-4 mb-3 min-h-11 px-4 py-2 border border-black rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-            : "absolute inset-0 z-10 w-full cursor-pointer rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:-outline-offset-4"}
-        >
-          {isExpanded ? "Collapse project" : <span className="sr-only">Expand {project.title}</span>}
-        </button>
-        {!isExpanded && (
-          <motion.div 
-            className="container mx-auto max-w-3xl px-4"
-            whileHover={{ scale: 0.99 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
-              <motion.div 
-                className="flex-1 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              >
-                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate transition-all duration-300 ease-in-out">
-                  {project.title}
-                </h3>
-                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate transition-all duration-300 ease-in-out">
-                  {project.location}
-                </p>
-              </motion.div>
-              <motion.div 
-                className="relative w-full md:w-[280px]"
-                whileHover={{ scale: 0.98 }}
-                transition={{ duration: 0.3 }}
-              >
-                <img
-                  src={project.image}
-                  alt={project.imageAlt}
-                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-        <div id={panelId} hidden={!isExpanded}>
-          {isExpanded && (
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
-            <motion.div 
-              className="h-[80vh] max-h-[800px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ProjectCarousel 
+    <article ref={rowRef} className="project-feed-row" data-project-id={project.id} data-expanded={isExpanded} aria-labelledby={titleId}>
+      {!isExpanded && <div className="project-feed-label">
+        <img className="project-feed-thumbnail" {...responsiveImageProps(project.image, "28px")} alt="" width={28} height={28} loading="lazy" />
+        <h2 id={titleId} className="project-feed-title">
+          <button type="button" onClick={() => toggle(!isExpanded)} aria-expanded={isExpanded} aria-controls={panelId} aria-label={`${isExpanded ? "Collapse" : "Expand"} ${project.title}`}>
+            {project.title}
+          </button>
+        </h2>
+        {project.location && <p className="project-feed-location">{project.location.trim()}</p>}
+        {project.year && <p className="project-feed-year">{project.year}</p>}
+      </div>}
+      {!isExpanded && (
+        <div className="project-feed-media">
+          <button ref={previewRef} type="button" className="project-feed-preview" style={coverDimensions ? { aspectRatio: `${coverDimensions.width} / ${coverDimensions.height}` } : undefined} onClick={() => toggle(true)} aria-expanded={isExpanded} aria-controls={panelId} aria-label={`Expand ${project.title}`}>
+            <img {...responsiveImageProps(project.image, "(max-width: 767px) calc(100vw - 44px), 40vw")} width={coverDimensions?.width} height={coverDimensions?.height} alt={project.imageAlt} loading="lazy" decoding="async" />
+          </button>
+        </div>
+      )}
+      <div id={panelId} className="project-feed-details" hidden={!isExpanded} role="region" aria-labelledby={titleId}>
+        {isExpanded && (
+          <>
+            <div className="project-feed-gallery">
+              <ProjectCarousel
+                compact
+                initialIndex={slideIndex}
+                onSlideChange={onSlideChange}
+                leadingPanel={
+                  <div className="project-ribbon-facts text-right">
+                    <img className="project-feed-thumbnail ml-[165px]" {...responsiveImageProps(project.image, "28px")} alt="" width={28} height={28} loading="lazy" />
+                    <h2 id={titleId} className="project-feed-title">
+                      <button type="button" onClick={() => toggle(false)} aria-expanded="true" aria-controls={panelId} aria-label={`Collapse ${project.title}`}>
+                        {project.title}
+                      </button>
+                    </h2>
+                    {project.location && <p className="project-feed-location">{project.location.trim()}</p>}
+                    {project.year && <p className="project-feed-year">{project.year}</p>}
+                    <ul className="project-feed-facts">
+                      {project.category && <li>{project.category}</li>}
+                      {project.metadata.filter(Boolean).map((fact, index) => <li key={`${index}-${fact}`}>{fact}</li>)}
+                    </ul>
+                    <button ref={closeRef} className="project-feed-close" type="button" aria-label={`Close ${project.title}`} aria-controls={panelId} onClick={() => toggle(false)}>
+                      Close <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                }
+                descriptionPanel={project.description ? <p className="project-ribbon-description">{project.description}</p> : null}
                 images={[
                   { src: project.image, alt: project.imageAlt },
-                  ...project.images.map((src, index) => ({ src, alt: project.imageAlts[index] }))
+                  ...project.images.map((src, index) => ({ src, alt: project.imageAlts[index] || `${project.title}, study ${index + 1}` })),
                 ]}
-                initialSlide={{
-                  title: project.title,
-                  description: project.description,
-                  year: project.year.toString(),
-                  category: project.category
-                }}
+                initialSlide={{ title: project.title, description: project.description, year: String(project.year), category: project.category }}
               />
-            </motion.div>
-          </div>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
+            </div>
+          </>
+        )}
+      </div>
+    </article>
   );
 }
