@@ -16,7 +16,7 @@ export function ProjectDetail({ project }: ProjectDetailProps) {
         <div className="aspect-[4/3] overflow-hidden">
           <img
             src={project.image}
-            alt={project.title}
+            alt={project.imageAlt}
             className="w-full h-full object-cover"
           />
         </div>
@@ -43,6 +43,11 @@ export function ProjectDetail({ project }: ProjectDetailProps) {
           </div>
         </div>
       </motion.div>
+      <div className="grid gap-6 py-10">
+        {project.images.map((src, index) => (
+          <img key={src} src={src} alt={project.imageAlts[index] || `${project.title} — view ${index + 1}`} loading="lazy" className="w-full h-auto" />
+        ))}
+      </div>
     </div>
   );
 }

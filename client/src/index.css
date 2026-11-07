@@ -1,3 +1,14 @@
+/* Readable server-rendered content, also usable if scripts are disabled. */
+.public-document { max-width: 1120px; margin: auto; padding: 2rem; color: #111; background: white; }
+.public-document nav { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0 3rem; }
+.public-document h1 { font-size: 2.5rem; margin: 1rem 0; }
+.public-document h2 { font-size: 1.5rem; margin: 1rem 0; }
+.public-document p { margin: 1rem 0; line-height: 1.7; }
+.public-document a { text-decoration: underline; text-underline-offset: .2em; }
+.public-document article { margin: 2rem 0; border-top: 1px solid #ddd; padding-top: 1rem; }
+.public-document img { max-width: 100%; height: auto; }
+.public-document footer { margin-top: 3rem; }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

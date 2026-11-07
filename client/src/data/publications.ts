@@ -1,5 +1,6 @@
 
 import { getPublicationCover } from "./publication-covers";
+import { readPublicPageData } from "../lib/public-page-data";
 
 export interface Publication {
   slug: string;
@@ -19,6 +20,11 @@ export let PUBLICATIONS: Publication[] = [];
 
 // Function to fetch publications from the API
 export async function fetchPublications(): Promise<Publication[]> {
+  const initial = readPublicPageData()?.publications;
+  if (initial) {
+    PUBLICATIONS = initial;
+    return initial;
+  }
   try {
     // In production, the API is served from the same origin
     // In development, Vite proxies /api requests to the backend
@@ -63,7 +69,7 @@ export async function fetchPublications(): Promise<Publication[]> {
       return {
         ...pub,
         title: displayTitle,
-        ...getPublicationCover(coverPath)
+        ...(pub.coverPath ? {} : getPublicationCover(coverPath))
       };
     });
     

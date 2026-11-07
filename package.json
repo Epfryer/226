@@ -13,6 +13,7 @@
     "check": "tsc",
     "test:dependency-security": "node --test scripts/dependency-security.test.mjs",
     "test:experience": "node --import tsx --test scripts/experience.test.ts",
+    "test:discovery": "node --import tsx --test scripts/search-discovery.test.ts scripts/site-metadata.test.ts",
     "test:shop": "node --import tsx --test scripts/shop.test.ts",
     "test:shop:browser": "node scripts/shop-browser.mjs",
     "test:experience:browser": "node scripts/experience-browser.mjs",

@@ -16,6 +16,7 @@ const About = lazy(() => import("@/pages/About"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Publications = lazy(() => import("@/pages/Publications"));
 const Projects = lazy(() => import("@/pages/Projects"));
+const Project = lazy(() => import("@/pages/Project"));
 const Studio = lazy(() => import("@/pages/Studio"));
 const Diagnostics = lazy(() => import("@/pages/Diagnostics"));
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/projects" component={Projects} />
+      <Route path="/project/:id" component={Project} />
       <Route path="/publications" component={Publications} />
       <Route path="/studio/:productId?" component={Studio} />
       <Route path="/diagnostics" component={Diagnostics} />

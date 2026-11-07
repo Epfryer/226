@@ -9,9 +9,14 @@ interface PublicationCardProps {
 
 export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
   return (
-    <motion.button
+    <motion.a
       layoutId={pub.slug}
-      onClick={() => onOpen(pub)}
+      href={`/publications?doc=${encodeURIComponent(pub.slug)}`}
+      onClick={(event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        onOpen(pub);
+      }}
       className="group relative max-w-full overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 transition hover:shadow-xl w-fit"
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -51,6 +56,6 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
         {/* Hover effect */}
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
-    </motion.button>
+    </motion.a>
   );
 }

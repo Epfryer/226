@@ -26,7 +26,7 @@ test("public pages have distinct, authored search metadata and complete social p
 });
 
 test("canonical URLs omit transient parameters and escape untrusted paths", () => {
-  assert.equal(getPageMetadata("/publications?doc=example#page=2").canonical, `${SITE_ORIGIN}/publications`);
+  assert.equal(getPageMetadata("/publications?doc=example#page=2").canonical, `${SITE_ORIGIN}/publications?doc=example`);
   assert.equal(getPageMetadata("/about/").canonical, `${SITE_ORIGIN}/about`);
   assert.equal(getPageMetadata("/index.html").canonical, `${SITE_ORIGIN}/`);
   assert.equal(getPageMetadata("/studio/123?checkout=cancelled").title, getPageMetadata("/studio").title);
@@ -49,18 +49,20 @@ test("shell replacement retains one metadata set and safe shell defaults", () =>
 
 test("production HTML and identity assets are served from the build", async () => {
   const app = express();
-  serveStatic(app, path.resolve("dist/public"));
+  serveStatic(app, path.resolve("dist/public"), { publications: async () => [], products: async () => [] });
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address() as { port: number };
   const origin = `http://127.0.0.1:${address.port}`;
   try {
-    for (const route of [...routes, "/index.html", "/about?tracking=ignored", "/studio/123"]) {
+    for (const route of [...routes, "/about?tracking=ignored"]) {
       const response = await fetch(`${origin}${route}`);
       assert.equal(response.status, 200);
       assert.match(response.headers.get("content-type")!, /text\/html/);
       assert.ok((await response.text()).includes(renderPageMetadata(route)), route);
     }
+    assert.equal((await fetch(`${origin}/index.html`, { redirect: "manual" })).status, 301);
+    assert.equal((await fetch(`${origin}/studio/123`)).status, 404);
     for (const [asset, type] of [
       ["/favicon.svg", /image\/svg\+xml/],
       ["/favicon.ico", /image\/.*icon/],

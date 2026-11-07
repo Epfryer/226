@@ -2,9 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Client } from '@replit/object-storage';
 import multer from 'multer';
-import { uploadPdf, listPdfs, deletePdf, getPdfMetadata } from './storage';
+import { uploadPdf, deletePdf, getPdfMetadata } from './storage';
 import pdfRoutes from './pdf-routes';
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault, isPayPalConfigured } from "./paypal";
+import { loadPublications } from "./public-content";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -79,22 +80,7 @@ export function registerRoutes(app: Express): Server {
   // List all PDFs with download URLs
   app.get("/api/publications", async (_req, res) => {
     try {
-      const pdfs = await listPdfs();
-
-      // Create publication objects with download URLs
-      const publications = await Promise.all(
-        pdfs.map(async (filename) => {
-          const metadata = await getPdfMetadata(filename);
-          return {
-            slug: filename.replace('.pdf', '').replace(/[^a-zA-Z0-9-]/g, '-'),
-            title: metadata?.title || filename.replace('.pdf', ''),
-            year: metadata?.year || new Date().getFullYear().toString(),
-            pdfPath: `/api/publications/${filename}`,
-            filename: filename,
-            metadata: metadata
-          };
-        })
-      );
+      const publications = await loadPublications();
 
       res.json({ publications });
     } catch (error) {

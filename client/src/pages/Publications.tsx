@@ -2,6 +2,8 @@ import { Component, useState, useEffect, useLayoutEffect, useCallback, useRef, l
 import { PublicationCard } from "@/components/PublicationCard";
 import { fetchPublications, type Publication } from "@/data/publications";
 import { trackEvent } from "@/lib/analytics";
+import { readPublicPageData } from "@/lib/public-page-data";
+import { renderPageMetadata } from "@/lib/site-metadata";
 
 const createPdfModal = () => lazy(() => import("@/components/PdfModal").then((module) => ({ default: module.PdfModal })));
 
@@ -66,8 +68,8 @@ class ViewerErrorBoundary extends Component<
 export default function Publications() {
   const [selectedPub, setSelectedPub] = useState<Publication | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [publications, setPublications] = useState<Publication[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [publications, setPublications] = useState<Publication[]>(() => readPublicPageData()?.publications || []);
+  const [loading, setLoading] = useState(() => !readPublicPageData()?.publications);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [PdfModal, setPdfModal] = useState(createPdfModal);
@@ -159,6 +161,14 @@ export default function Publications() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [publications]);
 
+  useEffect(() => {
+    document.head.querySelectorAll("[data-site-metadata]").forEach(element => element.remove());
+    document.head.insertAdjacentHTML("beforeend", renderPageMetadata(
+      selectedPub ? `/publications?doc=${encodeURIComponent(selectedPub.slug)}` : "/publications",
+      selectedPub ? { title: `${selectedPub.title} | Ethan Fryer | D.EF`, description: `${selectedPub.title} (${selectedPub.year}), an architectural publication by Ethan Fryer. Read online or open the PDF.` } : undefined,
+    ));
+  }, [selectedPub]);
+
   return (
     <div className="container mx-auto px-4 pb-12 pt-28 md:py-16">
       <div className="mx-auto max-w-7xl">
@@ -186,7 +196,10 @@ export default function Publications() {
           <>
             <div className="flex flex-wrap justify-center gap-6 md:justify-start">
               {publications.map((pub) => (
-                <PublicationCard key={pub.slug} pub={pub} onOpen={handleOpenPub} />
+                <div key={pub.slug}>
+                  <PublicationCard pub={pub} onOpen={handleOpenPub} />
+                  <a href={pub.pdfPath} className="block py-3 text-sm underline">Read {pub.title} as a PDF</a>
+                </div>
               ))}
             </div>
 

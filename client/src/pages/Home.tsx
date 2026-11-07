@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { projects } from "@/lib/projects";
+import { projectPath } from "@/lib/public-routes";
 
 const featuredProjects = [
   projects.find((project) => project.id === "thesis"),
@@ -166,7 +167,7 @@ export default function Home() {
                       <p className="text-xs uppercase tracking-[0.25em] text-black/45">
                         {project!.year} · {project!.category}
                       </p>
-                      <h3 className="mt-2 text-2xl font-medium tracking-[-0.02em]">{project!.title}</h3>
+                      <h3 className="mt-2 text-2xl font-medium tracking-[-0.02em]"><Link href={projectPath(project!)}>{project!.title}</Link></h3>
                     </div>
                     <span className="text-sm text-black/40">{String(index + 1).padStart(2, "0")}</span>
                   </div>

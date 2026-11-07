@@ -3,6 +3,7 @@ import { useId, useRef, useEffect } from "react";
 import type { Project } from "@/lib/projects";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { useProject } from "@/context/ProjectContext";
+import { projectPath } from "@/lib/public-routes";
 
 interface ProjectCardProps {
   project: Project;
@@ -123,6 +124,9 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           </div>
           )}
         </div>
+        <a href={projectPath(project)} className="relative z-20 inline-block px-4 py-3 text-sm underline focus-visible:outline">
+          View {project.title}
+        </a>
       </motion.div>
     </motion.div>
   );

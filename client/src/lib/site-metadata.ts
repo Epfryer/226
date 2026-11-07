@@ -1,4 +1,5 @@
 // Primary public origin verified from the deployment settings.
+import { findProject, projectPath } from "./public-routes";
 export const SITE_ORIGIN = "https://ethanfryer.com";
 export const SITE_NAME = "D.EF — Ethan Fryer";
 export const PREVIEW_IMAGE = `${SITE_ORIGIN}/social-preview.png`;
@@ -30,17 +31,22 @@ const pages: Record<string, { title: string; description: string }> = {
   },
 };
 
-export function getPageMetadata(url: string) {
-  // Only use the pathname; filters, reader state, and checkout parameters are not canonical.
+export function getPageMetadata(url: string, override?: { title: string; description: string }) {
+  // Only reader document identity is canonical; filters, page position and checkout state are not.
   let pathname = url.split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/";
   if (pathname === "/index.html") pathname = "/";
-  const page = pages[pathname] ?? (pathname.startsWith("/studio/") ? pages["/studio"] : undefined);
+  const project = findProject(pathname);
+  const page = override ?? (project ? {
+    title: `${project.title} | Architecture | Ethan Fryer`,
+    description: project.description.slice(0, 200),
+  } : pages[pathname] ?? (pathname.startsWith("/studio/") ? pages["/studio"] : undefined));
+  const doc = pathname === "/publications" ? new URL(url, SITE_ORIGIN).searchParams.get("doc") : null;
   return {
     ...(page ?? {
       title: "Page Not Found | Ethan Fryer | D.EF",
       description: "Explore Ethan Fryer's architectural portfolio, publications, and D.EF Studio.",
     }),
-    canonical: `${SITE_ORIGIN}${pathname}`,
+    canonical: `${SITE_ORIGIN}${project ? projectPath(project) : pathname}${doc ? `?doc=${encodeURIComponent(doc)}` : ""}`,
     type: "website",
     noindex: !page,
   };
@@ -52,8 +58,8 @@ function escapeHtml(value: string) {
   })[character]!);
 }
 
-export function renderPageMetadata(url: string) {
-  const page = getPageMetadata(url);
+export function renderPageMetadata(url: string, override?: { title: string; description: string }) {
+  const page = getPageMetadata(url, override);
   const meta = (key: string, value: string, property = false) =>
     `<meta data-site-metadata ${property ? "property" : "name"}="${key}" content="${escapeHtml(value)}" />`;
   return [
@@ -79,9 +85,9 @@ export function renderPageMetadata(url: string) {
   ].join("\n    ");
 }
 
-export function injectPageMetadata(template: string, url: string) {
+export function injectPageMetadata(template: string, url: string, override?: { title: string; description: string }) {
   return template.replace(
     /<!-- site-metadata:start -->[\s\S]*?<!-- site-metadata:end -->/,
-    () => `<!-- site-metadata:start -->\n    ${renderPageMetadata(url)}\n    <!-- site-metadata:end -->`,
+    () => `<!-- site-metadata:start -->\n    ${renderPageMetadata(url, override)}\n    <!-- site-metadata:end -->`,
   );
 }
