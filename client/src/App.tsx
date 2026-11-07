@@ -10,6 +10,7 @@ import { WhiteHeader } from "@/components/layout/WhiteHeader";
 import { WhiteFooter } from "@/components/layout/WhiteFooter";
 import { ProjectProvider } from "@/context/ProjectContext";
 import Home from "@/pages/Home";
+import { PageMetadata } from "@/components/PageMetadata";
 
 const About = lazy(() => import("@/pages/About"));
 const Contact = lazy(() => import("@/pages/Contact"));
@@ -41,6 +42,7 @@ function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <PageMetadata />
       <QueryClientProvider client={queryClient}>
         <ProjectProvider>
         <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
