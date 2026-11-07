@@ -65,6 +65,25 @@ test("shop data is server-rendered; unknown products 404 and provider errors 503
     assert.match(response.html, /noindex, follow/);
   }
 });
+test("each Studio product has a descriptive crawlable link and distinct detail document", async () => {
+  const products = [product, { ...product, id: 456, name: "Studio Print" }];
+  const catalog = { ...services, products: async () => products };
+  const listing = await renderPublicResponse(template, "/studio", catalog);
+  const titles = new Set();
+  for (const item of products) {
+    const href = `/studio/${item.id}`;
+    assert.ok(listing.html.includes(`<a href="${href}">${item.name}</a>`));
+    const detail = await renderPublicResponse(template, `${href}?tracking=ignored`, catalog);
+    assert.equal(detail.status, 200);
+    assert.ok(detail.html.includes(`<h1>${item.name}</h1>`));
+    assert.ok(detail.html.replace(/<!--.*?-->/g, "").includes(`${item.variants} product variants`));
+    assert.ok(detail.html.includes(`rel="canonical" href="https://ethanfryer.com${href}"`));
+    assert.ok(detail.html.includes(`<title data-site-metadata>${item.name} | D.EF Studio</title>`));
+    assert.doesNotMatch(detail.html, /name="robots" content="noindex/);
+    titles.add(detail.html.match(/<title[^>]*>(.*?)<\/title>/)?.[1]);
+  }
+  assert.equal(titles.size, products.length);
+});
 test("catalog text is escaped in HTML and bootstrap JSON", async () => {
   const dangerous = "</script><script>alert(1)</script>";
   const { html } = await renderPublicResponse(template, "/studio", { ...services, products: async () => [{ ...product, name: dangerous }] });

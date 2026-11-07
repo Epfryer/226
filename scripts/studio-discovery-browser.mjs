@@ -9,7 +9,7 @@ const base = process.env.TEST_BASE_URL || `https://${process.env.REPLIT_DEV_DOMA
 const image = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="#ddd"/></svg>');
 const products = [101, 202].map((id, index) => ({
   id, external_id: String(id), name: `Discovery Tee ${index + 1}`,
-  variants: 2, synced: 2, thumbnail_url: image, is_ignored: false,
+  variants: 4, synced: 4, thumbnail_url: image, is_ignored: false,
 }));
 
 try {
@@ -24,10 +24,10 @@ try {
       const product = products.find(item => item.id === id);
       return route.fulfill({ json: { code: 200, result: {
         sync_product: product,
-        sync_variants: ["Black", "White"].map((color, index) => ({
+        sync_variants: ["Black", "White"].flatMap(color => ["M", "L"].map(size => ({ color, size }))).map(({ color, size }, index) => ({
           id: id * 10 + index, variant_id: id * 10 + index, sync_product_id: id,
           external_id: `${id}-${index}`, name: product.name, synced: true,
-          color, size: "M", retail_price: "25.00", currency: "USD",
+          color, size, retail_price: "25.00", currency: "USD",
           availability_status: "active", files: [],
           product: { image, name: product.name, variant_id: id * 10 + index, product_id: id },
         })),
@@ -38,13 +38,17 @@ try {
     await card.waitFor();
     assert.equal(await card.getAttribute("href"), "/studio/202");
     await card.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    assert.equal(await card.evaluate(element => element === document.activeElement), true);
     assert.equal(await card.evaluate(element => getComputedStyle(element).outlineStyle), "solid");
     assert.equal(await card.evaluate(element => getComputedStyle(element).outlineWidth), "3px");
     const categoryRoot = width < 1024 ? page.locator(".lg\\:hidden").filter({ has: page.getByRole("button", { name: "ALL", exact: true }) }) : page.locator("nav");
     await categoryRoot.getByRole("button", { name: "GARMENTS", exact: true }).click();
     assert.equal(await categoryRoot.getByRole("button", { name: "GARMENTS", exact: true }).getAttribute("aria-pressed"), "true");
     assert.equal(await categoryRoot.getByRole("button", { name: "ALL", exact: true }).getAttribute("aria-pressed"), "false");
-    await card.click();
+    await card.focus();
+    await page.keyboard.press("Enter");
     await page.waitForURL("**/studio/202");
     const scope = width < 1024 ? page.getByRole("dialog") : page.locator(".hidden.lg\\:block").last();
     await scope.getByRole("button", { name: "Select White color", exact: true }).click();
@@ -52,6 +56,9 @@ try {
     assert.equal(await scope.getByRole("button", { name: "Select Black color", exact: true }).getAttribute("aria-pressed"), "false");
     await scope.getByRole("button", { name: "Select size M", exact: true }).click();
     assert.equal(await scope.getByRole("button", { name: "Select size M", exact: true }).getAttribute("aria-pressed"), "true");
+    await scope.getByRole("button", { name: "Select size L", exact: true }).click();
+    assert.equal(await scope.getByRole("button", { name: "Select size L", exact: true }).getAttribute("aria-pressed"), "true");
+    assert.equal(await scope.getByRole("button", { name: "Select size M", exact: true }).getAttribute("aria-pressed"), "false");
     await page.reload();
     await page.getByRole("button", { name: "Select White color", exact: true }).filter({ visible: true }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/studio/202");
