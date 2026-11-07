@@ -1,10 +1,16 @@
 
+import { getPublicationCover } from "./publication-covers";
+
 export interface Publication {
   slug: string;
   title: string;
   year: string;
   pdfPath: string;
   coverPath?: string;
+  coverSrcSet?: string;
+  coverSizes?: string;
+  coverWidth?: number;
+  coverHeight?: number;
   filename?: string;
 }
 
@@ -57,7 +63,7 @@ export async function fetchPublications(): Promise<Publication[]> {
       return {
         ...pub,
         title: displayTitle,
-        coverPath
+        ...getPublicationCover(coverPath)
       };
     });
     
@@ -71,14 +77,14 @@ export async function fetchPublications(): Promise<Publication[]> {
         title: "Hybrid Urbanism",
         year: "2025",
         pdfPath: "/api/publications/EthanFryer_Hybrid-Urbanism.pdf",
-        coverPath: "/publications/EthanFryer_Hybrid-Urbanism.jpg"
+        ...getPublicationCover("/publications/EthanFryer_Hybrid-Urbanism.jpg")
       },
       {
         slug: "5th-year-selected-works",
         title: "5th Year Selected Works",
         year: "2024",
         pdfPath: "/api/publications/EthanFryer_5thYear_SelectedWorks.pdf",
-        coverPath: "/publications/EthanFryer_5thYear_SelectedWorks.jpg"
+        ...getPublicationCover("/publications/EthanFryer_5thYear_SelectedWorks.jpg")
       }
     ];
     return PUBLICATIONS;

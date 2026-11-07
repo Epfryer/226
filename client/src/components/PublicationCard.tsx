@@ -22,12 +22,14 @@ export function PublicationCard({ pub, onOpen }: PublicationCardProps) {
         {pub.coverPath ? (
           <img
             src={pub.coverPath}
+            srcSet={pub.coverSrcSet}
+            sizes={pub.coverSizes}
             alt={pub.title}
             loading="lazy"
             decoding="async"
             className="h-full w-auto max-w-full object-contain"
-            width={1200}
-            height={1600}
+            width={pub.coverWidth ?? 1200}
+            height={pub.coverHeight ?? 1600}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
