@@ -73,7 +73,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           >
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
               <motion.div 
-                className="flex-1 text-center md:text-right"
+                className="flex-1 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
@@ -124,9 +124,6 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
           </div>
           )}
         </div>
-        <a href={projectPath(project)} className="relative z-20 inline-block px-4 py-3 text-sm underline focus-visible:outline">
-          View {project.title}
-        </a>
       </motion.div>
     </motion.div>
   );
