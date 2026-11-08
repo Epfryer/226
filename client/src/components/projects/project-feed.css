@@ -60,6 +60,7 @@
 @keyframes project-feed-widen { from { opacity: .7; transform: scaleX(.76); } to { opacity: 1; transform: scaleX(1); } }
 @media (min-width: 768px) {
   .project-archive { padding-left: 24px; padding-right: 32px; padding-top: 72px; }
+  .project-feed-row[data-expanded="false"] > .project-feed-label { left: calc(var(--project-preview-left, 0px) - var(--project-facts-width) - 24px); align-self: center; }
   .project-carousel-compact .project-ribbon-panel-slide--facts .project-ribbon-panel { padding-left: 24px; }
 }
 @media (min-width: 1440px) {

@@ -1,4 +1,6 @@
 import { ProjectCard } from "./ProjectCard";
+import { useMemo } from "react";
+import { chronologicalFeed } from "@/lib/project-feed-order";
 import type { Project } from "@/lib/projects";
 import type { Publication } from "@/data/publications";
 import { PublicationFeedCard } from "./PublicationFeedCard";
@@ -44,26 +46,26 @@ export function ProjectGrid({
   onRetryPublications,
   registerPublicationSlot,
 }: ProjectGridProps) {
+  const entries = useMemo(() => chronologicalFeed(projects, publications), [projects, publications]);
   return (
     <div className="project-feed" aria-label="Project feed">
-      {projects.map((project) => (
+      {entries.map((entry) => entry.kind === "project" ? (
         <ProjectCard
-          key={project.id}
-          project={project}
-          isExpanded={expandedIds.has(project.id)}
+          key={entry.item.id}
+          project={entry.item}
+          isExpanded={expandedIds.has(entry.item.id)}
           onExpand={onExpandedChange}
-          slideIndex={slideIndices[project.id] ?? 0}
-          zoom={zoomLevels[project.id] ?? 1}
-          onZoomChange={(zoom) => onZoomChange(project.id, zoom)}
-          onSlideChange={(index) => onSlideChange(project.id, index)}
+          slideIndex={slideIndices[entry.item.id] ?? 0}
+          zoom={zoomLevels[entry.item.id] ?? 1}
+          onZoomChange={(zoom) => onZoomChange(entry.item.id, zoom)}
+          onSlideChange={(index) => onSlideChange(entry.item.id, index)}
         />
-      ))}
-      {publications.map((publication) => (
+      ) : (
         <PublicationFeedCard
-          key={`publication:${publication.slug}`}
-          publication={publication}
-          isActive={activePublicationSlug === publication.slug && pinnedPublicationSlug !== publication.slug}
-          isPinned={pinnedPublicationSlug === publication.slug}
+          key={`publication:${entry.item.slug}`}
+          publication={entry.item}
+          isActive={activePublicationSlug === entry.item.slug && pinnedPublicationSlug !== entry.item.slug}
+          isPinned={pinnedPublicationSlug === entry.item.slug}
           onOpen={onOpenPublication}
           onPin={onPinPublication}
           onClose={onClosePublication}

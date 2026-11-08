@@ -15,6 +15,12 @@ The user approved projects opening independently and remaining open while scroll
 
 **How to apply:** Preserve independent open states and gallery positions. Keep facts, artwork, and description in the same horizontal flow when refining the project feed.
 
+Collapsed thumbnail/title/location/year blocks belong immediately beside their own preview, not at the far-left viewport edge. Mix projects and publications into one newest-first completion chronology.
+
+**Why:** The user explicitly marked the desired adjacent-label position and requested both types together by completion date, while prohibiting unrelated changes.
+
+**How to apply:** Preserve preview sizes and expanded galleries when adjusting closed-row labels. Use the available completion years without inventing more precise dates; do not separate publications into an appended group.
+
 Use the same compact dropdown navigation across every page, including Studio, instead of the permanent desktop sidebar.
 
 **Why:** After requesting more artwork space on Projects, the user explicitly confirmed that the dropdown should replace navigation on every page.

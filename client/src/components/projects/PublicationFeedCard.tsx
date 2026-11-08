@@ -1,4 +1,5 @@
-import { useCallback, useId } from "react";
+import { useCallback, useId, useRef } from "react";
+import { usePreviewLabelAlignment } from "@/hooks/use-preview-label-alignment";
 import type { Publication } from "@/data/publications";
 import type { RefCallback } from "react";
 
@@ -23,12 +24,15 @@ export function PublicationFeedCard({
 }: PublicationFeedCardProps) {
   const panelId = useId();
   const titleId = useId();
+  const rowRef = useRef<HTMLElement>(null);
+  usePreviewLabelAlignment(rowRef, isActive);
   const slotRef: RefCallback<HTMLDivElement> = useCallback((node) => {
     registerSlot(publication.slug, node);
   }, [publication.slug, registerSlot]);
 
   return (
     <article
+      ref={rowRef}
       className={`project-feed-row publication-feed-row${isActive ? " publication-feed-row--open" : ""}`}
       data-publication-id={publication.slug}
       data-expanded={isActive}

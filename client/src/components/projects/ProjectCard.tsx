@@ -5,6 +5,7 @@ import { projectImageDimensions } from "@/lib/project-image-dimensions";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { useProjectMediaZoom } from "@/hooks/use-project-media-zoom";
 import { usePreviewScrollMotion } from "@/hooks/use-preview-scroll-motion";
+import { usePreviewLabelAlignment } from "@/hooks/use-preview-label-alignment";
 import type { CSSProperties } from "react";
 
 interface ProjectCardProps {
@@ -23,6 +24,7 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
   const panelId = useId();
   const titleId = useId();
   const rowRef = useRef<HTMLElement>(null);
+  usePreviewLabelAlignment(rowRef, isExpanded);
   const previewRef = useRef<HTMLButtonElement>(null);
   usePreviewScrollMotion(previewRef, isExpanded);
   const closeRef = useRef<HTMLButtonElement>(null);
