@@ -27,6 +27,39 @@
   min-width: 0;
 }
 
+.route-entrance {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  overflow: hidden;
+  background: #050505;
+  color: #fff;
+  pointer-events: none;
+}
+
+.route-entrance-wipe {
+  position: absolute;
+  inset: 0;
+  transform-origin: center bottom;
+  background: #fff;
+}
+
+.route-entrance-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  color: #fff;
+  mix-blend-mode: difference;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -.085em;
+  line-height: 1;
+  white-space: nowrap;
+  translate: -50% -50%;
+  transform-origin: center;
+}
+
 @media (min-width: 768px) {
   .portfolio-main,
   .portfolio-shell > footer { padding-left: 0; }

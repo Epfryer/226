@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhiteHeader } from "@/components/layout/WhiteHeader";
 import { WhiteFooter } from "@/components/layout/WhiteFooter";
+import { RouteEntrance } from "@/components/layout/RouteEntrance";
 import { ProjectProvider } from "@/context/ProjectContext";
 import Home from "@/pages/Home";
 import { PageMetadata } from "@/components/PageMetadata";
@@ -55,6 +56,7 @@ function App() {
         <ProjectProvider>
         <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
           {!isStudioPage && !isHomePage && (isAboutPage ? <WhiteHeader /> : <Header />)}
+          <RouteEntrance />
           <main className={`flex-1 ${isStudioPage ? "" : "portfolio-main"}`}>
             <Suspense fallback={
               <div role="status" aria-live="polite" className={`px-6 py-32 ${isAboutPage ? "text-white" : ""}`}>

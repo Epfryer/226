@@ -1,4 +1,5 @@
 import { useId, useLayoutEffect, useRef } from "react";
+import { LayoutGroup, m as motion } from "framer-motion";
 import type { Project } from "@/lib/projects";
 import { responsiveImageProps } from "@/lib/responsive-images";
 import { projectImageDimensions } from "@/lib/project-image-dimensions";
@@ -61,6 +62,7 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
   }, [isExpanded]);
 
   return (
+    <LayoutGroup id={`project-feed-${project.id}`}>
     <article ref={rowRef} className="project-feed-row" data-project-id={project.id} data-expanded={isExpanded} data-project-zoom={zoom.toFixed(3)} aria-labelledby={titleId}>
       {!isExpanded && <div className="project-feed-label">
         <img className="project-feed-thumbnail" {...responsiveImageProps(project.image, "28px")} alt="" width={28} height={28} loading="lazy" />
@@ -74,9 +76,9 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
       </div>}
       {!isExpanded && (
         <div className="project-feed-media">
-          <button ref={previewRef} type="button" className="project-feed-preview" style={coverDimensions ? { aspectRatio: `${coverDimensions.width} / ${coverDimensions.height}` } : undefined} onClick={() => toggle(true)} aria-expanded={isExpanded} aria-controls={panelId} aria-label={`Expand ${project.title}`}>
+          <motion.button ref={previewRef} type="button" layoutId={`project-feed-image-${project.id}`} transition={{ layout: { duration: 0.56, ease: [0.22, 1, 0.36, 1] } }} className="project-feed-preview" style={coverDimensions ? { aspectRatio: `${coverDimensions.width} / ${coverDimensions.height}` } : undefined} onClick={() => toggle(true)} aria-expanded={isExpanded} aria-controls={panelId} aria-label={`Expand ${project.title}`}>
             <img {...responsiveImageProps(project.image, "(max-width: 767px) calc(100vw - 44px), 40vw")} width={coverDimensions?.width} height={coverDimensions?.height} alt={project.imageAlt} loading="lazy" decoding="async" />
-          </button>
+          </motion.button>
         </div>
       )}
       <div id={panelId} className="project-feed-details" hidden={!isExpanded} role="region" aria-labelledby={titleId}>
@@ -85,6 +87,7 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
             <div ref={mediaRef} className="project-feed-gallery" style={{ "--project-media-zoom": zoom } as CSSProperties}>
               <ProjectCarousel
                 compact
+                projectId={project.id}
                 mediaZoom={zoom}
                 initialIndex={slideIndex}
                 onSlideChange={onSlideChange}
@@ -125,5 +128,6 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
         )}
       </div>
     </article>
+    </LayoutGroup>
   );
 }

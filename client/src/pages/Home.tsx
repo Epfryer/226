@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { projects, type Project } from "@/lib/projects";
@@ -10,8 +10,6 @@ import "@/styles/home-project-index.css";
 
 const indexProjects = [...projects].sort((a, b) => b.year - a.year);
 const transitionEase = [0.22, 1, 0.36, 1] as const;
-const introTransition = { duration: 0.6, ease: transitionEase };
-
 type ProjectControls = {
   collapsed: HTMLButtonElement | null;
   expanded: HTMLButtonElement | null;
@@ -202,21 +200,8 @@ function ProjectRow({
 export default function Home() {
   const reducedMotion = useReducedMotion();
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
-  const [introVisible, setIntroVisible] = useState(
-    () => typeof window !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
   const controls = useRef(new Map<string, ProjectControls>());
   const pendingFocus = useRef<{ id: string; expanded: boolean } | null>(null);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setIntroVisible(false);
-      return;
-    }
-    setIntroVisible(true);
-    const timer = window.setTimeout(() => setIntroVisible(false), 350);
-    return () => window.clearTimeout(timer);
-  }, [reducedMotion]);
 
   useLayoutEffect(() => {
     const pending = pendingFocus.current;
@@ -251,7 +236,7 @@ export default function Home() {
     <div className="home-project-index">
       <header className="home-index-header">
         <div className="home-index-header-inner">
-          <Link className="home-index-wordmark" href="/" aria-label="D.EF — Ethan Fryer home">D.EF</Link>
+          <Link className="home-index-wordmark" href="/" aria-label="D.EF — Ethan Fryer home" data-intro-brand>D.EF</Link>
           <nav className="home-index-nav" aria-label="Main navigation">
             <Link href="/about">About</Link>
             <Link href="/projects">Projects</Link>
@@ -291,24 +276,6 @@ export default function Home() {
         </div>
       </main>
 
-      <AnimatePresence>
-        {introVisible && !reducedMotion && (
-          <motion.div
-            key="home-index-intro-overlay"
-            className="home-index-intro-overlay"
-            initial={{ y: "0%" }}
-            animate={{ y: "0%" }}
-            exit={{ y: "-100%" }}
-            transition={introTransition}
-            aria-hidden="true"
-          >
-            <div className="home-index-intro-mark">
-              <span>D.EF</span>
-              <span className="home-index-intro-domain">EthanFryer.com</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

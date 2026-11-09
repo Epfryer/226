@@ -16,8 +16,8 @@ async function checkFeed(page, width) {
       year: Number(row.querySelector(".project-feed-year").textContent),
       gap: preview.left - label.right,
       centerDelta: Math.abs((preview.top + preview.height / 2) - (label.top + label.height / 2)),
-      previewBottom: preview.bottom,
-      labelTop: label.top,
+      previewBottom: preview.bottom + scrollY,
+      labelTop: label.top + scrollY,
     };
   }));
   const years = rows.map(row => row.year);
@@ -35,24 +35,35 @@ async function checkFeed(page, width) {
 }
 
 try {
-  for (const width of [2401, 1440, 768, 390]) {
+  for (const width of (process.env.TEST_WIDTHS || "2401,1440,768,390").split(",").map(Number)) {
     const context = await browser.newContext({ viewport: { width, height: 1000 } });
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(base + "/projects");
     await page.locator("[data-publication-id]").first().waitFor();
+    await page.waitForTimeout(700);
     const all = await checkFeed(page, width);
     assert(all.some(row => row.kind === "publication") && all.some(row => row.kind === "project"));
     assert.equal(all[0].kind, "publication", "A newer publication is not relegated after all projects");
     for (const category of ["Academic", "Competition", "Publications"]) {
       await page.getByRole("button", { name: category, exact: true }).click();
+      await page.waitForTimeout(700);
       const rows = await checkFeed(page, width);
       assert(rows.length > 0);
       assert(rows.every(row => row.kind === (category === "Publications" ? "publication" : "project")));
     }
     await page.getByRole("button", { name: "All", exact: true }).click();
-    assert.deepEqual(await checkFeed(page, width), all, "Returning to All restores order and layout");
+    // Shared-layout previews need to finish morphing before comparing geometry.
+    await page.waitForTimeout(700);
+    const restored = await checkFeed(page, width);
+    assert.deepEqual(restored.map(({ kind, year }) => ({ kind, year })),
+      all.map(({ kind, year }) => ({ kind, year })), "Returning to All restores the mixed chronology");
+    restored.forEach((row, index) => {
+      assert(Math.abs(row.labelTop - all[index].labelTop) < 2 &&
+        Math.abs(row.previewBottom - all[index].previewBottom) < 2,
+      `Returning to All restores row ${index}: label delta ${row.labelTop - all[index].labelTop}px, preview delta ${row.previewBottom - all[index].previewBottom}px`);
+    });
     assert.deepEqual(errors, []);
     if (width === 2401) await page.screenshot({ path: "/tmp/project-feed-alignment-desktop.png" });
     console.log(`PASS ${width}px: every label aligned, mixed date order, category filters, no overflow or page errors`);

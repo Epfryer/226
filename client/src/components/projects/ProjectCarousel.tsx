@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { useReducedMotion } from "framer-motion";
+import { m as motion, useReducedMotion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -17,6 +17,7 @@ interface ProjectImage {
 }
 
 interface ProjectCarouselProps {
+  projectId?: string;
   images: ProjectImage[];
   onSlideChange?: (index: number) => void;
   compact?: boolean;
@@ -32,7 +33,7 @@ interface ProjectCarouselProps {
   };
 }
 
-export function ProjectCarousel({ images, onSlideChange, initialSlide, compact = false, mediaZoom = 1, initialIndex = 0, leadingPanel, descriptionPanel }: ProjectCarouselProps) {
+export function ProjectCarousel({ images, onSlideChange, initialSlide, compact = false, projectId, mediaZoom = 1, initialIndex = 0, leadingPanel, descriptionPanel }: ProjectCarouselProps) {
   const reducedMotion = useReducedMotion();
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<ProjectImage | null>(null);
@@ -194,10 +195,10 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide, compact =
               <div className="project-ribbon-panel">{leadingPanel}</div>
             </SwiperSlide>
             <SwiperSlide key={`image-0-${images[0].src}`} className="project-ribbon-slide h-full" role="group" aria-roledescription="slide" aria-label={`Image 1 of ${images.length}`}>
-              <button type="button" className="project-carousel-image project-image-open relative flex items-center justify-center h-full" aria-label={`Open image 1 of ${initialSlide.title} full screen`} onClick={(event) => openImage(images[0], event)}>
+              <motion.button type="button" layoutId={projectId ? `project-feed-image-${projectId}` : undefined} transition={{ layout: { duration: reducedMotion ? 0 : 0.56, ease: [0.22, 1, 0.36, 1] } }} className="project-carousel-image project-image-open relative flex items-center justify-center h-full" aria-label={`Open image 1 of ${initialSlide.title} full screen`} onClick={(event) => openImage(images[0], event)}>
                 <img src={images[0].src} alt={images[0].alt} className="project-ribbon-image h-full w-auto object-contain cursor-zoom-in" loading="eager" decoding="async"
                   onLoad={(event) => updateImageSize(event.currentTarget)} />
-              </button>
+              </motion.button>
             </SwiperSlide>
             {descriptionPanel && <SwiperSlide key="project-description" className="project-ribbon-panel-slide project-ribbon-panel-slide--description h-full" role="group" aria-roledescription="slide" aria-label={`${initialSlide.title} project description`}>
               <div className="project-ribbon-panel">{descriptionPanel}</div>

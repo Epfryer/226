@@ -10,7 +10,7 @@ async function anchor(row) {
   await row.evaluate(element => window.scrollBy({
     top: element.getBoundingClientRect().top - 150, behavior: "instant",
   }));
-  await row.page().waitForTimeout(400);
+  await row.page().waitForTimeout(700);
 }
 async function expanded(row, value) {
   await row.page().waitForFunction(({ id, value }) =>
@@ -22,7 +22,7 @@ async function open(row, keyboard) {
   if (keyboard) { await control.focus(); await control.press(keyboard); }
   else await control.click();
   await expanded(row, true);
-  await row.page().waitForTimeout(400);
+  await row.page().waitForTimeout(700);
 }
 async function noOverflow(page) {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "No horizontal overflow");
@@ -40,6 +40,7 @@ try {
     assert(originalOrder.length >= 3);
     const a = rows.nth(0), b = rows.nth(1), c = rows.nth(2);
     const id = originalOrder[0];
+    const projectTitle = (await a.locator(".project-feed-title").innerText()).trim();
     // Native buttons expose the same state and a real, unique target region.
     const controls = a.locator("button[aria-controls][aria-expanded]");
     assert(await controls.count() >= 2, "Title and preview both expand the row");
@@ -66,10 +67,15 @@ try {
     assert(factsBounds.x + factsBounds.width <= firstImageBounds.x + 2, "Project facts are left of the first image");
     assert(descriptionBounds.x >= firstImageBounds.x + firstImageBounds.width - 2, "Description is right of the first image");
     assert(Math.abs(factsBounds.y - firstImageBounds.y) < 15, "Facts and artwork share a horizontal row");
-    const openTitle = await a.locator(".project-feed-title").boundingBox();
-    const closedTitle = await b.locator(".project-feed-title").boundingBox();
-    assert(Math.abs(openTitle.x - closedTitle.x) < 2, "Expanded and collapsed titles share the same column");
-    assert(Math.abs(openTitle.width - closedTitle.width) < 2, "Title and fact columns use the same width");
+    const closedLabel = await b.locator(".project-feed-label").boundingBox();
+    const closedPreview = await b.locator(".project-feed-preview").boundingBox();
+    if (width >= 768) {
+      assert(Math.abs(closedPreview.x - closedLabel.x - closedLabel.width - 24) < 2,
+        "Closed facts sit beside their own preview, not at the expanded gallery's viewport edge");
+    } else {
+      assert(closedLabel.y >= closedPreview.y + closedPreview.height,
+        "Mobile facts remain below their own preview");
+    }
     await anchor(a);
     await page.screenshot({ path: `/tmp/project-ribbon-inline-${width}-${reducedMotion}.png` });
     assert.equal(await a.getByRole("button", { name: /^Enlarge/ }).count(), 0, "No separate Enlarge button");
@@ -137,7 +143,7 @@ try {
     const before = (await a.boundingBox()).y;
     await close.press("Enter");
     await expanded(a, false);
-    await page.waitForTimeout(450);
+    await page.waitForTimeout(700);
     assert(Math.abs((await a.boundingBox()).y - before) < 12, "Close anchors its own row");
     await expanded(b, true);
     assert(await a.evaluate(element => element.contains(document.activeElement)), "Close restores focus in its row");
@@ -152,7 +158,7 @@ try {
     await anchor(a);
     await page.screenshot({ path: `/tmp/project-feed-${width}-${reducedMotion}.png` });
     await page.goto(`${base}/project/${encodeURIComponent(id)}`);
-    await page.getByRole("heading", { level: 1, name: id, exact: true }).waitFor();
+    await page.getByRole("heading", { level: 1, name: projectTitle, exact: true }).waitFor();
     await noOverflow(page);
     assert.deepEqual(errors, []);
     console.log(`PASS ${width}px ${reducedMotion}: independent A/B/C, stable order, scrolling, slides, local close/focus/anchor, keyboard, overflow, direct URL`);
