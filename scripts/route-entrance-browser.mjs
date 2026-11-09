@@ -7,7 +7,8 @@ const browser = await chromium.launch({
   ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
 });
 
-async function sampleEntrance(page) {
+async function sampleEntrance(page, { checkDuration = true } = {}) {
+  const startedAt = Date.now();
   await page.locator(".route-entrance").waitFor({ state: "attached", timeout: 5000 });
   const samples = await page.evaluate(() => new Promise((resolve) => {
     const frames = [];
@@ -16,7 +17,7 @@ async function sampleEntrance(page) {
       const overlay = document.querySelector(".route-entrance");
       const mark = overlay?.querySelector(".route-entrance-mark");
       const anchor = document.querySelector("[data-intro-brand]");
-      if (!overlay || performance.now() - started > 2500) {
+      if (!overlay || performance.now() - started > 6200) {
         resolve(frames);
         return;
       }
@@ -27,8 +28,10 @@ async function sampleEntrance(page) {
         frames.push({
           x: a.x + a.width / 2,
           y: a.y + a.height / 2,
+          wipeTop: wipe.top / innerHeight,
           distance: Math.hypot(a.x + a.width / 2 - b.x - b.width / 2, a.y + a.height / 2 - b.y - b.height / 2),
           wipe: wipe.height / innerHeight,
+          wipeWidth: wipe.width / innerWidth,
           pointerEvents: getComputedStyle(overlay).pointerEvents,
         });
       }
@@ -36,10 +39,16 @@ async function sampleEntrance(page) {
     }
     sample();
   }));
-  await page.locator(".route-entrance").waitFor({ state: "detached", timeout: 2000 });
+  await page.locator(".route-entrance").waitFor({ state: "detached", timeout: 6500 });
+  const elapsed = Date.now() - startedAt;
   assert(samples.length > 1, "Entrance produces animation frames");
   assert(samples.at(-1).distance < 20, "D.EF reaches the real header brand");
   assert(samples.at(-1).wipe > 0.98, "Black backdrop completes its white reveal");
+  assert(samples.every((frame) => frame.wipeWidth > 0.98), "White reveal spans the viewport width throughout");
+  if (checkDuration) assert(elapsed >= 4600 && elapsed < 6200, `Entrance lasts about five seconds (${elapsed}ms)`);
+  if (checkDuration) assert(samples[0].wipe < 0.1, "White reveal starts at the bottom edge");
+  assert(samples.at(-1).wipeTop < 0.02, "White reveal reaches the top edge");
+  assert(samples.every((frame, index) => index === 0 || frame.wipe >= samples[index - 1].wipe - 0.002), "White reveal moves only upward");
   assert(samples.every((frame) => frame.pointerEvents === "none"), "Entrance never traps clicks");
 }
 
@@ -74,8 +83,9 @@ try {
     await page.evaluate(() => history.pushState({}, "", "/about"));
     await page.waitForTimeout(60);
     await page.evaluate(() => history.pushState({}, "", "/projects"));
-    await page.waitForTimeout(1600);
-    assert.equal(await page.locator(".route-entrance").count(), 0, "Rapid navigation cannot leave a stuck entrance");
+    await page.locator(".route-entrance").waitFor({ state: "attached" });
+    await sampleEntrance(page, { checkDuration: false });
+    assert.equal(await page.locator(".route-entrance").count(), 0, "Rapid navigation eventually clears the entrance");
     assert.equal(await page.locator(".home-index-intro-overlay").count(), 0, "No duplicate Home introduction");
     assert.deepEqual(errors, [], "No browser runtime errors");
     await context.close();

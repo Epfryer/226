@@ -3,7 +3,7 @@ import { m as motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 
 const blackHold = 160;
-const wipeDuration = 620;
+const wipeDuration = 4660;
 const fadeDuration = 180;
 const entranceEase = [0.76, 0, 0.24, 1] as const;
 
@@ -61,8 +61,8 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
     >
       <motion.div
         className="route-entrance-wipe"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
+        initial={{ scaleY: 0 }}
+        animate={{ scaleY: 1 }}
         transition={{ duration: wipeDuration / 1000, delay: blackHold / 1000, ease: entranceEase }}
       />
       <motion.span
@@ -71,7 +71,6 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
         initial={{ x: 0, y: 0, scale: 1 }}
         animate={{
           ...(target ?? { x: 0, y: 0, scale: 1 }),
-          color: "#171717",
         }}
         transition={{ duration: wipeDuration / 1000, delay: blackHold / 1000, ease: entranceEase }}
         style={{ color: "#fff" }}
