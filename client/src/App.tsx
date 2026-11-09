@@ -13,7 +13,6 @@ import Home from "@/pages/Home";
 import { PageMetadata } from "@/components/PageMetadata";
 
 const About = lazy(() => import("@/pages/About"));
-const Contact = lazy(() => import("@/pages/Contact"));
 const Publications = lazy(() => import("@/pages/Publications"));
 const Projects = lazy(() => import("@/pages/Projects"));
 const Project = lazy(() => import("@/pages/Project"));
@@ -31,7 +30,6 @@ function Router() {
       <Route path="/publications" component={Publications} />
       <Route path="/studio/:productId?" component={Studio} />
       <Route path="/diagnostics" component={Diagnostics} />
-      <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
     </Switch>
   );

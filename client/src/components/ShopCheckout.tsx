@@ -201,7 +201,7 @@ function StatusPanel({
         </div>
       )}
       {verification?.testMode && <p className="text-xs text-muted-foreground">This checkout is running in test mode.</p>}
-      {status === "needs_attention" && <a href="/contact" className="inline-block text-sm underline underline-offset-4">Contact us about this order</a>}
+      {status === "needs_attention" && <a href="/about#contact" className="inline-block text-sm underline underline-offset-4">Contact us about this order</a>}
       {verification?.tracking && (
         <div className="border-t border-border pt-4 text-sm">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Tracking</p>

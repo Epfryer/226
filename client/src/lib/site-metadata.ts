@@ -25,10 +25,6 @@ const pages: Record<string, { title: string; description: string }> = {
     title: "D.EF Studio | Graphics, Garments & Design Objects",
     description: "Explore D.EF Studio by Ethan Fryer: graphic studies, garments, and design objects translated from architectural ideas and speculative imagery.",
   },
-  "/contact": {
-    title: "Contact Ethan Fryer | Architecture & Design | D.EF",
-    description: "Connect with Ethan Fryer about architecture, speculative design, graphics, and design objects, and find links to his wider work.",
-  },
 };
 
 export function getPageMetadata(url: string, override?: { title: string; description: string }) {

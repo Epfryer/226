@@ -6,7 +6,7 @@ import express from "express";
 import { getPageMetadata, injectPageMetadata, renderPageMetadata, SITE_ORIGIN } from "../client/src/lib/site-metadata";
 import { serveStatic } from "../server/vite";
 
-const routes = ["/", "/about", "/projects", "/publications", "/studio", "/contact"];
+const routes = ["/", "/about", "/projects", "/publications", "/studio"];
 
 test("public pages have distinct, authored search metadata and complete social previews", () => {
   assert.equal(new Set(routes.map((route) => getPageMetadata(route).title)).size, routes.length);
@@ -32,6 +32,7 @@ test("canonical URLs omit transient parameters and escape untrusted paths", () =
   assert.equal(getPageMetadata("/studio/123?checkout=cancelled").title, getPageMetadata("/studio").title);
   assert.ok(!renderPageMetadata('/"><script>alert(1)</script>').includes("<script>"));
   assert.ok(getPageMetadata("/missing").noindex);
+  assert.ok(getPageMetadata("/contact").noindex);
 });
 
 test("shell replacement retains one metadata set and safe shell defaults", () => {

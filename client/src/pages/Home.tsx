@@ -278,10 +278,10 @@ export default function Home() {
                 About the practice
                 <ArrowUpRight size={16} />
             </Link>
-            <Link href="/contact" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
+            <a href="/about#contact" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Contact / collaborate
                 <ArrowUpRight size={16} />
-            </Link>
+            </a>
             <Link href="/studio" className="inline-flex items-center justify-between border border-black/15 px-5 py-4 text-sm uppercase tracking-[0.2em] transition duration-300 hover:border-black hover:bg-black/[0.02]">
                 Enter studio + shop
                 <ArrowUpRight size={16} />

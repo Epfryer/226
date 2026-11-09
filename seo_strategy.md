@@ -1,7 +1,7 @@
 # SEO Strategy
 
 ## In scope
-- Public D.EF / Designs by Ethan Fryer architectural portfolio: `/`, `/about`, `/projects`, `/publications`, `/contact`.
+- Public D.EF / Designs by Ethan Fryer architectural portfolio: `/`, `/about`, `/projects`, `/publications`.
 - Public Studio storefront `/studio`, including product discovery and checkout accessibility.
 
 ## Out of scope

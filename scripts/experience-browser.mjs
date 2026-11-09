@@ -34,7 +34,7 @@ for (const [name, engine] of Object.entries({chromium,firefox,webkit})) {
       const errors=[];page.on("pageerror",e=>errors.push(e.message));
       await page.route("**/api/shop/products",r=>r.fulfill({json:{result:[]}}));
       if (!process.env.TEST_READER_ONLY) {
-      for(const path of ["/","/about","/projects","/contact","/publications","/studio"]) {
+      for(const path of ["/","/about","/projects","/publications","/studio"]) {
         await page.goto(base+path);
         await page.locator("main").first().waitFor();
         await page.waitForTimeout(400);

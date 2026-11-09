@@ -1,6 +1,6 @@
 import { projects, type Project } from "./projects";
 
-export const publicRoutes = ["/", "/about", "/projects", "/publications", "/studio", "/contact"] as const;
+export const publicRoutes = ["/", "/about", "/projects", "/publications", "/studio"] as const;
 // Existing immutable IDs provide stable addresses, including spaces and punctuation.
 export function projectPath(project: Project) {
   return `/project/${encodeURIComponent(project.id)}`;
