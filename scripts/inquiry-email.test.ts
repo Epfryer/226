@@ -38,7 +38,15 @@ test("inquiry email sends through the connected Resend integration", async () =>
   assert.equal(emails[1].subject, "We received your D.EF inquiry");
   assert.match(emails[1].html, /Hi Test,/);
   assert.ok(emails[1].html.includes(reference));
-  assert.match(emails[1].html, /Received/);
+  assert.ok(emails[1].html.includes("Test Sender"));
+  assert.ok(emails[1].html.includes("visitor@example.com"));
+  assert.ok(emails[1].html.includes("Collaborations"));
+  assert.ok(emails[1].html.includes("Example Studio"));
+  assert.ok(emails[1].html.includes("A design collaboration"));
+  assert.ok(emails[1].html.includes("A sufficiently long inquiry for the test."));
+  assert.match(emails[1].html, /within <strong>72 hours<\/strong>/);
+  assert.match(emails[1].html, /https:\/\/ethanfryer\.com/);
+  assert.match(emails[1].html, /SOCIALS · COMING SOON/);
   assert.ok(!emails[1].html.includes("{{"));
 });
 
@@ -64,10 +72,19 @@ test("missing sender is rejected before contacting Resend", async () => {
 test("receipt values are escaped before insertion into the HTML template", () => {
   const html = renderInquiryReceipt({
     firstName: "<script>alert(1)</script>",
+    fullName: "Test <b>person</b>",
+    email: "test@example.com",
+    inquiryType: "Commissions",
+    organization: "Example",
+    specificQuestion: "Where is the project?",
+    specificAnswer: "A city",
+    details: "The project details.",
     inquiryId: "DEF-00000001",
     receivedDate: "November 9, 2026",
+    responseTime: "72 hours",
   });
   assert.ok(html.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.ok(html.includes("Test &lt;b&gt;person&lt;/b&gt;"));
   assert.ok(!html.includes("<script>alert(1)</script>"));
   assert.ok(!html.includes("{{"));
 });
