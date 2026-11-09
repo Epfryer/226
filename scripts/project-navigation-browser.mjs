@@ -31,15 +31,15 @@ try {
       await toggle.focus();
       await toggle.press("Enter");
       assert(await panel.isVisible(), "Keyboard activation opens navigation");
-      await panel.getByRole("link", { name: "Contact", exact: true }).click();
+      await panel.getByRole("link", { name: "About", exact: true }).click();
     } else {
       assert(!await toggle.isVisible(), "No duplicate desktop menu on phones");
       await page.getByRole("button", { name: "Open navigation", exact: true }).click();
       const mobile = page.locator("#mobile-navigation");
       assert(await mobile.isVisible(), "Mobile navigation opens by tap");
-      await mobile.getByRole("link", { name: "Contact", exact: true }).click();
+      await mobile.getByRole("link", { name: "About", exact: true }).click();
     }
-    await page.waitForURL(/\/contact$/);
+    await page.waitForURL(/\/about$/);
     assert.equal(await page.locator("main").evaluate(element => getComputedStyle(element).paddingLeft), "0px", "Every route uses the compact navigation layout");
     await page.goto(base + "/projects");
     const row = page.locator("[data-project-id]").first();

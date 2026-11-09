@@ -14,7 +14,7 @@ Preferred communication style: Simple, everyday language.
 
 **Framework & Routing:**
 - React 18+ with TypeScript for type safety
-- Wouter for lightweight client-side routing (routes: Home `/`, About `/about`, Publications `/publications`, Studio `/studio`, Contact `/contact`)
+- Wouter for lightweight client-side routing (routes: Home `/`, About `/about`, Publications `/publications`, Studio `/studio`)
 - Vite as the build tool and development server
 
 **UI Component System:**

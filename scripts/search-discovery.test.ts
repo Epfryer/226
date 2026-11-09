@@ -25,6 +25,14 @@ test("all public routes have initial headings, navigation, and authored body con
     for (const target of publicRoutes) assert.ok(html.includes(`href="${target}"`));
   }
 });
+test("About contains contact details before selected work and the old route is removed", async () => {
+  const about = await renderPublicResponse(template, "/about", services);
+  assert.match(about.html, /id="contact"/);
+  assert.ok(about.html.indexOf('id="contact"') < about.html.indexOf("Selected work and studies"));
+  assert.match(about.html, /href="mailto:Epfryer@me.com"/);
+  assert.match(about.html, /href="tel:\+18135050290"/);
+  assert.equal((await renderPublicResponse(template, "/contact", services)).status, 404);
+});
 test("every project has a working encoded detail URL, description, image sequence, and unique metadata", async () => {
   const titles = new Set();
   for (const project of projects) {
@@ -106,6 +114,7 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
     assert.match(sitemap.headers.get("content-type")!, /application\/xml/);
     const xml = await sitemap.text();
     for (const route of [...publicRoutes, ...projects.map(projectPath)]) assert.ok(xml.includes(`<loc>https://ethanfryer.com${route}</loc>`));
+    assert.ok(!xml.includes("<loc>https://ethanfryer.com/contact</loc>"));
     assert.ok(!xml.includes("diagnostics"));
     assert.ok(!xml.includes("session_id"));
     for (const route of [...publicRoutes, ...projects.map(projectPath), "/studio/123", "/publications?doc=research"]) {
@@ -113,7 +122,7 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
       assert.equal(response.status, 200, route);
       assert.match(await response.text(), /<h1>/);
     }
-    for (const route of ["/unknown", "/project/unknown", "/studio/999"]) {
+    for (const route of ["/contact", "/unknown", "/project/unknown", "/studio/999"]) {
       const response = await fetch(`${origin}${route}`);
       assert.equal(response.status, 404, route);
       assert.match(await response.text(), /404 — Page not found/);

@@ -16,7 +16,6 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
   const path = location.split("?")[0];
   const sectionLabel = path === "/" ? "Home"
     : path === "/about" ? "About"
-    : path === "/contact" ? "Contact"
     : path.startsWith("/project/") || path === "/projects" ? "Projects"
     : path === "/publications" || path.startsWith("/publication/") ? "Publications"
     : path === "/studio" || path.startsWith("/studio/") ? "Studio"
@@ -25,7 +24,6 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
   const linkClass = `hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? "text-white" : ""}`;
   const links = [
     ["/about", "About"],
-    ["/contact", "Contact"],
     ["/projects", "Projects"],
     ["/publications", "Publications"],
     ["/studio", "Studio"],

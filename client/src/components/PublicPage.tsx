@@ -21,7 +21,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
   const project = findProject(pathname);
   const doc = data.publications?.find(pub => pub.slug === url.searchParams.get("doc"));
   const product = data.products?.find(item => `/studio/${item.id}` === pathname);
-  const labels = ["Home", "About", "Projects", "Publications", "Studio", "Contact"];
+  const labels = ["Home", "About", "Projects", "Publications", "Studio"];
   return <div className="public-document">
     <header><a href="/">D.EF — Ethan Fryer</a><nav aria-label="Main navigation">
       {publicRoutes.map((href, index) => <a key={href} href={href}>{labels[index]}</a>)}
@@ -55,21 +55,23 @@ export function PublicPage({ data }: { data: PublicPageData }) {
           <h1>About Ethan Fryer</h1>
           <p>Architect at heart, Ethan approaches design as both spatial practice and visual authorship. His work moves between architecture, speculative studies, competitions, graphics, and objects — all connected by a desire to make ideas feel lived in.</p>
           <p>This site is a living body of work that is gradually becoming a studio: projects act as proof, publications add depth, and the shop becomes a collection of artifacts translated from the same worldview.</p>
+          <section id="contact">
+            <h2>Reach out if you want to build something thoughtful.</h2>
+            <p>Ethan Fryer is developing a studio practice rooted in architecture, speculative thinking, graphics, and design objects. Get in touch about commissions, collaborations, studio inquiries, and press or features.</p>
+            <a href="mailto:Epfryer@me.com">Email Ethan Fryer</a>
+            {" "}<a href="tel:+18135050290">+1 (813) 505-0290</a>
+          </section>
           <h2>Selected work and studies</h2>
           <p>2025: Thesis work, competition entries, and a growing studio direction focused on spatial ideas, graphics, and objects.</p>
           <p>2024: Graduate B.Arch work at Virginia Tech shaped around architecture, narrative, visual systems, and speculative form.</p>
           <p>2023: Competitions, studies, and academic projects exploring form, rendering, geometry, and architectural storytelling.</p>
           <a href="/projects">Explore the architecture archive</a>
-        </> : pathname === "/contact" ? <>
-          <h1>Contact Ethan Fryer</h1>
-          <p>Ethan Fryer is developing a studio practice rooted in architecture, speculative thinking, graphics, and design objects. Get in touch about commissions, collaborations, studio inquiries, and press or features.</p>
-          <a href="mailto:Epfryer@me.com">Email Ethan Fryer</a>
         </> : <>
           <h1>{pathname === "/projects" ? "Architecture Projects & Studies" : "Ethan Fryer — Architecture & D.EF Studio"}</h1>
           <p>Architecture, speculative studies, competitions, graphics, and objects. Explore selected projects, <a href="/publications">architectural publications</a>, and <a href="/studio">D.EF Studio</a>.</p>
           {(pathname === "/projects" ? projects : projects.filter(item => ["thesis", "Behind The Curtain", "AIA Comp"].includes(item.id))).map(item => <ProjectContent key={item.id} project={item} />)}
         </>}
     </main>
-    <footer><a href="/contact">Contact D.EF — Ethan Fryer</a></footer>
+    <footer><a href="/about#contact">Contact D.EF — Ethan Fryer</a></footer>
   </div>;
 }
