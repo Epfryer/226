@@ -62,4 +62,4 @@ timeoutMs = 240000
 [userenv]
 
 [userenv.shared]
-INQUIRY_FROM_EMAIL = "Epfryer@me.com"
+INQUIRY_FROM_EMAIL = "inquiry@ethanfryer.com"
