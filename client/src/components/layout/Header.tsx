@@ -19,6 +19,7 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
     : path.startsWith("/project/") || path === "/projects" ? "Projects"
     : path === "/publications" || path.startsWith("/publication/") ? "Publications"
     : path === "/studio" || path.startsWith("/studio/") ? "Studio"
+    : path === "/account" || path === "/login" || path === "/register" ? "Account"
     : "Home";
   const navigationHidden = isProjectExpanded && !shouldRevealHeader;
   const linkClass = `hover:opacity-70 transition-opacity uppercase tracking-wide px-3 py-1 rounded-sm ${isAboutPage ? "text-white" : ""}`;
@@ -27,6 +28,7 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
     ["/projects", "Projects"],
     ["/publications", "Publications"],
     ["/studio", "Studio"],
+    ["/account", "Account"],
   ];
   const projectsMenuRef = useRef<HTMLDivElement>(null);
   const projectsMenuButtonRef = useRef<HTMLButtonElement>(null);

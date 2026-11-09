@@ -24,7 +24,7 @@ try {
         panel = page.locator(`[id="${await toggle.getAttribute("aria-controls")}"]`);
         await toggle.hover();
         await panel.waitFor({ state: "visible" });
-        assert.equal(await panel.getByRole("link").count(), 4, `All navigation destinations on ${route}`);
+        assert.equal(await panel.getByRole("link").count(), 5, `All navigation destinations on ${route}`);
         if (route === "/about") {
           const colors = await panel.evaluate(element => ({
             background: getComputedStyle(element).backgroundColor,

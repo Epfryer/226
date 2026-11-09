@@ -136,8 +136,91 @@ Preferred communication style: Simple, everyday language.
 - SSR-safe media query hook for responsive behavior
 
 **Missing/Incomplete Integrations:**
-- Authentication system (schema exists but no implementation)
 - API routes for CRUD operations on projects
 - Database migration workflow (Drizzle Kit configured but not utilized)
 - Form submissions for contact page
 - Cart functionality for Studio page (Add to Cart button is placeholder)
+
+## Password accounts and owner setup
+
+Accounts use the existing Express session stack and PostgreSQL, with Node's salted
+scrypt password hashes. No hosted identity provider, email verification, social
+sign-in, or self-service recovery is configured. Visitors do not need accounts to
+browse, inquire, read publications, or check out. Orders retain their separate
+anonymous browser ownership token; signing in does not link orders to accounts.
+
+### Configuration and non-destructive setup
+
+- Configure `DATABASE_URL` and a randomly generated `SESSION_SECRET` of at least
+  32 characters in workspace Secrets, and configure them separately for the
+  production environment when appropriate. Never put their values in source.
+  Keep the signing secret stable across restarts and instances.
+- Run `npm run auth:setup` against the intended database before enabling accounts.
+  This is additive/idempotent, uses a transaction and lock, audits only aggregate
+  counts of recognized password hashes, and stops on case/whitespace-normalized
+  username collisions rather than renaming or deleting users.
+- Existing passwords are never assumed to be secure. Legacy values cannot sign
+  in; use the trusted reset procedure below. Existing accounts default to visitor.
+  No first-user owner or default password is created.
+- Do not use a destructive schema reset or blindly accept `db:push` changes.
+  The auth setup command preserves users, orders and content. Apply the same
+  reviewed setup to the production database through your trusted operations
+  process; development setup does not migrate production.
+- HTTPS origins for the canonical website and Replit-provided domains are
+  trusted explicitly. Additional website aliases go in `AUTH_TRUSTED_ORIGINS`
+  as comma-separated exact origins; production permits HTTPS only. For local
+  development, explicitly add the local HTTP origin. Arbitrary request Host
+  or Origin headers do not grant trust.
+- Cookies are HttpOnly, SameSite=Lax, and Secure in production (behind the
+  existing one-hop trusted proxy). Sessions expire after seven days, are stored
+  in PostgreSQL, rotate at sign-in/registration, and are destroyed on sign-out.
+  Expired session and limiter records are cleaned periodically.
+- Authentication fails closed with a non-sensitive 503 when configuration,
+  tables or database access are unavailable; public browsing is not gated.
+  Auth and account responses are no-store and noindex. Credentials/tokens are
+  excluded from API logs.
+
+### Provision an owner (trusted terminal only)
+
+First register the intended account through `/register`. With trusted database
+access, target that **explicit existing username**:
+
+```sh
+npm run auth:admin -- owner EXISTING_USERNAME
+```
+
+This grants owner permissions and invalidates all earlier sessions. Sign in
+again through `/login`. Public registration cannot accept a role. Only the
+owner can upload/delete publications; these requests need the session cookie,
+a trusted Origin, and the `X-CSRF-Token` from `/api/auth/me`, even for multipart
+uploads. Authorization runs before upload parsing. Attribution uses the
+authenticated owner's account ID, never a supplied `uploadedBy`.
+Attribution is saved in a separate `.publication-metadata/` App Storage object;
+it is not part of the public publication catalog. If recording attribution
+fails after the PDF is stored, upload reports that partial failure explicitly.
+
+### Trusted password recovery (no public reset endpoint)
+
+Verify the account holder's identity outside the application. From a trusted
+Bash terminal, read the new password without echo or command-line history:
+
+```sh
+read -r -s -p 'New password: ' AUTH_PASSWORD; printf '\n'
+printf '%s' "$AUTH_PASSWORD" | npm run auth:admin -- reset-password EXISTING_USERNAME
+unset AUTH_PASSWORD
+```
+
+Use 12–128 characters. The command hashes the password, increments the account's
+session version, and deletes existing sessions in one transaction. It neither
+changes the role nor prints the password. Never put passwords in arguments,
+chat, committed files, or shell history. Legacy usernames must meet the sign-in
+policy (3–32 ASCII letters/numbers/underscore/hyphen); resolve exceptions manually
+with verified account ownership rather than silently rewriting them.
+
+### Verification
+
+`npm run test:auth` uses the development database and removes its own temporary
+accounts/sessions. It must never target the production database. The auth
+browser test likewise creates temporary visitor accounts; it does not place
+orders or mutate real publications. Use `npm run test:auth:browser` with
+Playwright's Chromium available. Database failures must fail tests, not skip them.

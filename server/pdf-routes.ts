@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import { Client } from "@replit/object-storage";
 import { PdfFileCache, parseRange } from "./pdf-delivery";
 
@@ -20,14 +19,6 @@ try {
   console.error('[PDF Routes] Error details:', error?.message, error?.stack);
   throw error;
 }
-
-// Allow CORS from all origins for development and deployment
-router.use(cors({ 
-  origin: true,  // Allow all origins
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Range'],
-  exposedHeaders: ['Accept-Ranges', 'Content-Range', 'Content-Length']
-}));
 
 const rangeCache = new PdfFileCache(name => storage.downloadAsStream(name));
 

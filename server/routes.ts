@@ -7,6 +7,8 @@ import pdfRoutes from './pdf-routes';
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault, isPayPalConfigured } from "./paypal";
 import { loadPublications } from "./public-content";
 import { z } from "zod";
+import { auth } from "./auth";
+import { apiCors } from "./request-origin";
 
 const inquirySchema = z.object({
   type: z.enum(["Commissions", "Collaborations", "Studio inquiries", "Press / features"]),
@@ -83,24 +85,31 @@ const upload = multer({
   }
 });
 
-export function registerRoutes(app: Express): Server {
-  // CORS middleware for API routes - allow all origins
-  app.use('/api', (req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
+export function registerRoutes(app: Express, publicationStorage = { uploadPdf, deletePdf }, authentication = auth): Server {
+  app.use('/api', apiCors);
+  authentication.register(app);
+
+  app.post("/api/inquiries", async (req, res) => {
+    const parsed = inquirySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Please check your details and try again." });
+    }
+    if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
+      return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
+    }
+    if (!process.env.RESEND_API_KEY || !process.env.INQUIRY_FROM_EMAIL) {
+      return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
     }
 
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Expose-Headers', 'Accept-Ranges, Content-Range, Content-Length');
-
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
+    try {
+      await sendInquiryEmail(parsed.data);
+      return res.json({ sent: true });
+    } catch (error) {
+      console.error("[Inquiries] Delivery failed", error instanceof Error ? error.message : "Unknown email error");
+      return res.status(502).json({
+        error: error instanceof Error ? error.message : "Your inquiry could not be sent. Please try again later.",
+      });
     }
-
-    next();
   });
 
   app.post("/api/inquiries", async (req, res) => {
@@ -127,7 +136,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Upload PDF endpoint
-  app.post("/api/publications/upload", upload.single('pdf'), async (req, res) => {
+  app.post("/api/publications/upload", ...authentication.ownerGuard, upload.single('pdf'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
@@ -135,12 +144,12 @@ export function registerRoutes(app: Express): Server {
 
       const metadata = {
         originalName: req.file.originalname,
-        uploadedBy: req.body.uploadedBy || 'anonymous',
+        uploadedBy: String(req.account!.id),
         title: req.body.title || req.file.originalname,
         year: req.body.year || new Date().getFullYear().toString()
       };
 
-      const result = await uploadPdf(
+      const result = await publicationStorage.uploadPdf(
         req.file.buffer,
         req.file.originalname,
         metadata
@@ -189,9 +198,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete PDF endpoint
-  app.delete("/api/publications/:filename", async (req, res) => {
+  app.delete("/api/publications/:filename", ...authentication.ownerGuard, async (req, res) => {
     try {
-      const success = await deletePdf(req.params.filename);
+      const success = await publicationStorage.deletePdf(req.params.filename);
       if (!success) {
         return res.status(404).json({ message: 'PDF not found or could not be deleted' });
       }

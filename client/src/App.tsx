@@ -19,6 +19,9 @@ const Project = lazy(() => import("@/pages/Project"));
 const Studio = lazy(() => import("@/pages/Studio"));
 const Diagnostics = lazy(() => import("@/pages/Diagnostics"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const LoginPage = lazy(() => import("@/pages/Account").then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import("@/pages/Account").then((module) => ({ default: module.RegisterPage })));
+const AccountPage = lazy(() => import("@/pages/Account").then((module) => ({ default: module.AccountPage })));
 
 function Router() {
   return (
@@ -29,6 +32,9 @@ function Router() {
       <Route path="/project/:id" component={Project} />
       <Route path="/publications" component={Publications} />
       <Route path="/studio/:productId?" component={Studio} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/register" component={RegisterPage} />
+      <Route path="/account" component={AccountPage} />
       <Route path="/diagnostics" component={Diagnostics} />
       <Route component={NotFound} />
     </Switch>

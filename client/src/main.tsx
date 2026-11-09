@@ -18,7 +18,7 @@ function PublicEntry({ data }: { data: PublicPageData }) {
 }
 
 const root = document.getElementById("root")!;
-if (data && data.url.split("?")[0] !== "/diagnostics") {
+if (data && !["/diagnostics", "/login", "/register", "/account"].includes(data.url.split(/[?#]/)[0].replace(/\/+$/, ""))) {
   hydrateRoot(root, <PublicEntry data={data} />);
 } else {
   createRoot(root).render(<App />);

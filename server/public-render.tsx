@@ -9,7 +9,7 @@ import { loadProducts, loadPublications } from "./public-content";
 
 export function registerCrawlerRoutes(app: Express) {
   app.get("/robots.txt", (_req, res) => res.type("text/plain").send(
-    `User-agent: *\nAllow: /\nDisallow: /diagnostics\nDisallow: /api/shop/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
+    `User-agent: *\nAllow: /\nDisallow: /diagnostics\nDisallow: /login\nDisallow: /register\nDisallow: /account\nDisallow: /api/auth/\nDisallow: /api/shop/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
   ));
   app.get("/sitemap.xml", (_req, res) => {
     const urls = [...publicRoutes, ...projects.map(projectPath)];
@@ -22,7 +22,8 @@ export async function renderPublicResponse(template: string, url: string, servic
   const parsed = new URL(url, SITE_ORIGIN);
   const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
   const data: PublicPageData = { url, status: 200 };
-  const valid = (publicRoutes as readonly string[]).includes(pathname) || !!findProject(pathname) || /^\/studio\/[1-9]\d*$/.test(pathname) || pathname === "/diagnostics";
+  const privatePage = ["/login", "/register", "/account"].includes(pathname);
+  const valid = privatePage || (publicRoutes as readonly string[]).includes(pathname) || !!findProject(pathname) || /^\/studio\/[1-9]\d*$/.test(pathname) || pathname === "/diagnostics";
   if (!valid) data.status = 404;
   try {
     if (pathname === "/publications") {
@@ -37,7 +38,7 @@ export async function renderPublicResponse(template: string, url: string, servic
     data.status = 503;
     data.unavailable = pathname === "/publications" ? "Publications are temporarily unavailable." : "The product catalog is temporarily unavailable.";
   }
-  const body = pathname === "/diagnostics" ? "" : renderToString(<PublicPage data={data} />);
+  const body = privatePage || pathname === "/diagnostics" ? "" : renderToString(<PublicPage data={data} />);
   // Escaping '<' protects both HTML and script boundaries in arbitrary catalog text.
   const json = JSON.stringify(data).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   const doc = data.publications?.find(pub => pub.slug === parsed.searchParams.get("doc"));

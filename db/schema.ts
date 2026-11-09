@@ -1,10 +1,27 @@
-import { pgTable, text, serial, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb, boolean, uniqueIndex, index, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("visitor"),
+  authVersion: integer("auth_version").notNull().default(1),
+}, table => [
+  uniqueIndex("users_username_normalized_unique").on(sql`lower(btrim(${table.username}))`),
+  check("users_auth_role_check", sql`${table.role} IN ('visitor','owner')`),
+]);
+
+export const authSessions = pgTable("auth_sessions", {
+  sid: text("sid").primaryKey(),
+  data: jsonb("data").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, table => [index("auth_sessions_expiry").on(table.expiresAt)]);
+export const authRateLimits = pgTable("auth_rate_limits", {
+  key: text("key").primaryKey(),
+  window: integer("window_id").notNull(),
+  count: integer("count").notNull(),
 });
 
 export const projects = pgTable("projects", {

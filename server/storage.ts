@@ -13,6 +13,7 @@ export interface UploadResult {
   objectName?: string;
   url?: string;
   error?: string;
+  uploadedBy?: string;
 }
 
 export async function uploadPdf(
@@ -35,9 +36,21 @@ export async function uploadPdf(
       };
     }
 
+    // The SDK's byte upload does not persist custom metadata. Keep attribution
+    // explicitly beside the object, outside the public PDF catalog.
+    if (metadata) {
+      const attribution = await client.uploadFromText(
+        `.publication-metadata/${encodeURIComponent(objectName)}.json`,
+        JSON.stringify({ ...metadata, uploadedAt: new Date().toISOString() }),
+      );
+      if (!attribution.ok) {
+        return { success: false, error: "PDF uploaded, but its attribution could not be recorded. Please retry." };
+      }
+    }
     return {
       success: true,
       objectName,
+      uploadedBy: metadata?.uploadedBy,
       url: `/api/publications/${sanitizedFilename}`
     };
   } catch (error) {
@@ -79,6 +92,10 @@ export async function deletePdf(filename: string): Promise<boolean> {
   try {
     const objectName = filename;
     const result = await client.delete(objectName);
+    if (result.ok) {
+      const metadata = await client.delete(`.publication-metadata/${encodeURIComponent(objectName)}.json`, { ignoreNotFound: true });
+      if (!metadata.ok) console.error("[Storage] Publication removed; attribution cleanup failed");
+    }
     return result.ok;
   } catch (error) {
     console.error('Error deleting PDF:', error);
@@ -87,8 +104,8 @@ export async function deletePdf(filename: string): Promise<boolean> {
 }
 
 export async function getPdfMetadata(filename: string) {
-  // Metadata is stored during upload but cannot be retrieved
-  // Return basic metadata based on filename
+  // Keep public display metadata filename-based for legacy publications.
+  // Upload attribution is stored separately, not added to the public catalog.
   const metadata: Record<string, string> = {
     originalName: filename
   };
