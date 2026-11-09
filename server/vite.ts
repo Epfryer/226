@@ -66,7 +66,13 @@ export async function setupVite(app: Express, server: Server) {
         res.status(404).type("text/plain").send("Resource not found");
         return;
       }
-      const rendered = await renderPublicResponse(template, url);
+      // Use Vite's invalidated module graph for SSR as well as the browser.
+      // A process-level import can retain old markup after a shared UI edit,
+      // causing hydration to fail until the entire server is restarted.
+      const { renderPublicResponse: renderDevelopmentResponse } = await vite.ssrLoadModule(
+        path.resolve(__dirname, "public-render.tsx"),
+      ) as typeof import("./public-render");
+      const rendered = await renderDevelopmentResponse(template, url, publicContentServices);
       const page = await vite.transformIndexHtml(url, rendered.html);
       res.status(rendered.status).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {

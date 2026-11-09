@@ -14,3 +14,9 @@ Optimize image delivery in both the initial document and the interactive page, n
 **Why:** The browser can begin downloading images from the initial HTML before the interactive page replaces it. Optimizing only the enhanced view still permits large original files to consume bandwidth.
 
 **How to apply:** Share responsive delivery rules across both rendering boundaries while retaining original source URLs for full-resolution viewing.
+
+Shared public UI must refresh on both the server and browser during development.
+
+**Why:** Browser hot updates alone can leave the first HTML response using an older navigation or content tree, producing hydration errors even though each version works independently.
+
+**How to apply:** Keep development server rendering in the same invalidated module graph as the client. A full restart can hide stale-rendering regressions, so consider hot-update consistency when changing this boundary.
