@@ -58,3 +58,8 @@ integrations = ["stripe:1.0.0"]
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 240000
+
+[userenv]
+
+[userenv.shared]
+INQUIRY_FROM_EMAIL = "Epfryer@me.com"
