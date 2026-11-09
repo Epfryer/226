@@ -6,3 +6,4 @@
 - [Public rendering boundary](public-rendering.md) — keep crawlable content independent of browser-only readers and checkout; preserve the interactive portfolio as enhancement.
 - [Pinned reader lifecycle](pinned-reader-lifecycle.md) — preserve a stable reader host across pinning; normalize zoom/pan on resize and verify both spread canvases are painted.
 - [Account boundaries](auth-boundaries.md) — preserve local-password scope, explicit owner provisioning, public browsing, and separate guest-order ownership.
+- [Inquiry email template](inquiry-email-template.md) — keep customer receipts separate from the studio’s full inquiry brief; the connected Resend access is send-only.

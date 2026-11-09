@@ -65,7 +65,7 @@ export function registerRoutes(app: Express, publicationStorage = { uploadPdf, d
     if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
       return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
     }
-    if (!process.env.INQUIRY_FROM_EMAIL || !process.env.INQUIRY_TEMPLATE_ID) {
+    if (!process.env.INQUIRY_FROM_EMAIL) {
       return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
     }
 

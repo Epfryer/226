@@ -1,4 +1,6 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
+import { randomUUID } from "node:crypto";
+import { renderInquiryReceipt } from "./inquiry-email-template";
 
 export interface InquiryEmail {
   type: string;
@@ -21,10 +23,8 @@ export async function sendInquiryEmail(
   inquiry: InquiryEmail,
   from = process.env.INQUIRY_FROM_EMAIL,
   proxy: ProxyRequest = resendProxy,
-  templateId = process.env.INQUIRY_TEMPLATE_ID,
 ) {
   if (!from) throw new Error("Inquiry email sender is not configured");
-  if (!templateId) throw new Error("Inquiry email template is not configured");
 
   const questions: Record<string, string> = {
     Commissions: "Where is the project located?",
@@ -33,27 +33,40 @@ export async function sendInquiryEmail(
     "Press / features": "Which outlet is this for, and when is your deadline?",
   };
 
-  const response = await proxy("/emails", {
+  const reference = `DEF-${randomUUID().slice(0, 8).toUpperCase()}`;
+  const receivedDate = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date());
+
+  const response = await proxy("/emails/batch", {
     method: "POST",
-    body: {
-      from,
-      to: ["Epfryer@me.com"],
-      cc: [inquiry.email],
-      reply_to: inquiry.email,
-      subject: `New ${inquiry.type} inquiry from ${inquiry.name}`,
-      template: {
-        id: templateId,
-        variables: {
-          INQUIRY_TYPE: inquiry.type,
-          INQUIRER_NAME: inquiry.name,
-          INQUIRER_EMAIL: inquiry.email,
-          ORGANIZATION: inquiry.organization || "Not provided",
-          SPECIFIC_QUESTION: questions[inquiry.type] ?? "Inquiry details",
-          SPECIFIC_ANSWER: inquiry.specificAnswer,
-          DETAILS: inquiry.details,
-        },
+    body: [
+      {
+        from,
+        to: ["Epfryer@me.com"],
+        reply_to: inquiry.email,
+        subject: `New ${inquiry.type} inquiry from ${inquiry.name}`,
+        text: [
+          `Inquiry reference: ${reference}`,
+          `Inquiry type: ${inquiry.type}`,
+          `Name: ${inquiry.name}`,
+          `Email: ${inquiry.email}`,
+          `Organization: ${inquiry.organization || "Not provided"}`,
+          `${questions[inquiry.type] ?? "Inquiry details"} ${inquiry.specificAnswer}`,
+          "",
+          inquiry.details,
+        ].join("\n"),
       },
-    },
+      {
+        from,
+        to: [inquiry.email],
+        reply_to: "Epfryer@me.com",
+        subject: "We received your D.EF inquiry",
+        html: renderInquiryReceipt({
+          firstName: inquiry.name.trim().split(/\s+/)[0],
+          inquiryId: reference,
+          receivedDate,
+        }),
+      },
+    ],
   });
 
   if (!response.ok) {
