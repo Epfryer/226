@@ -52,8 +52,10 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(`${base}/projects`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForURL("**/projects");
     await sampleEntrance(page);
+    assert.equal(await page.locator(".home-project-index").count(), 0, "The separate home screen is removed");
     assert(await page.locator("[data-project-id]").count() >= 3);
     // Use the actual navigation once, then exercise the shared route boundary.
     if (width >= 768) await page.locator(".projects-nav-toggle").click();

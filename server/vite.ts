@@ -26,7 +26,7 @@ export function log(message: string, source = "express") {
 
 export async function setupVite(app: Express, server: Server) {
   registerCrawlerRoutes(app);
-  app.get("/index.html", (_req, res) => res.redirect(301, "/"));
+  app.get("/index.html", (_req, res) => res.redirect(301, "/projects"));
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -97,7 +97,7 @@ export function serveStatic(app: Express, distPath = path.resolve(__dirname, "pu
     filter: (req, res) => !req.headers.range && compression.filter(req, res),
   }));
   registerCrawlerRoutes(app);
-  app.get("/index.html", (_req, res) => res.redirect(301, "/"));
+  app.get("/index.html", (_req, res) => res.redirect(301, "/projects"));
   app.use("/assets", express.static(path.resolve(distPath, "assets"), {
     index: false,
     maxAge: "1y",

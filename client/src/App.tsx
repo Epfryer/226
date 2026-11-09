@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +10,6 @@ import { WhiteHeader } from "@/components/layout/WhiteHeader";
 import { WhiteFooter } from "@/components/layout/WhiteFooter";
 import { RouteEntrance } from "@/components/layout/RouteEntrance";
 import { ProjectProvider } from "@/context/ProjectContext";
-import Home from "@/pages/Home";
 import { PageMetadata } from "@/components/PageMetadata";
 
 const About = lazy(() => import("@/pages/About"));
@@ -27,7 +26,7 @@ const AccountPage = lazy(() => import("@/pages/Account").then((module) => ({ def
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/"><Redirect to="/projects" replace /></Route>
       <Route path="/about" component={About} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={Project} />
@@ -44,7 +43,6 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isHomePage = location === "/";
   const isAboutPage = location === "/about";
   const isStudioPage = location === "/studio" || location.startsWith("/studio/");
 
@@ -55,7 +53,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ProjectProvider>
         <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
-          {!isStudioPage && !isHomePage && (isAboutPage ? <WhiteHeader /> : <Header />)}
+          {!isStudioPage && (isAboutPage ? <WhiteHeader /> : <Header />)}
           <RouteEntrance />
           <main className={`flex-1 ${isStudioPage ? "" : "portfolio-main"}`}>
             <Suspense fallback={

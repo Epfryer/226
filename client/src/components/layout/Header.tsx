@@ -89,7 +89,7 @@ export function Header({ white = false, actions }: { white?: boolean; actions?: 
               delay: 0.2
             }}
           >
-            <Link href="/" data-intro-brand>
+            <Link href="/projects" data-intro-brand>
               {isProjectExpanded && !shouldRevealHeader ? (
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-light ${isAboutPage ? 'text-white' : ''}`}>Designed by</span>

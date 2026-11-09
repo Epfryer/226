@@ -117,6 +117,14 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
     assert.ok(!xml.includes("<loc>https://ethanfryer.com/contact</loc>"));
     assert.ok(!xml.includes("diagnostics"));
     assert.ok(!xml.includes("session_id"));
+    for (const method of ["GET", "HEAD"]) {
+      const landing = await fetch(`${origin}/?source=landing`, { method, redirect: "manual" });
+      assert.equal(landing.status, 301);
+      assert.equal(landing.headers.get("location"), "/projects?source=landing");
+    }
+    const index = await fetch(`${origin}/index.html`, { redirect: "manual" });
+    assert.equal(index.status, 301);
+    assert.equal(index.headers.get("location"), "/projects");
     for (const route of [...publicRoutes, ...projects.map(projectPath), "/studio/123", "/publications?doc=research"]) {
       const response = await fetch(`${origin}${route}`);
       assert.equal(response.status, 200, route);
