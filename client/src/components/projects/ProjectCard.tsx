@@ -5,6 +5,7 @@ import { responsiveImageProps } from "@/lib/responsive-images";
 import { projectImageDimensions } from "@/lib/project-image-dimensions";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { useProjectMediaZoom } from "@/hooks/use-project-media-zoom";
+import { useGalleryScrollZoom } from "@/hooks/use-gallery-scroll-zoom";
 import { usePreviewScrollMotion } from "@/hooks/use-preview-scroll-motion";
 import { usePreviewLabelAlignment } from "@/hooks/use-preview-label-alignment";
 import type { CSSProperties } from "react";
@@ -26,6 +27,7 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
   const titleId = useId();
   const rowRef = useRef<HTMLElement>(null);
   usePreviewLabelAlignment(rowRef, isExpanded);
+  useGalleryScrollZoom(mediaRef, isExpanded);
   const previewRef = useRef<HTMLButtonElement>(null);
   usePreviewScrollMotion(previewRef, isExpanded);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -57,8 +59,19 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
     anchor.current = null;
     const delta = rowRef.current.getBoundingClientRect().top - pending.top;
     if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
-    if (pending.closing) previewRef.current?.focus({ preventScroll: true });
-    else closeRef.current?.focus({ preventScroll: true });
+    if (pending.closing) {
+      previewRef.current?.focus({ preventScroll: true });
+    } else {
+      closeRef.current?.focus({ preventScroll: true });
+      // Bring the opened ribbon to full size by easing it to the viewport center.
+      const gallery = mediaRef.current;
+      if (gallery) {
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const rect = gallery.getBoundingClientRect();
+        const top = rect.top + rect.height / 2 - innerHeight / 2;
+        if (Math.abs(top) > 8) window.scrollBy({ top, behavior: reduced ? "instant" as ScrollBehavior : "smooth" });
+      }
+    }
   }, [isExpanded]);
 
   return (
