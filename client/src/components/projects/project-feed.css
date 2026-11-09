@@ -89,7 +89,8 @@
 }
 
 .project-zoom-controls { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; }
-.project-feed-gallery { transition: height .1s ease-out; }
+.project-feed-gallery { transition: height .1s ease-out, transform .85s cubic-bezier(.22, 1, .36, 1); }
+.project-feed-gallery[data-focus="down"] { cursor: zoom-in; }
 .project-zoom-controls button { min-width: 36px; min-height: 36px; border: 1px solid #ddd; }
 .project-zoom-controls button:disabled { opacity: .35; }
 .project-zoom-hint { font-size: 9px; line-height: 1.5; color: #737373; margin-top: 5px; }
