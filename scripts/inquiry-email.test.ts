@@ -46,7 +46,10 @@ test("inquiry email sends through the connected Resend integration", async () =>
   assert.ok(emails[1].html.includes("A sufficiently long inquiry for the test."));
   assert.match(emails[1].html, /within <strong>72 hours<\/strong>/);
   assert.match(emails[1].html, /https:\/\/ethanfryer\.com/);
-  assert.match(emails[1].html, /SOCIALS · COMING SOON/);
+  assert.match(emails[1].html, /href="https:\/\/www\.facebook\.com\/ethan\.fryer\.927\/"/);
+  assert.match(emails[1].html, /href="https:\/\/www\.instagram\.com\/fryer_21\/"/);
+  assert.match(emails[1].html, /href="https:\/\/www\.linkedin\.com\/in\/epfryer\/"/);
+  assert.match(emails[1].html, /X profile coming soon/);
   assert.ok(!emails[1].html.includes("{{"));
 });
 

@@ -55,18 +55,25 @@ const receiptHtml = `<!DOCTYPE html>
           <p style="margin:0 0 20px">Thanks again,<br /><strong>Ethan<br />D.EF</strong></p>
           <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:2px;color:#555555">ON THE WEB</p>
           <p style="margin:0 0 14px"><a href="https://ethanfryer.com" style="color:#171717;text-decoration:underline">ethanfryer.com</a></p>
-          <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:2px;color:#555555">SOCIALS · COMING SOON</p>
+          <p style="margin:0 0 8px;font-size:12px;font-weight:bold;letter-spacing:2px;color:#555555">SOCIALS</p>
           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
             <tr>
-              <td aria-label="Instagram" style="width:28px;height:28px;background:#171717;color:#ffffff;text-align:center;font-size:18px;font-weight:bold">◎</td>
+              <td style="padding:0">
+                <a href="https://www.instagram.com/fryer_21/" aria-label="Instagram" title="Instagram" style="display:block;width:28px;height:28px;line-height:28px;background:#171717;color:#ffffff;text-align:center;text-decoration:none;font-size:18px;font-weight:bold">◎</a>
+              </td>
               <td style="width:8px"></td>
-              <td aria-label="Facebook" style="width:28px;height:28px;background:#171717;color:#ffffff;text-align:center;font-size:19px;font-weight:bold">f</td>
+              <td style="padding:0">
+                <a href="https://www.facebook.com/ethan.fryer.927/" aria-label="Facebook" title="Facebook" style="display:block;width:28px;height:28px;line-height:28px;background:#171717;color:#ffffff;text-align:center;text-decoration:none;font-size:19px;font-weight:bold">f</a>
+              </td>
               <td style="width:8px"></td>
-              <td aria-label="LinkedIn" style="width:28px;height:28px;background:#171717;color:#ffffff;text-align:center;font-size:13px;font-weight:bold">in</td>
+              <td style="padding:0">
+                <a href="https://www.linkedin.com/in/epfryer/" aria-label="LinkedIn" title="LinkedIn" style="display:block;width:28px;height:28px;line-height:28px;background:#171717;color:#ffffff;text-align:center;text-decoration:none;font-size:13px;font-weight:bold">in</a>
+              </td>
               <td style="width:8px"></td>
               <td aria-label="X" style="width:28px;height:28px;background:#171717;color:#ffffff;text-align:center;font-size:16px;font-weight:bold">X</td>
             </tr>
           </table>
+          <p style="margin:8px 0 0;font-size:12px;color:#666666">X profile coming soon.</p>
         </td></tr>
       </table>
     </td></tr>
