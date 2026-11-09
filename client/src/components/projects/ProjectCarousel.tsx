@@ -5,6 +5,7 @@ import { Navigation, Scrollbar, FreeMode, A11y, Mousewheel } from 'swiper/module
 import type { Swiper as SwiperType } from 'swiper';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/scrollbar';
@@ -83,6 +84,11 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide, compact =
     // Keyboard activation has detail=0 and remains available after panning.
     if (draggedRef.current && event.detail !== 0) return;
     imageTriggerRef.current = event.currentTarget;
+    trackEvent("project_image_opened", {
+      project_title: initialSlide.title,
+      image_number: images.indexOf(image) + 1,
+      location: compact ? "projects_feed" : "project_detail",
+    });
     setZoomImage(image);
     setScale(1);
     setPosition({ x: 50, y: 50 });

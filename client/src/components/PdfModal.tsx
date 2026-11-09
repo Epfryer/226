@@ -122,6 +122,7 @@ export function PdfModal({ open, pub, onClose }: PdfModalProps) {
                 onClick={() =>
                   trackEvent("publication_download_clicked", {
                     publication: pub.slug,
+                    location: "publication_modal",
                   })
                 }
                 className="reader-shell__control reader-shell__download"

@@ -27,6 +27,7 @@ export default function Projects() {
   const [slotVersion, setSlotVersion] = useState(0);
   const [pendingReturnSlug, setPendingReturnSlug] = useState<string | null>(null);
   const snapshots = useRef<Record<string, FlipbookSnapshot>>({});
+  const zoomAnalyticsTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const inlineSlots = useRef(new Map<string, HTMLDivElement>());
   const floatingSlot = useRef<HTMLDivElement | null>(null);
   const keeper = useRef<HTMLDivElement | null>(null);
@@ -36,6 +37,14 @@ export default function Projects() {
     element.className = "publication-reader-portal";
     return element;
   });
+
+  useEffect(() => {
+    const timers = zoomAnalyticsTimers.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      timers.clear();
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -109,23 +118,44 @@ export default function Projects() {
 
   const handleSnapshotChange = useCallback((snapshot: FlipbookSnapshot) => {
     if (!activePublication) return;
+    const previous = snapshots.current[activePublication.slug];
     snapshots.current[activePublication.slug] = snapshot;
-  }, [activePublication]);
+    // Zoom/pan also emit snapshots; only actual page changes are reading events.
+    if (previous && previous.page !== snapshot.page) {
+      trackEvent("publication_page_changed", {
+        publication: activePublication.slug,
+        page: snapshot.page,
+        location: pinnedPublicationSlug ? "pinned" : "projects_inline",
+      });
+    }
+  }, [activePublication, pinnedPublicationSlug]);
+
+  const trackReaderAction = useCallback((action: string, side?: "left" | "right") => {
+    if (!activePublication) return;
+    trackEvent("publication_reader_action", {
+      publication: activePublication.slug,
+      action,
+      location: pinnedPublicationSlug ? "pinned" : "projects_inline",
+      ...(side ? { side } : {}),
+    });
+  }, [activePublication, pinnedPublicationSlug]);
 
   const closePublication = useCallback(() => {
+    trackReaderAction("close");
     setActivePublication(null);
     setPinnedPublicationSlug(null);
     setReaderMinimized(false);
-  }, []);
+  }, [trackReaderAction]);
 
   const returnInline = useCallback(() => {
     if (!activePublication) return;
+    trackReaderAction("return_inline");
     const slug = activePublication.slug;
     setPendingReturnSlug(slug);
     if (activeCategory && activeCategory !== "Publications") setActiveCategory("Publications");
     setPinnedPublicationSlug(null);
     setReaderMinimized(false);
-  }, [activeCategory, activePublication]);
+  }, [activeCategory, activePublication, trackReaderAction]);
 
   return (
     <div className="project-archive">
@@ -167,15 +197,33 @@ export default function Projects() {
           });
           trackEvent(expanded ? "project_expanded" : "project_closed", { project_id: id });
         }}
-        onSlideChange={(id, index) => setSlideIndices((current) => current[id] === index ? current : { ...current, [id]: index })}
-        onZoomChange={(id, zoom) => setZoomLevels((current) => current[id] === zoom ? current : { ...current, [id]: zoom })}
+        onSlideChange={(id, index) => {
+          if ((slideIndices[id] ?? 0) !== index) {
+            trackEvent("project_gallery_changed", { project_id: id, image_number: index + 1 });
+          }
+          setSlideIndices((current) => current[id] === index ? current : { ...current, [id]: index });
+        }}
+        onZoomChange={(id, zoom) => {
+          setZoomLevels((current) => current[id] === zoom ? current : { ...current, [id]: zoom });
+          // One event after a gesture settles, rather than a request per wheel frame.
+          clearTimeout(zoomAnalyticsTimers.current.get(id));
+          zoomAnalyticsTimers.current.set(id, setTimeout(() => {
+            zoomAnalyticsTimers.current.delete(id);
+            trackEvent("project_zoom_changed", { project_id: id, zoom_percent: Math.round(zoom * 100) });
+          }, 400));
+        }}
         onOpenPublication={(publication) => {
+          trackEvent("publication_opened", {
+            publication: publication.slug,
+            location: pinnedPublicationSlug ? "pinned" : "projects_inline",
+          });
           setActivePublication(publication);
           setPinnedPublicationSlug((current) => current ? publication.slug : null);
           setReaderMinimized(false);
         }}
         onPinPublication={() => {
           if (!activePublication) return;
+          trackReaderAction("pin");
           setPinnedPublicationSlug(activePublication.slug);
           setReaderMinimized(false);
         }}
@@ -199,9 +247,18 @@ export default function Projects() {
         onSnapshotChange={handleSnapshotChange}
         onClose={closePublication}
         onReturnInline={returnInline}
-        onMinimize={() => setReaderMinimized(true)}
-        onRestore={() => setReaderMinimized(false)}
-        onDock={setDockSide}
+        onMinimize={() => {
+          trackReaderAction("minimize");
+          setReaderMinimized(true);
+        }}
+        onRestore={() => {
+          trackReaderAction("restore");
+          setReaderMinimized(false);
+        }}
+        onDock={(side) => {
+          trackReaderAction("dock", side);
+          setDockSide(side);
+        }}
         onFloatingSlotChange={registerFloatingSlot}
       />
     </div>

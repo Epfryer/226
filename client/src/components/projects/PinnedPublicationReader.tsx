@@ -1,6 +1,7 @@
 import { Component, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { asset } from "@/utils/asset";
+import { trackEvent } from "@/lib/analytics";
 import type { Publication } from "@/data/publications";
 import type { FlipbookSnapshot } from "@/components/FlipbookViewer";
 import "./publication-feed.css";
@@ -148,7 +149,7 @@ export function PinnedPublicationReader({
         fallback={
           <div className="publication-reader-failure" role="alert">
             <p>The reader could not load.</p>
-            <a href={asset(publication.pdfPath)} target="_blank" rel="noreferrer">Open PDF</a>
+            <a href={asset(publication.pdfPath)} target="_blank" rel="noreferrer" onClick={() => trackEvent("publication_download_clicked", { publication: publication.slug, location: "reader_error" })}>Open PDF</a>
             <button type="button" onClick={() => {
               setViewer(createViewer());
               setLoadAttempt((attempt) => attempt + 1);
@@ -191,7 +192,9 @@ export function PinnedPublicationReader({
             <span>{publication?.year}</span>
           </div>
           <div className="publication-reader-controls">
-            <a href={publication ? asset(publication.pdfPath) : undefined} target="_blank" rel="noreferrer">PDF</a>
+            <a href={publication ? asset(publication.pdfPath) : undefined} target="_blank" rel="noreferrer" onClick={() => {
+              if (publication) trackEvent("publication_download_clicked", { publication: publication.slug, location: "pinned" });
+            }}>PDF</a>
             <button type="button" className="publication-desktop-control" onClick={() => dock("left")} aria-label="Dock left">Left</button>
             <button type="button" className="publication-desktop-control" onClick={() => dock("right")} aria-label="Dock right">Right</button>
             <button type="button" className="publication-mobile-control" onClick={isMinimized ? onRestore : onMinimize}>

@@ -105,7 +105,7 @@ export default function Publications() {
   }, [loadAttempt]);
 
   const handleOpenPub = (pub: Publication) => {
-    trackEvent("publication_opened", { publication: pub.slug });
+    trackEvent("publication_opened", { publication: pub.slug, location: "publications_page" });
     setSelectedPub(pub);
     setIsModalOpen(true);
 
@@ -199,7 +199,7 @@ export default function Publications() {
               {publications.map((pub) => (
                 <div key={pub.slug}>
                   <PublicationCard pub={pub} onOpen={handleOpenPub} />
-                  <a href={pub.pdfPath} className="block py-3 text-sm underline">Read {pub.title} as a PDF</a>
+                  <a href={pub.pdfPath} onClick={() => trackEvent("publication_download_clicked", { publication: pub.slug, location: "publications_list" })} className="block py-3 text-sm underline">Read {pub.title} as a PDF</a>
                 </div>
               ))}
             </div>

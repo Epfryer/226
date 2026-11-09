@@ -26,9 +26,22 @@ async function open(row) {
   await sleep(row.page());
 }
 
+async function clickPdfLinkWithoutNavigation(link) {
+  await link.evaluate(element => {
+    // Exercise the real click handler without opening/downloading a large PDF.
+    element.addEventListener("click", event => event.preventDefault(), { once: true });
+    element.click();
+  });
+}
+
 try {
   for (const [width, reducedMotion] of [[1440, "no-preference"], [390, "reduce"]]) {
     const context = await browser.newContext({ viewport: { width, height: 928 }, reducedMotion, hasTouch: width < 768, isMobile: width < 768 });
+    await context.addInitScript(() => {
+      // Tests never send visitor events to the live analytics service.
+      window.__analyticsEvents = [];
+      window.umami = { track: (name, data) => window.__analyticsEvents.push({ name, data }) };
+    });
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
@@ -44,8 +57,16 @@ try {
     await sleep(page);
     const selected = await a.getByRole("status").innerText();
     const image = a.locator(".project-image-open").nth(1);
-    assert(await wheelResult(image, { altKey: true, deltaY: 400 }), "Alt-wheel zoom is handled");
-    await sleep(page);
+    await image.press("Enter");
+    await page.getByRole("dialog").waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    for (let i = 0; i < 4; i++) {
+      assert(await wheelResult(image, { altKey: true, deltaY: 100 }), "Alt-wheel zoom is handled");
+      await sleep(page, 30);
+    }
+    await sleep(page, 650);
+    assert.equal(await page.evaluate(() => window.__analyticsEvents.filter(event => event.name === "project_zoom_changed").length), 1, "A multi-frame zoom gesture emits one settled event");
     assert.equal(await a.getAttribute("data-project-zoom"), "0.760");
     assert.equal(await b.getAttribute("data-project-zoom"), "1.000");
     assert.equal(await a.getByRole("status").innerText(), selected, "Zoom preserves the selected gallery image");
@@ -84,11 +105,14 @@ try {
     await publication.getByRole("button", { name: "Open 5th Year Selected Works", exact: true }).first().click();
     await waitForReader(page);
     await paintedReader(page);
+    await clickPdfLinkWithoutNavigation(publication.getByRole("link", { name: "Open PDF", exact: true }));
     const reader = page.locator(".pdf-viewer-container");
     await reader.focus();
     for (let i = 0; i < 3; i++) { await page.keyboard.press("ArrowRight"); await settle(page); }
     const spread = Number(await reader.getAttribute("data-reader-page"));
     assert(spread >= 4, "The real publication turns several pages");
+    const pageEventCount = await page.evaluate(() => window.__analyticsEvents.filter(event => event.name === "publication_page_changed").length);
+    assert(pageEventCount >= 3, "Reader page turns emit custom events");
     await page.keyboard.press("+");
     await page.keyboard.press("+");
     await page.keyboard.press("Shift+ArrowLeft");
@@ -124,6 +148,7 @@ try {
     const zoom = Number(await reader.getAttribute("data-reader-zoom"));
     const pan = Number(await surface.getAttribute("data-pan-x"));
     assert(pan > 0, "The zoomed book can pan");
+    assert.equal(await page.evaluate(() => window.__analyticsEvents.filter(event => event.name === "publication_page_changed").length), pageEventCount, "Zoom and pan snapshots do not produce false page-turn events");
     await reader.evaluate(element => { window.__readingElement = element; });
     await publication.getByRole("button", { name: "Pin reader", exact: true }).click();
     await settle(page);
@@ -137,6 +162,7 @@ try {
     await open(rows.first());
     assert(await pinned.isVisible(), "Pinned book survives filtering and project opening");
     if (width >= 768) {
+      await clickPdfLinkWithoutNavigation(pinned.getByRole("link", { name: "PDF", exact: true }));
       await pinned.getByRole("button", { name: "Dock left", exact: true }).click();
       assert((await pinned.boundingBox()).x <= 15);
       await pinned.getByRole("button", { name: "Dock right", exact: true }).click();
@@ -176,18 +202,38 @@ try {
     assert([200, 206].includes(response.status()), "PDF link serves the original document");
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "No page-level horizontal overflow");
     await page.screenshot({ path: `/tmp/projects-reader-${width}-${reducedMotion}.png` });
+    const projectEvents = await page.evaluate(() => window.__analyticsEvents);
     await page.goto(base + "/publications?doc=EthanFryer-5thYear-SelectedWorks");
     await page.getByRole("dialog").waitFor();
     await waitForReader(page);
     await paintedReader(page);
+    await clickPdfLinkWithoutNavigation(page.getByRole("link", { name: /Download .* as PDF/ }));
     const legacyPage = Number(await page.locator(".pdf-viewer-container").getAttribute("data-reader-page"));
     await page.keyboard.press("ArrowRight");
     await settle(page);
     assert(Number(await page.locator(".pdf-viewer-container").getAttribute("data-reader-page")) > legacyPage, "Existing publication deep links and keyboard page turns still work");
     await page.getByRole("button", { name: "Close publication", exact: true }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await clickPdfLinkWithoutNavigation(page.getByRole("link", { name: "Read 5th Year Selected Works as a PDF", exact: true }));
+    const events = [...projectEvents, ...await page.evaluate(() => window.__analyticsEvents)];
+    for (const name of ["project_expanded", "project_closed", "project_category_selected", "project_gallery_changed", "project_image_opened", "project_zoom_changed", "publication_opened", "publication_page_changed", "publication_download_clicked", "publication_reader_action"]) {
+      assert(events.some(event => event.name === name), `${name} fires from the working UI`);
+    }
+    const actions = events.filter(event => event.name === "publication_reader_action").map(event => event.data.action);
+    for (const action of ["pin", "return_inline", "close", ...(width >= 768 ? ["dock"] : ["minimize", "restore"])]) {
+      assert(actions.includes(action), `Reader ${action} is instrumented`);
+    }
+    const downloads = events.filter(event => event.name === "publication_download_clicked").map(event => event.data.location);
+    for (const location of ["projects_inline", "publication_modal", "publications_list", ...(width >= 768 ? ["pinned"] : [])]) {
+      assert(downloads.includes(location), `PDF link ${location} is instrumented`);
+    }
+    for (const event of events) {
+      assert(/^[a-z][a-z0-9_]{0,48}$/.test(event.name), "Event names are short snake_case");
+      assert(Object.values(event.data || {}).every(value => ["string", "number", "boolean"].includes(typeof value)), "Only flat analytics dimensions are sent");
+      assert(!Object.keys(event.data || {}).some(key => /email|address|phone|password|token|session|name$/.test(key)), "No personal or checkout identifiers are sent");
+    }
     assert.deepEqual(errors, []);
-    console.log(`PASS ${width}px ${reducedMotion}: independent project state/Alt-wheel/browser gestures/filters; real book pages/pin/dock or minimize/return/close/PDF`);
+    console.log(`PASS ${width}px ${reducedMotion}: project/reader behavior and custom analytics, settled zoom, page-turn filtering, reader actions and PDF sources`);
     await context.close();
   }
 } finally { await browser.close(); }

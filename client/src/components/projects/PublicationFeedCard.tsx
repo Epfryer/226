@@ -1,5 +1,6 @@
 import { useCallback, useId, useRef } from "react";
 import { usePreviewLabelAlignment } from "@/hooks/use-preview-label-alignment";
+import { trackEvent } from "@/lib/analytics";
 import type { Publication } from "@/data/publications";
 import type { RefCallback } from "react";
 
@@ -105,7 +106,7 @@ export function PublicationFeedCard({
             <div className="publication-feed-actions">
               <span>{publication.title} · {publication.year}</span>
               <div>
-                <a href={publication.pdfPath} target="_blank" rel="noreferrer">
+                <a href={publication.pdfPath} target="_blank" rel="noreferrer" onClick={() => trackEvent("publication_download_clicked", { publication: publication.slug, location: "projects_inline" })}>
                   Open PDF
                 </a>
                 <button type="button" onClick={onPin}>Pin reader</button>
