@@ -9,6 +9,7 @@ import { loadPublications } from "./public-content";
 import { z } from "zod";
 import { auth } from "./auth";
 import { apiCors } from "./request-origin";
+import { sendInquiryEmail } from "./inquiry-email";
 
 const inquirySchema = z.object({
   type: z.enum(["Commissions", "Collaborations", "Studio inquiries", "Press / features"]),
@@ -37,40 +38,6 @@ function isInquiryRateLimited(ip: string) {
   return bucket.count > 5;
 }
 
-async function sendInquiryEmail(inquiry: z.infer<typeof inquirySchema>) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.INQUIRY_FROM_EMAIL;
-  if (!apiKey || !from) throw new Error("Inquiry email delivery is not configured");
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: ["Epfryer@me.com"],
-      cc: [inquiry.email],
-      reply_to: inquiry.email,
-      subject: `New ${inquiry.type} inquiry from ${inquiry.name}`,
-      text: [
-        `Inquiry type: ${inquiry.type}`,
-        `Name: ${inquiry.name}`,
-        `Email: ${inquiry.email}`,
-        `Organization: ${inquiry.organization || "Not provided"}`,
-        "",
-        inquiry.details,
-      ].join("\n"),
-    }),
-  });
-
-  if (!response.ok) {
-    console.error("[Inquiries] Email provider rejected the request", response.status);
-    throw new Error("The email service could not send your inquiry. Please try again later.");
-  }
-}
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -97,30 +64,7 @@ export function registerRoutes(app: Express, publicationStorage = { uploadPdf, d
     if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
       return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
     }
-    if (!process.env.RESEND_API_KEY || !process.env.INQUIRY_FROM_EMAIL) {
-      return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
-    }
-
-    try {
-      await sendInquiryEmail(parsed.data);
-      return res.json({ sent: true });
-    } catch (error) {
-      console.error("[Inquiries] Delivery failed", error instanceof Error ? error.message : "Unknown email error");
-      return res.status(502).json({
-        error: error instanceof Error ? error.message : "Your inquiry could not be sent. Please try again later.",
-      });
-    }
-  });
-
-  app.post("/api/inquiries", async (req, res) => {
-    const parsed = inquirySchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Please check your details and try again." });
-    }
-    if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
-      return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
-    }
-    if (!process.env.RESEND_API_KEY || !process.env.INQUIRY_FROM_EMAIL) {
+    if (!process.env.INQUIRY_FROM_EMAIL) {
       return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
     }
 
