@@ -2,9 +2,9 @@
 .publication-feed-media { display: flex; justify-content: flex-start; }
 .publication-feed-preview {
   display: block;
-  width: fit-content;
-  max-width: calc(100% - max(0px, (100% - min(76%, 460px)) / 2));
-  margin: 0 0 0 max(0px, calc((100% - min(76%, 460px)) / 2));
+  width: 76%;
+  max-width: 460px;
+  margin: 0 auto;
   padding: 0;
   aspect-ratio: auto;
   overflow: visible;
@@ -16,10 +16,10 @@
 }
 .publication-feed-preview img {
   display: block;
-  width: auto;
+  width: 100%;
   height: auto;
   max-width: 100%;
-  max-height: min(78dvh, 560px);
+  max-height: none;
   object-fit: contain;
   object-position: left top;
 }
@@ -64,8 +64,7 @@
   .publication-feed-row { display: flex; flex-direction: column; }
   .publication-feed-row .project-feed-label { order: 1; }
   .publication-feed-media { order: 0; width: 100%; }
-  .publication-feed-preview { max-width: 100%; margin-left: 0; }
-  .publication-feed-preview img { max-height: min(70dvh, 440px); }
+  .publication-feed-preview { width: 100%; max-width: none; margin: 0; }
   .publication-feed-details { width: 100%; }
   .publication-feed-actions { align-items: flex-start; flex-direction: column; }
   .publication-feed-reader-slot { height: 62dvh; min-height: 400px; }
