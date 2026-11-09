@@ -43,6 +43,7 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
+  const isHomePage = location === "/";
   const isAboutPage = location === "/about";
   const isStudioPage = location === "/studio" || location.startsWith("/studio/");
 
@@ -53,7 +54,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ProjectProvider>
         <div className={`min-h-screen flex flex-col ${isStudioPage ? "" : "portfolio-shell"} ${isAboutPage ? "portfolio-shell--about" : ""}`}>
-          {!isStudioPage && (isAboutPage ? <WhiteHeader /> : <Header />)}
+          {!isStudioPage && !isHomePage && (isAboutPage ? <WhiteHeader /> : <Header />)}
           <main className={`flex-1 ${isStudioPage ? "" : "portfolio-main"}`}>
             <Suspense fallback={
               <div role="status" aria-live="polite" className={`px-6 py-32 ${isAboutPage ? "text-white" : ""}`}>
