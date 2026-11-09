@@ -119,8 +119,15 @@ test("production handles crawler files, redirects, valid routes, diagnostics, an
     assert.ok(!xml.includes("session_id"));
     for (const method of ["GET", "HEAD"]) {
       const landing = await fetch(`${origin}/?source=landing`, { method, redirect: "manual" });
-      assert.equal(landing.status, 301);
-      assert.equal(landing.headers.get("location"), "/projects?source=landing");
+      assert.equal(landing.status, 200, "Publishing readiness requires a 200 at the root");
+      assert.equal(landing.headers.get("location"), null);
+      if (method === "GET") {
+        const html = await landing.text();
+        assert.match(html, /<h1>Architecture Projects &amp; Studies<\/h1>/);
+        assert.ok(html.includes('rel="canonical" href="https://ethanfryer.com/projects"'));
+      } else {
+        assert.equal(await landing.text(), "");
+      }
     }
     const index = await fetch(`${origin}/index.html`, { redirect: "manual" });
     assert.equal(index.status, 301);

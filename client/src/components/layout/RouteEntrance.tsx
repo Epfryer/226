@@ -61,8 +61,8 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
     >
       <motion.div
         className="route-entrance-wipe"
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: 1 }}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
         transition={{ duration: wipeDuration / 1000, delay: blackHold / 1000, ease: entranceEase }}
       />
       <motion.span
@@ -71,6 +71,7 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
         initial={{ x: 0, y: 0, scale: 1 }}
         animate={{
           ...(target ?? { x: 0, y: 0, scale: 1 }),
+          color: "#171717",
         }}
         transition={{ duration: wipeDuration / 1000, delay: blackHold / 1000, ease: entranceEase }}
         style={{ color: "#fff" }}

@@ -26,7 +26,7 @@ const AccountPage = lazy(() => import("@/pages/Account").then((module) => ({ def
 function Router() {
   return (
     <Switch>
-      <Route path="/"><Redirect to="/projects" replace /></Route>
+      <Route path="/"><Redirect to={`/projects${window.location.search}${window.location.hash}`} replace /></Route>
       <Route path="/about" component={About} />
       <Route path="/projects" component={Projects} />
       <Route path="/project/:id" component={Project} />

@@ -8,7 +8,6 @@ import type { PublicPageData } from "../client/src/lib/public-page-data";
 import { loadProducts, loadPublications } from "./public-content";
 
 export function registerCrawlerRoutes(app: Express) {
-  app.get("/", (req, res) => res.redirect(301, `/projects${req.originalUrl.slice(1)}`));
   app.get("/robots.txt", (_req, res) => res.type("text/plain").send(
     `User-agent: *\nAllow: /\nDisallow: /diagnostics\nDisallow: /login\nDisallow: /register\nDisallow: /account\nDisallow: /api/auth/\nDisallow: /api/shop/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
   ));
@@ -21,6 +20,12 @@ export function registerCrawlerRoutes(app: Express) {
 export const publicContentServices = { publications: loadPublications, products: loadProducts };
 export async function renderPublicResponse(template: string, url: string, services = publicContentServices) {
   const parsed = new URL(url, SITE_ORIGIN);
+  // Publishing probes require a 200 at "/". Serve Projects directly; the
+  // browser can normalize its address without an HTTP redirect at startup.
+  if (parsed.pathname === "/") {
+    parsed.pathname = "/projects";
+    url = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  }
   const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
   const data: PublicPageData = { url, status: 200 };
   const privatePage = ["/login", "/register", "/account"].includes(pathname);

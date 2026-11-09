@@ -6,7 +6,7 @@ import express from "express";
 import { getPageMetadata, injectPageMetadata, renderPageMetadata, SITE_ORIGIN } from "../client/src/lib/site-metadata";
 import { serveStatic } from "../server/vite";
 
-const routes = ["/", "/about", "/projects", "/publications", "/studio"];
+const routes = ["/about", "/projects", "/publications", "/studio"];
 
 test("public pages have distinct, authored search metadata and complete social previews", () => {
   assert.equal(new Set(routes.map((route) => getPageMetadata(route).title)).size, routes.length);
@@ -28,7 +28,8 @@ test("public pages have distinct, authored search metadata and complete social p
 test("canonical URLs omit transient parameters and escape untrusted paths", () => {
   assert.equal(getPageMetadata("/publications?doc=example#page=2").canonical, `${SITE_ORIGIN}/publications?doc=example`);
   assert.equal(getPageMetadata("/about/").canonical, `${SITE_ORIGIN}/about`);
-  assert.equal(getPageMetadata("/index.html").canonical, `${SITE_ORIGIN}/`);
+  assert.equal(getPageMetadata("/index.html").canonical, `${SITE_ORIGIN}/projects`);
+  assert.deepEqual(getPageMetadata("/"), getPageMetadata("/projects"));
   assert.equal(getPageMetadata("/studio/123?checkout=cancelled").title, getPageMetadata("/studio").title);
   assert.ok(!renderPageMetadata('/"><script>alert(1)</script>').includes("<script>"));
   assert.ok(getPageMetadata("/missing").noindex);
@@ -56,7 +57,7 @@ test("production HTML and identity assets are served from the build", async () =
   const address = server.address() as { port: number };
   const origin = `http://127.0.0.1:${address.port}`;
   try {
-    for (const route of [...routes, "/about?tracking=ignored"]) {
+    for (const route of ["/", ...routes, "/about?tracking=ignored"]) {
       const response = await fetch(`${origin}${route}`);
       assert.equal(response.status, 200);
       assert.match(response.headers.get("content-type")!, /text\/html/);

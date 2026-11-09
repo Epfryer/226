@@ -21,7 +21,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
   const project = findProject(pathname);
   const doc = data.publications?.find(pub => pub.slug === url.searchParams.get("doc"));
   const product = data.products?.find(item => `/studio/${item.id}` === pathname);
-  const labels = ["Home", "About", "Projects", "Publications", "Studio"];
+  const labels = ["About", "Projects", "Publications", "Studio"];
   return <div className="public-document">
     <header><a href="/">D.EF — Ethan Fryer</a><nav aria-label="Main navigation">
       {publicRoutes.map((href, index) => <a key={href} href={href}>{labels[index]}</a>)}

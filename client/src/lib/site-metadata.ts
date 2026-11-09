@@ -8,10 +8,6 @@ const pages: Record<string, { title: string; description: string }> = {
   "/login": { title: "Sign in | D.EF", description: "Sign in to your D.EF account." },
   "/register": { title: "Create an account | D.EF", description: "Create a visitor account at D.EF." },
   "/account": { title: "Your account | D.EF", description: "Manage your D.EF session." },
-  "/": {
-    title: "Ethan Fryer | Architectural Portfolio & D.EF Studio",
-    description: "Explore Ethan Fryer's architectural portfolio: selected projects, speculative studies, publications, and D.EF Studio's graphics, garments, and design objects.",
-  },
   "/about": {
     title: "About Ethan Fryer | Architecture & Design | D.EF",
     description: "Meet Ethan Fryer and explore the ideas behind D.EF: architecture, speculative studies, competitions, graphics, and objects, with a timeline of selected work.",
@@ -33,7 +29,7 @@ const pages: Record<string, { title: string; description: string }> = {
 export function getPageMetadata(url: string, override?: { title: string; description: string }) {
   // Only reader document identity is canonical; filters, page position and checkout state are not.
   let pathname = url.split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/";
-  if (pathname === "/index.html") pathname = "/";
+  if (pathname === "/index.html" || pathname === "/") pathname = "/projects";
   const project = findProject(pathname);
   const page = override ?? (project ? {
     title: `${project.title} | Architecture | Ethan Fryer`,
