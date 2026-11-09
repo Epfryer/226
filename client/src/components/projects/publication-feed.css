@@ -3,8 +3,8 @@
 .publication-feed-preview {
   display: block;
   width: fit-content;
-  max-width: 100%;
-  margin: 0;
+  max-width: calc(100% - max(0px, (100% - min(76%, 460px)) / 2));
+  margin: 0 0 0 max(0px, calc((100% - min(76%, 460px)) / 2));
   padding: 0;
   aspect-ratio: auto;
   overflow: visible;
@@ -64,6 +64,7 @@
   .publication-feed-row { display: flex; flex-direction: column; }
   .publication-feed-row .project-feed-label { order: 1; }
   .publication-feed-media { order: 0; width: 100%; }
+  .publication-feed-preview { max-width: 100%; margin-left: 0; }
   .publication-feed-preview img { max-height: min(70dvh, 440px); }
   .publication-feed-details { width: 100%; }
   .publication-feed-actions { align-items: flex-start; flex-direction: column; }
