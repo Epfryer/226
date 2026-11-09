@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Timeline } from "@/components/Timeline";
 import { trackEvent } from "@/lib/analytics";
-
-const inquiryTypes = ["Commissions", "Collaborations", "Studio inquiries", "Press / features"];
+import { InquiryFunnel } from "@/components/InquiryFunnel";
 
 export default function About() {
   useEffect(() => {
@@ -155,13 +154,7 @@ export default function About() {
                 If the work resonates, this is the place for collaborations, commissions, opportunities, and conversations around where the studio can go next.
               </p>
 
-              <div className="mt-10 grid gap-3 sm:grid-cols-2">
-                {inquiryTypes.map((item) => (
-                  <div key={item} className="border border-black/10 px-4 py-4 text-sm uppercase tracking-[0.2em] text-black/60">
-                    {item}
-                  </div>
-                ))}
-              </div>
+              <InquiryFunnel />
             </div>
 
             <div className="flex flex-col gap-6 border-t border-black/10 pt-8 md:border-l md:border-t-0 md:pl-10 md:pt-0">
