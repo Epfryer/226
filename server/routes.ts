@@ -16,7 +16,8 @@ const inquirySchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: z.string().trim().email().max(254),
   organization: z.string().trim().max(160).default(""),
-  details: z.string().trim().min(10).max(5000),
+  specificAnswer: z.string().trim().min(1).max(500),
+  details: z.string().trim().min(10).max(2000),
   website: z.string().max(0).optional().default(""),
 });
 
@@ -64,7 +65,7 @@ export function registerRoutes(app: Express, publicationStorage = { uploadPdf, d
     if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
       return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
     }
-    if (!process.env.INQUIRY_FROM_EMAIL) {
+    if (!process.env.INQUIRY_FROM_EMAIL || !process.env.INQUIRY_TEMPLATE_ID) {
       return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
     }
 
