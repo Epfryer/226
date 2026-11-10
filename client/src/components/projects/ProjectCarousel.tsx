@@ -114,29 +114,35 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide, compact =
 
   return (
     <>
-      <section aria-label={`${initialSlide.title} gallery`} aria-roledescription="carousel" className={`relative w-full h-full flex flex-col ${compact ? "project-carousel-compact" : ""}`}>
+      <section
+        aria-label={`${initialSlide.title} gallery`}
+        aria-roledescription="carousel"
+        tabIndex={compact ? 0 : undefined}
+        onKeyDown={compact ? (event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          if (event.key === "ArrowLeft" && currentIndex > 0) {
+            swiperRef.current?.slideTo(imageSlideIndex(currentIndex - 1), reducedMotion ? 0 : 260);
+          } else if (event.key === "ArrowRight" && currentIndex < images.length - 1) {
+            swiperRef.current?.slideTo(imageSlideIndex(currentIndex + 1), reducedMotion ? 0 : 260);
+          }
+        } : undefined}
+        className={`relative w-full h-full flex flex-col ${compact ? "project-carousel-compact" : ""}`}
+      >
         <div className="project-carousel-controls flex shrink-0 items-center justify-center gap-4 px-4 pb-3">
-          <Button type="button" variant="outline" disabled={atStart}
+          {!compact && <Button type="button" variant="outline" disabled={atStart}
             aria-label={`Previous image in ${initialSlide.title}`}
-            onClick={() => {
-              if (!swiperRef.current) return;
-              if (!compact) swiperRef.current.slidePrev();
-              else swiperRef.current.slideTo(currentIndex > 0 ? imageSlideIndex(currentIndex - 1) : 0, reducedMotion ? 0 : 260);
-            }}>
+            onClick={() => swiperRef.current?.slidePrev()}>
             Previous
-          </Button>
+          </Button>}
           <p className="text-sm" role="status" aria-live="polite" aria-atomic="true">
             Image {currentIndex + 1} of {images.length}
           </p>
-          <Button type="button" variant="outline" disabled={atEnd}
+          {!compact && <Button type="button" variant="outline" disabled={atEnd}
             aria-label={`Next image in ${initialSlide.title}`}
-            onClick={() => {
-              if (!swiperRef.current) return;
-              if (!compact) swiperRef.current.slideNext();
-              else if (currentIndex < images.length - 1) swiperRef.current.slideTo(imageSlideIndex(currentIndex + 1), reducedMotion ? 0 : 260);
-            }}>
+            onClick={() => swiperRef.current?.slideNext()}>
             Next
-          </Button>
+          </Button>}
         </div>
         <Swiper
           speed={reducedMotion ? 0 : 260}

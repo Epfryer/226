@@ -50,53 +50,53 @@ try {
     await page.keyboard.press("Enter");
     assert.equal(await academic.getAttribute("aria-pressed"), "false");
     assert.equal(await all.getAttribute("aria-pressed"), "true");
-    await page.getByRole("button", { name: "Expand Corp0rate-Circus", exact: true }).waitFor();
-    const titles = await page.getByRole("button", { name: /^Expand / }).allTextContents();
-    assert.equal(titles.length, 9);
+    const rows = page.locator("[data-project-id]");
+    await rows.first().waitFor();
+    const titles = await rows.locator(".project-feed-label .project-feed-title button").allTextContents();
+    assert.equal(titles.length, await rows.count());
 
-    for (const [index, text] of titles.entries()) {
-      const title = text.replace(/^Expand /, "");
-      const expand = page.getByRole("button", { name: `Expand ${title}`, exact: true });
+    for (const [index] of titles.entries()) {
+      const row = rows.nth(index);
+      const expand = row.locator(".project-feed-label .project-feed-title button");
+      const title = (await expand.innerText()).trim();
       await tabTo(page, expand);
       assert.equal(await expand.getAttribute("aria-expanded"), "false");
       await page.keyboard.press(index % 2 ? "Space" : "Enter");
       const collapse = page.getByRole("button", { name: `Collapse ${title}`, exact: true });
       assert.equal(await collapse.getAttribute("aria-expanded"), "true");
-      assert(await collapse.evaluate(el => el === document.activeElement), "Expansion must retain focus");
+      const close = row.getByRole("button", { name: /^Close/ });
+      assert(await close.evaluate(el => el === document.activeElement), "Expansion moves focus to the close control");
       const panelId = await collapse.getAttribute("aria-controls");
       assert(await page.locator(`[id="${panelId}"]`).isVisible());
       const gallery = page.getByRole("region", { name: `${title} gallery`, exact: true });
-      const previous = gallery.getByRole("button", { name: `Previous image in ${title}`, exact: true });
-      const next = gallery.getByRole("button", { name: `Next image in ${title}`, exact: true });
       const status = gallery.getByRole("status");
-      const images = gallery.locator("img");
+      const images = gallery.locator(".project-ribbon-image");
       const count = await images.count();
       assert(count >= 3);
       for (const image of await images.all()) {
         assert((await image.getAttribute("alt")).length > 20);
       }
       assert.equal(await status.innerText(), `Image 1 of ${count}`);
-      assert(await previous.isDisabled());
-      await tabTo(page, next);
-      await page.keyboard.press("Enter");
+      assert.equal(await gallery.getByRole("button", { name: /^(Previous|Next) image in/ }).count(), 0,
+        "Compact project galleries do not show previous/next buttons");
+      await gallery.focus();
+      await page.keyboard.press("ArrowRight");
       await page.waitForTimeout(400);
       assert.equal(await status.innerText(), `Image 2 of ${count}`);
-      await tabTo(page, previous);
-      await page.keyboard.press("Space");
+      await page.keyboard.press("ArrowLeft");
       await page.waitForTimeout(400);
       assert.equal(await status.innerText(), `Image 1 of ${count}`);
       // All content must be reachable without dragging, including the final image.
-      await next.focus();
-      for (let i = 0; i < count && await next.isEnabled(); i++) {
-        await page.keyboard.press("Enter");
+      for (let i = 1; i < count; i++) {
+        await page.keyboard.press("ArrowRight");
         await page.waitForTimeout(350);
       }
-      assert(await next.isDisabled(), "Next must stop at the gallery boundary");
       assert.equal(await status.innerText(), `Image ${count} of ${count}`);
       await collapse.focus();
       await page.keyboard.press("Space");
       assert.equal(await expand.getAttribute("aria-expanded"), "false");
-      assert(await expand.evaluate(el => el === document.activeElement), "Collapse must retain focus");
+      assert(await row.locator(".project-feed-preview").evaluate(el => el === document.activeElement),
+        "Collapse restores focus to the project's preview");
       assert.equal(await page.getByRole("region", { name: `${title} gallery`, exact: true }).count(), 0);
     }
     assert.equal(errors.length, 0, errors.join("\n"));

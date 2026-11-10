@@ -53,7 +53,9 @@ try {
     const a = rows.nth(0), b = rows.nth(1);
     await open(a);
     await open(b);
-    await a.getByRole("button", { name: /Next image in/ }).click();
+    const carousel = a.locator(".project-carousel-compact");
+    await carousel.focus();
+    await carousel.press("ArrowRight");
     await sleep(page);
     const selected = await a.getByRole("status").innerText();
     const image = a.locator(".project-image-open").nth(1);
@@ -82,13 +84,11 @@ try {
     assert.equal(await a.getAttribute("data-project-zoom"), "0.760");
     assert.equal(await b.getAttribute("data-expanded"), "true");
     assert.equal(await a.getByRole("status").innerText(), selected);
-    await a.getByRole("button", { name: /^Zoom out/ }).press("Enter");
+    assert.equal(await a.locator(".project-zoom-controls").count(), 0, "Projects gallery zoom buttons are removed");
+    assert(await wheelResult(a.locator(".project-image-open").first(), { altKey: true, deltaY: 100 }), "Alt-wheel reaches the 75% lower boundary");
     await sleep(page);
     assert.equal(await a.getAttribute("data-project-zoom"), "0.750");
     assert(!await wheelResult(a.locator(".project-image-open").first(), { altKey: true, deltaY: 100 }), "Zoom at its lower boundary does not consume scrolling");
-    await a.getByRole("button", { name: /^Zoom in/ }).press("Enter");
-    await sleep(page);
-    assert.equal(await a.getAttribute("data-project-zoom"), "0.800");
     assert(await wheelResult(a.locator(".project-image-open").first(), { altKey: true, deltaY: -1000 }), "Alt-wheel up restores expanded artwork");
     await sleep(page);
     assert.equal(await a.getAttribute("data-project-zoom"), "1.000");

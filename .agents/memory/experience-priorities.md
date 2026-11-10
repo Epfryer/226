@@ -32,3 +32,15 @@ The supplied reference video's compact previews expanding into wide, in-page hor
 **Why:** The user explicitly assigned the recorded experience to Projects, requested the same branded entrance across pages, and then asked to remove Home so the site opens on Projects.
 
 **How to apply:** Keep the reference's open/close motion and continuous browsing on Projects without dropping publication or reader functionality. Keep page entrances bounded and respect reduced-motion preferences.
+
+For expanded Projects galleries, a user scroll that moves the gallery away from viewport center should start the zoom-out immediately; it remains at the reduced scale until clicked. Keep Alt+scroll zoom, but omit visible zoom and previous/next buttons; retain keyboard arrow navigation.
+
+**Why:** The user specified that the reduced state must persist until clicked, then requested immediate response to scrolling and removal of those controls while keeping Alt+scroll.
+
+**How to apply:** Treat the persistent scroll-reduced state as separate from the artwork's Alt+scroll zoom. Programmatic layout scrolling must not trigger it.
+
+Keep vertical gaps between Projects feed entries compact while preserving a distinct break between entries.
+
+**Why:** The user said the project entries felt too far apart and asked to tighten their spacing.
+
+**How to apply:** Apply restrained spacing consistently to collapsed and expanded entries on desktop and mobile.

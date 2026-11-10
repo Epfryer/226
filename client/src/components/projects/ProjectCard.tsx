@@ -21,7 +21,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlideChange, zoom, onZoomChange }: ProjectCardProps) {
-  const { mediaRef, update: updateZoom } = useProjectMediaZoom(isExpanded, zoom, onZoomChange);
+  const { mediaRef } = useProjectMediaZoom(isExpanded, zoom, onZoomChange);
   const coverDimensions = projectImageDimensions[project.id];
   const panelId = useId();
   const titleId = useId();
@@ -118,11 +118,6 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
                       {project.category && <li>{project.category}</li>}
                       {project.metadata.filter(Boolean).map((fact, index) => <li key={`${index}-${fact}`}>{fact}</li>)}
                     </ul>
-                    <div className="project-zoom-controls" aria-label={`${project.title} media zoom`}>
-                      <button type="button" aria-label={`Zoom out ${project.title}`} disabled={zoom <= .75} onClick={() => updateZoom(zoom - .05)}>−</button>
-                      <span aria-live="polite" aria-label="Project zoom level">{Math.round(zoom * 100)}%</span>
-                      <button type="button" aria-label={`Zoom in ${project.title}`} disabled={zoom >= 1} onClick={() => updateZoom(zoom + .05)}>+</button>
-                    </div>
                     <p className="project-zoom-hint">Alt + scroll to resize artwork</p>
                     <button ref={closeRef} className="project-feed-close" type="button" aria-label={`Close ${project.title}`} aria-controls={panelId} onClick={() => toggle(false)}>
                       Close <span aria-hidden="true">×</span>

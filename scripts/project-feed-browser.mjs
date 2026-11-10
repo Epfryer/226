@@ -77,6 +77,19 @@ try {
         "Mobile facts remain below their own preview");
     }
     await anchor(a);
+    const galleryRegion = a.getByRole("region", { name: `${projectTitle} gallery`, exact: true });
+    assert.equal(await galleryRegion.getByRole("button", { name: /^(Previous|Next) image in/ }).count(), 0,
+      "Expanded Projects gallery has no previous/next buttons");
+    assert.equal(await a.locator(".project-zoom-controls").count(), 0, "Expanded Projects gallery has no zoom buttons");
+    await ribbon.evaluate(element => element.scrollIntoView({ block: "center" }));
+    await page.mouse.move(width - 12, 850);
+    await page.mouse.wheel(0, 180);
+    await page.waitForTimeout(120);
+    assert.equal(await ribbon.getAttribute("data-focus"), "down", "User scrolling away immediately shrinks the gallery");
+    await a.getByRole("button", { name: /^Open image 1 .* full screen$/ }).click({ force: true });
+    assert.equal(await page.getByRole("dialog").count(), 0, "The first click restores the gallery without opening the image");
+    await page.waitForTimeout(900);
+    assert.equal(await ribbon.getAttribute("data-focus"), "up", "Click restores the gallery to full size");
     await page.screenshot({ path: `/tmp/project-ribbon-inline-${width}-${reducedMotion}.png` });
     assert.equal(await a.getByRole("button", { name: /^Enlarge/ }).count(), 0, "No separate Enlarge button");
     const artwork = a.getByRole("button", { name: /^Open image 1 .* full screen$/ });
@@ -102,7 +115,9 @@ try {
     await page.mouse.up();
     await page.waitForTimeout(350);
     assert.equal(await page.getByRole("dialog").count(), 0, "Dragging pans without opening the image");
-    await a.getByRole("button", { name: /Next image in/ }).click();
+    const aCarousel = a.locator(".project-carousel-compact");
+    await aCarousel.focus();
+    await aCarousel.press("ArrowRight");
     await page.waitForTimeout(500);
     let aSlide = await a.getByRole("status").innerText();
     assert.match(aSlide, /Image 2 of/);
@@ -121,7 +136,9 @@ try {
     }
     await open(b);
     await expanded(a, true);
-    await b.getByRole("button", { name: /Next image in/ }).click();
+    const bCarousel = b.locator(".project-carousel-compact");
+    await bCarousel.focus();
+    await bCarousel.press("ArrowRight");
     await page.waitForTimeout(500);
     const bSlide = await b.getByRole("status").innerText();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -133,9 +150,9 @@ try {
     await expanded(b, true);
     await noOverflow(page);
     // Closing via keyboard must leave the row anchored, B open, and focus local.
-    const previous = a.getByRole("button", { name: /Previous image in/ });
-    for (let i = 0; i < 20 && !await previous.isDisabled(); i++) {
-      await previous.click();
+    await aCarousel.focus();
+    for (let i = 0; i < 20 && !(await a.getByRole("status").innerText()).includes("Image 1 of"); i++) {
+      await aCarousel.press("ArrowLeft");
       await page.waitForTimeout(300);
     }
     const close = a.getByRole("button", { name: /^Close/ });
