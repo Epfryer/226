@@ -18,11 +18,14 @@ async function expanded(row, value) {
   { id: await row.getAttribute("data-project-id"), value });
 }
 async function open(row, keyboard) {
+  const before = await row.boundingBox();
   const control = row.locator('button[aria-expanded="false"]').first();
   if (keyboard) { await control.focus(); await control.press(keyboard); }
   else await control.click();
   await expanded(row, true);
   await row.page().waitForTimeout(700);
+  const after = await row.boundingBox();
+  assert(Math.abs(after.y - before.y) < 12, "Opening a project keeps its row at the same viewport position");
 }
 async function noOverflow(page) {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "No horizontal overflow");
