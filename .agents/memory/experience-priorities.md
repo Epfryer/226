@@ -44,3 +44,9 @@ Keep vertical gaps between Projects feed entries compact while preserving a dist
 **Why:** The user said the project entries felt too far apart and asked to tighten their spacing.
 
 **How to apply:** Apply restrained spacing consistently to collapsed and expanded entries on desktop and mobile.
+
+On iPhone portrait, preserve the existing project-open transition but expand the gallery to the visible viewport height, center its text and artwork vertically, and return to the prior compact size as the gallery scrolls away.
+
+**Why:** The user clarified that only the portrait viewing scale should change; horizontal browsing and the existing project-open behavior should remain.
+
+**How to apply:** Keep the mobile gallery edge-to-edge and horizontally swipeable, with native vertical page scrolling between projects.

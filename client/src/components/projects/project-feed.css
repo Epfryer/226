@@ -78,16 +78,21 @@
   .project-carousel-compact .project-ribbon-facts .project-feed-thumbnail { margin-left: 0; }
   .project-feed-preview { width: 100%; max-width: none; }
   .project-feed-details { display: flex; }
-  .project-feed-gallery { --project-base-art-height: min(296px, 56vw); --project-ribbon-height: 390px; order: 1; max-height: 390px; }
+  .project-feed-gallery { --project-base-art-height: min(calc(100dvh - 156px), 680px); --project-ribbon-height: min(calc(100dvh - 112px), 724px); order: 1; max-height: none; }
+  .project-feed-gallery[data-focus="down"] { --project-base-art-height: min(296px, 56vw); --project-ribbon-height: 390px; transform: none; }
   .project-carousel-compact .project-ribbon-panel-slide { width: 158px !important; }
   .project-carousel-compact .project-ribbon-panel-slide--description { width: 190px !important; }
-  .project-carousel-compact .project-ribbon-panel { padding: 6px 12px 12px; }
+  .project-carousel-compact .project-ribbon-panel { padding: 6px 12px 12px; transition: height .85s cubic-bezier(.22, 1, .36, 1); }
+  .project-carousel-compact .project-ribbon-panel-slide--facts .project-ribbon-panel,
+  .project-carousel-compact .project-ribbon-panel-slide--description .project-ribbon-panel { display: flex; align-items: center; }
   .project-carousel-compact .project-ribbon-description { font-size: 11px; line-height: 1.65; }
+  .project-carousel-compact .project-carousel-image { align-items: center; }
+  .project-carousel-compact .project-ribbon-image { transition: height .85s cubic-bezier(.22, 1, .36, 1); }
   .project-feed-title { font-size: 13px; }
   .project-feed-row[data-expanded="true"] { margin-bottom: 36px; }
 }
 
-.project-feed-gallery { transition: height .1s ease-out, transform .85s cubic-bezier(.22, 1, .36, 1); }
+.project-feed-gallery { transition: height .85s cubic-bezier(.22, 1, .36, 1), transform .85s cubic-bezier(.22, 1, .36, 1); }
 .project-feed-gallery[data-focus="down"] { cursor: zoom-in; }
 .project-zoom-hint { font-size: 9px; line-height: 1.5; color: #737373; margin-top: 5px; }
 @media (prefers-reduced-motion: reduce) {

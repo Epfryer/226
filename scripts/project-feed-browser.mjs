@@ -52,6 +52,9 @@ try {
     const ribbonBounds = await ribbon.boundingBox();
     assert(Math.abs(ribbonBounds.x) <= 2, "Expanded gallery starts at the viewport edge, not a center-column box");
     assert(Math.abs(ribbonBounds.width - width) <= 2, "Expanded gallery spans the full viewport");
+    if (width < 768) {
+      assert(ribbonBounds.height > 600, "Portrait mobile expands to a near-full-height horizontal gallery");
+    }
     const visiblePanels = await a.locator(".swiper-slide").evaluateAll(elements => elements.filter(element => {
       const rect = element.getBoundingClientRect();
       return rect.left < innerWidth - 20 && rect.right > 20 && rect.width > 0;
@@ -66,7 +69,12 @@ try {
     }
     assert(factsBounds.x + factsBounds.width <= firstImageBounds.x + 2, "Project facts are left of the first image");
     assert(descriptionBounds.x >= firstImageBounds.x + firstImageBounds.width - 2, "Description is right of the first image");
-    assert(Math.abs(factsBounds.y - firstImageBounds.y) < 15, "Facts and artwork share a horizontal row");
+    if (width >= 768) {
+      assert(Math.abs(factsBounds.y - firstImageBounds.y) < 15, "Facts and artwork share a horizontal row");
+    } else {
+      assert(Math.abs(factsBounds.y + factsBounds.height / 2 - firstImageBounds.y - firstImageBounds.height / 2) < 30,
+        "Mobile facts and artwork are centered together vertically");
+    }
     const closedLabel = await b.locator(".project-feed-label").boundingBox();
     const closedPreview = await b.locator(".project-feed-preview").boundingBox();
     if (width >= 768) {
@@ -86,6 +94,11 @@ try {
     await page.mouse.wheel(0, 180);
     await page.waitForTimeout(120);
     assert.equal(await ribbon.getAttribute("data-focus"), "down", "User scrolling away immediately shrinks the gallery");
+    if (width < 768) {
+      await page.waitForTimeout(900);
+      assert(Math.abs((await ribbon.boundingBox()).height - 390) < 3,
+        "Portrait mobile scroll-away returns the ribbon to its original compact height");
+    }
     await a.getByRole("button", { name: /^Open image 1 .* full screen$/ }).click({ force: true });
     assert.equal(await page.getByRole("dialog").count(), 0, "The first click restores the gallery without opening the image");
     await page.waitForTimeout(900);
