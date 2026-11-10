@@ -63,6 +63,14 @@ export function ProjectCard({ project, isExpanded, onExpand, slideIndex, onSlide
       previewRef.current?.focus({ preventScroll: true });
     } else {
       closeRef.current?.focus({ preventScroll: true });
+      // Bring the opened ribbon to full size by easing it to the viewport center.
+      const gallery = mediaRef.current;
+      if (gallery) {
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const rect = gallery.getBoundingClientRect();
+        const top = rect.top + rect.height / 2 - innerHeight / 2;
+        if (Math.abs(top) > 8) window.scrollBy({ top, behavior: reduced ? "instant" as ScrollBehavior : "smooth" });
+      }
     }
   }, [isExpanded]);
 

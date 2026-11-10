@@ -18,14 +18,13 @@ async function expanded(row, value) {
   { id: await row.getAttribute("data-project-id"), value });
 }
 async function open(row, keyboard) {
-  const before = await row.boundingBox();
   const control = row.locator('button[aria-expanded="false"]').first();
   if (keyboard) { await control.focus(); await control.press(keyboard); }
   else await control.click();
   await expanded(row, true);
   await row.page().waitForTimeout(700);
-  const after = await row.boundingBox();
-  assert(Math.abs(after.y - before.y) < 12, "Opening a project keeps its row at the same viewport position");
+  assert.equal(await row.page().locator(".route-entrance").count(), 0,
+    "Opening a project does not replay the D.EF entrance");
 }
 async function noOverflow(page) {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "No horizontal overflow");
@@ -39,6 +38,7 @@ try {
     await page.goto(base + "/projects");
     const rows = page.locator("[data-project-id]");
     await rows.first().waitFor();
+    await page.locator(".route-entrance").waitFor({ state: "detached" });
     const originalOrder = await rows.evaluateAll(elements => elements.map(element => element.dataset.projectId));
     assert(originalOrder.length >= 3);
     const a = rows.nth(0), b = rows.nth(1), c = rows.nth(2);
