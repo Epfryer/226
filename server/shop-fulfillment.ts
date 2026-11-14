@@ -92,9 +92,10 @@ export async function fulfillOrder(id: string, services = {
 }
 
 export async function reconcileOrders() {
+  // Oldest scheduled check first; matches the partial pending-work index.
   const result = await shopPool.query(`SELECT id FROM shop_orders
     WHERE stripe_session_id IS NOT NULL AND status IN ('awaiting_payment','paid','processing','needs_attention','fulfilled')
-    AND next_attempt_at <= now() AND attempts < 8 ORDER BY created_at LIMIT 10`);
+    AND next_attempt_at <= now() AND attempts < 8 ORDER BY next_attempt_at, created_at LIMIT 10`);
   for (const { id } of result.rows) {
     await shopPool.query("UPDATE shop_orders SET next_attempt_at=now()+interval '1 minute' WHERE id=$1", [id]);
     await fulfillOrder(id).catch(() => console.error("[Shop] Scheduled reconciliation deferred", id));

@@ -21,7 +21,7 @@
     "audit:performance": "node --import tsx scripts/performance-audit.ts",
     "test:discovery": "node --import tsx --test scripts/search-discovery.test.ts scripts/site-metadata.test.ts",
     "test:studio:browser": "node scripts/studio-discovery-browser.mjs",
-    "test:shop": "node --import tsx --test scripts/shop.test.ts",
+    "test:shop": "node --import tsx --test scripts/shop.test.ts scripts/shop-reconciliation.test.ts",
     "test:shop:browser": "node scripts/shop-browser.mjs",
     "test:experience:browser": "node scripts/experience-browser.mjs",
     "db:push": "drizzle-kit push",

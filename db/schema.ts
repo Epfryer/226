@@ -68,4 +68,9 @@ export const shopOrders = pgTable("shop_orders", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, table => [
+  // id is a trailing key because this Drizzle version has no INCLUDE support.
+  index("shop_orders_reconciliation_due_idx")
+    .on(table.nextAttemptAt, table.createdAt, table.id)
+    .where(sql`${table.stripeSessionId} IS NOT NULL AND ${table.status} IN ('awaiting_payment','paid','processing','needs_attention','fulfilled') AND ${table.attempts} < 8`),
+]);
