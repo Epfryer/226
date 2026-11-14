@@ -84,6 +84,7 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     assert.equal((await checkout()).status, 200);
     assert.equal((await checkout()).status, 200); assert.equal(sessionCreates, 1);
     assert.equal(checkoutParams.line_items[0].price, "price_fixture");
+    assert.deepEqual(checkoutParams.payment_method_types, ["card", "link"]);
     assert.equal(checkoutParams.shipping_options[0].shipping_rate_data.fixed_amount.amount, 525);
     assert.equal(checkoutParams.automatic_tax.enabled, true);
     assert.equal(checkoutParams.shipping_address_collection, undefined);
@@ -96,6 +97,12 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     assert.equal((await fetch(`${base}/api/shop/quote`, { method: "POST", headers: { ...headers, Origin: "https://evil.example" }, body: "{}" })).status, 403);
     await shopPool.query("UPDATE shop_orders SET expires_at=now()-interval '1 minute' WHERE id=$1", [quote.quoteId]);
     assert.equal((await checkout()).status, 409);
+    for (let i = 0; i < 13; i++) {
+      assert.equal((await fetch(`${base}/api/shop/checkout/cs_test_probe${i}/verify`)).status, 404);
+    }
+    const limited = await fetch(`${base}/api/shop/checkout/cs_test_different/verify`);
+    assert.equal(limited.status, 429);
+    assert.ok(Number(limited.headers.get("retry-after")) > 0);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });
 

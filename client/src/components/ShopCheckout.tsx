@@ -431,15 +431,15 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">We’ll use these details to calculate available shipping services. Payment is completed securely with Stripe.</p>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <label className={labelClass}>Full name<input className={fieldClass} autoComplete="name" required value={recipient.name} onChange={updateRecipient("name")} /></label>
-                      <label className={labelClass}>Email address<input className={fieldClass} type="email" autoComplete="email" required value={recipient.email} onChange={updateRecipient("email")} /></label>
-                      <label className={`${labelClass} sm:col-span-2`}>Address<input className={fieldClass} autoComplete="address-line1" required value={recipient.address1} onChange={updateRecipient("address1")} /></label>
-                      <label className={`${labelClass} sm:col-span-2`}>Apartment, suite, etc. <span className="normal-case tracking-normal">(optional)</span><input className={fieldClass} autoComplete="address-line2" value={recipient.address2} onChange={updateRecipient("address2")} /></label>
-                      <label className={labelClass}>City<input className={fieldClass} autoComplete="address-level2" required value={recipient.city} onChange={updateRecipient("city")} /></label>
-                      <label className={labelClass}>State / region<input className={fieldClass} autoComplete="address-level1" value={recipient.state_code} onChange={updateRecipient("state_code")} /></label>
-                      <label className={labelClass}>Postal code<input className={fieldClass} autoComplete="postal-code" required value={recipient.zip} onChange={updateRecipient("zip")} /></label>
+                      <label className={labelClass}>Full name<input name="name" className={fieldClass} autoComplete="shipping name" required value={recipient.name} onChange={updateRecipient("name")} /></label>
+                      <label className={labelClass}>Email address<input name="email" className={fieldClass} type="email" autoComplete="email" required value={recipient.email} onChange={updateRecipient("email")} /></label>
+                      <label className={`${labelClass} sm:col-span-2`}>Address<input name="address1" className={fieldClass} autoComplete="shipping address-line1" required value={recipient.address1} onChange={updateRecipient("address1")} /></label>
+                      <label className={`${labelClass} sm:col-span-2`}>Apartment, suite, etc. <span className="normal-case tracking-normal">(optional)</span><input name="address2" className={fieldClass} autoComplete="shipping address-line2" value={recipient.address2} onChange={updateRecipient("address2")} /></label>
+                      <label className={labelClass}>City<input name="city" className={fieldClass} autoComplete="shipping address-level2" required value={recipient.city} onChange={updateRecipient("city")} /></label>
+                      <label className={labelClass}>State / region<input name="state_code" className={fieldClass} autoComplete="shipping address-level1" required={["US", "CA", "AU"].includes(recipient.country_code)} value={recipient.state_code} onChange={updateRecipient("state_code")} /></label>
+                      <label className={labelClass}>Postal code<input name="zip" className={fieldClass} autoComplete="shipping postal-code" required value={recipient.zip} onChange={updateRecipient("zip")} /></label>
                       <label className={labelClass}>Country
-                        <select className={fieldClass} autoComplete="country" required value={recipient.country_code} onChange={updateRecipient("country_code")}>
+                        <select name="country_code" className={fieldClass} autoComplete="shipping country" required value={recipient.country_code} onChange={updateRecipient("country_code")}>
                           {countries.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
                         </select>
                       </label>

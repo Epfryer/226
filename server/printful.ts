@@ -62,6 +62,11 @@ class PrintfulClient {
     return response.data;
   }
 
+  async getCatalogProduct(productId: number) {
+    const response = await this.client.get(`/products/${productId}`);
+    return response.data;
+  }
+
   // Get catalog variant by ID
   async getCatalogVariant(variantId: number) {
     const response = await this.client.get(`/products/variant/${variantId}`);

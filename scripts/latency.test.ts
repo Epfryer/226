@@ -59,6 +59,10 @@ test("document catalog and public API share full envelopes and detail requests c
     getProduct: async (id: number) => {
       details++; await delay(); return { code: 200, result: { sync_product: { id }, sync_variants: [] } };
     },
+    getCatalogProduct: async () => ({ result: { variants: [
+      { id: 77, color_code: "#aabbcc", color_code2: "#112233" },
+      { id: 78, color_code: "not-a-color" },
+    ] } }),
   };
   const app = express();
   registerShopRoutes(app, { getPrintful: () => provider as any, getStripe: async () => ({} as any), runtime: { ready: false, message: "init", testMode: true } });
@@ -77,6 +81,8 @@ test("document catalog and public API share full envelopes and detail requests c
     }
     await Promise.all(Array.from({ length: 20 }, () => fetch(`${base}/api/shop/products/7`)));
     assert.equal(lists, 1); assert.equal(details, 1);
+    const colors = await fetch(`${base}/api/shop/catalog-colors/7`);
+    assert.deepEqual(await colors.json(), { "77": { colorCode: "#aabbcc", colorCode2: "#112233" } });
     assert.equal((await fetch(`${base}/api/shop/products/not-an-id`)).headers.get("cache-control"), "no-store");
     assert.equal((await fetch(`${base}/api/shop/status`)).headers.get("cache-control"), "no-store");
     let retries = 0;

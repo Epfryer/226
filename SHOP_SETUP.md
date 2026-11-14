@@ -18,7 +18,9 @@ The checkout dialog displays the current setup status.
 3. A 15-minute quote stores authoritative product prices and shipping choices.
 4. Before payment, availability and prices are revalidated and Printful's estimated
    fulfillment cost is checked against the pre-tax customer payment.
-5. Stripe-hosted checkout collects card payment and calculates applicable tax.
+5. Stripe-hosted checkout collects card payment or Stripe Link (where available)
+   and calculates applicable tax. Apple Pay and Google Pay availability depends
+   on Stripe, the shopper's device and account settings.
    The delivery address is fixed to the quote, not changed after shipping pricing.
 6. A **separate signed payment webhook** verifies the payment server-side and
    submits and confirms the Printful order, whether or not the shopper returns.
@@ -43,6 +45,10 @@ payout arrangement. Processor fees and applicable taxes affect your actual margi
 - Unknown provider responses fail closed. A failed external-ID lookup is not
   treated as permission to create a new Printful order.
 - Public order listing, creation and confirmation routes are disabled.
+- Same-origin requests, per-process rate limits and Stripe's payment protections
+  reduce abuse; the rate limits are not shared across instances. No CAPTCHA
+  is required for browser-based shopping agents. This is not a dedicated
+  shopping-agent protocol or a public server-to-server checkout API.
 - Delivery addresses and provider response bodies are not written to shop logs.
 - Owner support actions are handled through Stripe/Printful dashboards, not an
   unprotected custom admin route. Once an order is in production, refunds or
@@ -54,6 +60,8 @@ payout arrangement. Processor fees and applicable taxes affect your actual margi
 ## Before accepting live purchases
 
 1. Finish Stripe's Tax setup and verify an actual test-card checkout completes.
+   Verify Link and any desired wallets in Stripe's payment settings and test
+   their availability; they may vary by device, region and account.
 2. Complete Stripe live-payment/payout activation and live Tax settings.
 3. In Printful, verify your fulfillment billing method or Wallet funding,
    print files, product sync, return policy and shipping destinations.
@@ -82,3 +90,11 @@ cannot hide fulfillment failures.
   callback and rejected a forged signature. This is not a completed Stripe payment.
 - Real Stripe card checkout remains unverified until the Tax setup blocker is
   resolved. No claim of physical iPhone/Android testing or live sales certification.
+
+## Product colors and images
+
+Swatches use the Printful catalog's color codes for each selected variant.
+If those codes are unavailable, the shop shows that variant's preview instead.
+Product images come from the selected variant's preview/mockup; print-file
+artwork is not presented as a product photo. If a mockup itself is incorrect,
+correct and resync it in Printful.

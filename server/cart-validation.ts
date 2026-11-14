@@ -21,7 +21,7 @@ export async function validateCart(items: unknown, getVariant: (id: number) => P
     return {
       syncVariantId: variant.id, variantId: variant.variant_id, quantity: item.quantity,
       name: variant.name, color: variant.color || "", size: variant.size || "", price,
-      image: variant.files?.find((file: any) => file.type === "preview")?.preview_url || variant.product?.image || "",
+      image: variant.files?.find((file: any) => ["preview", "mockup"].includes(file.type) && file.preview_url)?.preview_url || variant.product?.image || "",
     };
   });
 }

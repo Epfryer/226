@@ -7,7 +7,7 @@ import { validateCart } from "./cart-validation";
 import { shopPool, withOrderLock } from "./shop-store";
 import { cents, normalizeRates, publicOrder, recipientSchema, type ShopItem, type ShippingRate } from "./shop-domain";
 import { shopRuntime } from "./shop-runtime";
-import { loadCatalog, loadProduct } from "./catalog";
+import { loadCatalog, loadCatalogColors, loadProduct } from "./catalog";
 import { boundedMap } from "./bounded-map";
 
 function owner(req: Request, res: Response): string {
@@ -29,12 +29,17 @@ function guarded(req: Request, res: Response, next: NextFunction) {
 }
 const rateLimits = new Map<string, { count: number; until: number }>();
 function throttle(req: Request, res: Response, next: NextFunction) {
-  const key = `${req.ip}:${req.path}`;
+  const path = req.path.startsWith("/api/shop/checkout/") ? "/api/shop/checkout/:sessionId/verify"
+    : req.path.startsWith("/api/shop/catalog-colors/") ? "/api/shop/catalog-colors/:id" : req.path;
+  const key = `${req.ip}:${path}`;
   const now = Date.now();
   if (rateLimits.size > 5000) rateLimits.forEach((value, key) => { if (value.until < now) rateLimits.delete(key); });
   const bucket = rateLimits.get(key);
   if (!bucket || bucket.until < now) rateLimits.set(key, { count: 1, until: now + 60000 });
-  else if (++bucket.count > 15) { res.status(429).json({ error: "Please wait a minute before trying again." }); return; }
+  else if (++bucket.count > 15) {
+    res.setHeader("Retry-After", String(Math.max(1, Math.ceil((bucket.until - now) / 1000))));
+    res.status(429).json({ error: "Please wait a minute before trying again." }); return;
+  }
   next();
 }
 const asyncRoute = (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response) => {
@@ -85,6 +90,12 @@ export function registerShopRoutes(app: Express, services = {
     const response = await loadProduct(id, printful());
     res.setHeader("Cache-Control", "public, max-age=30");
     res.json(response);
+  }));
+  app.get("/api/shop/catalog-colors/:id", throttle, asyncRoute(async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const colors = await loadCatalogColors(id, printful());
+    res.setHeader("Cache-Control", "public, max-age=30");
+    res.json(colors);
   }));
   app.post("/api/shop/cart/validate", guarded, throttle, asyncRoute(async (req, res) => {
     res.json({ items: await validateCart(req.body.items, id => printful().getSyncVariant(id)) });
@@ -151,7 +162,7 @@ export function registerShopRoutes(app: Express, services = {
       await client.query("UPDATE shop_orders SET shipping_id=$2,shipping_amount=$3,expected_amount=subtotal+$3 WHERE id=$1", [quoteId, shippingId, shippingAmount]);
       const origin = trustedOrigin(req);
       const session = await stripe.checkout.sessions.create({
-        customer: customer.id, mode: "payment", payment_method_types: ["card"],
+        customer: customer.id, mode: "payment", payment_method_types: ["card", "link"],
         client_reference_id: quoteId,
         line_items: lineItems, automatic_tax: { enabled: true },
         shipping_options: [{ shipping_rate_data: {

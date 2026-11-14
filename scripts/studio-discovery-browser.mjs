@@ -28,10 +28,19 @@ try {
           id: id * 10 + index, variant_id: id * 10 + index, sync_product_id: id,
           external_id: `${id}-${index}`, name: product.name, synced: true,
           color, size, retail_price: "25.00", currency: "USD",
-          availability_status: "active", files: [],
+          availability_status: "active", files: [
+            { type: "default", preview_url: `${image}#artwork` },
+            { type: "preview", preview_url: `${image}#${color}-${size}` },
+          ],
           product: { image, name: product.name, variant_id: id * 10 + index, product_id: id },
         })),
       } } });
+    });
+    await page.route(/\/api\/shop\/catalog-colors\/\d+$/, route => {
+      const id = Number(route.request().url().split("/").pop());
+      return route.fulfill({ json: Object.fromEntries([0, 1, 2, 3].map(index => [
+        id * 10 + index, { colorCode: index < 2 ? "#111111" : "#fefefe", colorCode2: null },
+      ])) });
     });
     await page.goto(`${base}/studio`);
     const card = page.getByRole("link", { name: "View Discovery Tee 2", exact: true });
@@ -51,12 +60,19 @@ try {
     await page.keyboard.press("Enter");
     await page.waitForURL("**/studio/202");
     const scope = width < 1024 ? page.getByRole("dialog") : page.locator(".hidden.lg\\:block").last();
+    const black = scope.getByRole("button", { name: "Select Black color", exact: true });
+    await page.waitForFunction(button => button.style.background === "rgb(17, 17, 17)", await black.elementHandle());
+    await scope.getByRole("img", { name: "Product preview" }).waitFor();
+    assert.ok((await scope.getByRole("img", { name: "Product preview" }).getAttribute("src")).endsWith("#Black-M"));
     await scope.getByRole("button", { name: "Select White color", exact: true }).click();
     assert.equal(await scope.getByRole("button", { name: "Select White color", exact: true }).getAttribute("aria-pressed"), "true");
     assert.equal(await scope.getByRole("button", { name: "Select Black color", exact: true }).getAttribute("aria-pressed"), "false");
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('img[alt="Product preview"]')).some(img => img.getAttribute("src")?.endsWith("#White-M")));
+    assert.equal(await scope.getByRole("button", { name: "Next image" }).count(), 0);
     await scope.getByRole("button", { name: "Select size M", exact: true }).click();
     assert.equal(await scope.getByRole("button", { name: "Select size M", exact: true }).getAttribute("aria-pressed"), "true");
     await scope.getByRole("button", { name: "Select size L", exact: true }).click();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('img[alt="Product preview"]')).some(img => img.getAttribute("src")?.endsWith("#White-L")));
     assert.equal(await scope.getByRole("button", { name: "Select size L", exact: true }).getAttribute("aria-pressed"), "true");
     assert.equal(await scope.getByRole("button", { name: "Select size M", exact: true }).getAttribute("aria-pressed"), "false");
     await page.reload();

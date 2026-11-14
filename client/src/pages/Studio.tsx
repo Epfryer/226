@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Link, useLocation, useRoute } from "wouter";
@@ -87,7 +87,6 @@ interface PrintfulApiResponse {
 
 interface ColorOption {
   name: string;
-  hex: string;
   variants: PrintfulSyncVariant[];
 }
 
@@ -104,55 +103,19 @@ interface CartItem {
 
 const categories: Category[] = ["ALL", "GARMENTS", "GRAPHICS", "OBJECTS", "STUDIES"];
 
-const colorMap: Record<string, string> = {
-  "graphite heather": "#5C5C5C",
-  "black": "#1a1a1a",
-  "white": "#ffffff",
-  "navy": "#1a2b4a",
-  "red": "#c41e3a",
-  "royal": "#4169e1",
-  "charcoal": "#36454f",
-  "heather grey": "#9CA3AF",
-  "sport grey": "#8B8B8B",
-  "dark heather": "#4a4a4a",
-  "light blue": "#ADD8E6",
-  "maroon": "#800000",
-  "military green": "#4B5320",
-  "orange": "#FF6600",
-  "pink": "#FFC0CB",
-  "purple": "#800080",
-  "sand": "#C2B280",
-  "forest green": "#228B22",
-  "gold": "#FFD700",
-  "irish green": "#009A63",
-  "natural": "#FAEBD7",
-  "sapphire": "#0F52BA",
-  "cardinal red": "#C41E3A",
-  "daisy": "#FFE135",
-  "heliconia": "#FF69B4",
-  "ice grey": "#D3D3D3",
-  "indigo blue": "#4B0082",
-  "lime": "#32CD32",
-  "carolina blue": "#56A0D3",
-  "sunset": "#FAD6A5",
-  "antique cherry red": "#CD5C5C",
-  "antique sapphire": "#2A52BE",
-  "dark chocolate": "#3D1E0F",
-  "kiwi": "#8EE53F",
-  "ash": "#B2BEB5",
-  "cobalt": "#0047AB",
-  "heather cardinal": "#CD5C5C",
-  "heather navy": "#2C3E50",
-  "heather sapphire": "#4169E1",
-  "turf green": "#3CB371",
-  "coral silk": "#FF7F7F",
-  "electric green": "#00FF00",
-  "gravel": "#837E7C",
-};
+type CatalogColors = Record<number, { colorCode: string; colorCode2: string | null }>;
 
-function getColorHex(colorName: string): string {
-  const normalized = colorName.toLowerCase();
-  return colorMap[normalized] || "#9CA3AF";
+function useCatalogColors(variants: PrintfulSyncVariant[]) {
+  const ids = Array.from(new Set(variants.map(v => v.product?.product_id).filter(id => Number.isSafeInteger(id) && id > 0))).sort((a, b) => a - b);
+  const results = useQueries({
+    queries: ids.map(id => ({ queryKey: ["/api/shop/catalog-colors", id], staleTime: 60_000 })),
+  });
+  const colors = Object.assign({}, ...results.map(result => result.data || {})) as CatalogColors;
+  return {
+    colors,
+    unavailable: results.some(result => result.isError) ||
+      (results.length > 0 && results.every(result => result.isSuccess) && variants.some(variant => !colors[variant.variant_id])),
+  };
 }
 
 function categorizeProduct(name: string): Category {
@@ -186,9 +149,9 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-function extractVariantImages(variant: PrintfulSyncVariant | null, fallbackThumbnail: string): string[] {
+function extractVariantImages(variant: PrintfulSyncVariant | null): string[] {
   const images: string[] = [];
-  if (!variant) return [fallbackThumbnail];
+  if (!variant) return images;
   
   const addedUrls = new Set<string>();
   const addImage = (url: string | null | undefined) => {
@@ -198,24 +161,9 @@ function extractVariantImages(variant: PrintfulSyncVariant | null, fallbackThumb
     }
   };
   
-  const previewFile = variant.files.find(f => f.type === "preview");
-  addImage(previewFile?.preview_url);
-  
-  const defaultFile = variant.files.find(f => f.type === "default");
-  addImage(defaultFile?.preview_url);
-  
-  const frontFile = variant.files.find(f => f.type === "front_dtf" || f.type === "front");
-  addImage(frontFile?.preview_url);
-  
-  const backFile = variant.files.find(f => f.type === "back_dtf" || f.type === "back");
-  addImage(backFile?.preview_url);
-  
-  const mockupFile = variant.files.find(f => f.type === "mockup");
-  addImage(mockupFile?.preview_url);
-  
-  addImage(variant.product?.image);
-  
-  return images.length > 0 ? images : [fallbackThumbnail];
+  variant.files?.filter(f => f.type === "preview" || f.type === "mockup").forEach(f => addImage(f.preview_url));
+  if (!images.length) addImage(variant.product?.image);
+  return images;
 }
 
 function StudioSidebar({
@@ -402,15 +350,18 @@ function StudioGrid({
 
 function ColorSwatch({
   color,
+  catalogColors,
   isSelected,
   onClick
 }: {
   color: ColorOption;
+  catalogColors: CatalogColors;
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const hex = getColorHex(color.name);
-  const isLight = hex === "#ffffff" || hex === "#FAEBD7" || hex === "#FAD6A5" || hex === "#FFE135";
+  const variant = color.variants[0];
+  const codes = catalogColors[variant.variant_id];
+  const image = extractVariantImages(variant)[0];
   
   return (
     <button
@@ -418,15 +369,16 @@ function ColorSwatch({
       className={`
         relative w-8 h-8 rounded-full transition-all duration-150
         ${isSelected ? "ring-2 ring-offset-2 ring-foreground" : "hover:scale-110"}
-        ${isLight ? "border border-gray-300" : ""}
+        border border-gray-300 overflow-hidden
       `}
-      style={{ backgroundColor: hex }}
+      style={codes ? { background: codes.colorCode2 ? `linear-gradient(135deg, ${codes.colorCode} 50%, ${codes.colorCode2} 50%)` : codes.colorCode } : undefined}
       title={color.name}
       aria-label={`Select ${color.name} color`}
       aria-pressed={isSelected}
     >
+      {!codes && image && <img src={image} alt="" className="h-full w-full object-cover" />}
       {isSelected && (
-        <span className={`absolute inset-0 flex items-center justify-center ${isLight ? "text-black" : "text-white"}`}>
+        <span className="absolute inset-0 flex items-center justify-center text-white drop-shadow-[0_1px_2px_black]">
           <Check className="w-4 h-4" />
         </span>
       )}
@@ -482,7 +434,7 @@ function ImageCarousel({
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
   
-  if (images.length === 0) return null;
+  if (images.length === 0) return <div className="grid aspect-square place-items-center bg-muted/30 text-sm text-muted-foreground">Preview unavailable for this variant</div>;
   
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!enableZoom) return;
@@ -501,8 +453,8 @@ function ImageCarousel({
     >
       <AnimatePresence mode="wait">
         <motion.img
-          key={currentIndex}
-          src={images[currentIndex]}
+          key={images[currentIndex] || images[0]}
+          src={images[currentIndex] || images[0]}
           alt="Product preview"
           className="w-full h-full object-cover transition-transform duration-150"
           style={isZoomed ? {
@@ -571,6 +523,7 @@ function StudioDetailPanel({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id,
   });
+  const { colors: catalogColors, unavailable: colorsUnavailable } = useCatalogColors(productDetail?.result?.sync_variants || []);
   
   // Log for debugging
   useEffect(() => {
@@ -599,7 +552,6 @@ function StudioDetailPanel({
       if (!colorMap.has(v.color)) {
         colorMap.set(v.color, {
           name: v.color,
-          hex: getColorHex(v.color),
           variants: []
         });
       }
@@ -621,17 +573,17 @@ function StudioDetailPanel({
       return aIndex - bIndex;
     });
     
-    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
+    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes.find(size => colorVariants.some(v => v.size === size && ["active", "available"].includes(v.availability_status)));
     const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
     
     return {
       colors: colorOptions,
       sizes: sortedSizes.map(size => ({
         size,
-        available: colorVariants.some(v => v.size === size && v.availability_status === "active")
+        available: colorVariants.some(v => v.size === size && ["active", "available"].includes(v.availability_status))
       })),
       selectedVariant: variant,
-      variantImages: extractVariantImages(variant, product?.thumbnail_url || "")
+      variantImages: extractVariantImages(variant)
     };
   }, [productDetail, selectedColor, selectedSize, product]);
   
@@ -652,10 +604,10 @@ function StudioDetailPanel({
   
   useEffect(() => {
     setImageIndex(0);
-  }, [selectedColor]);
+  }, [selectedColor, selectedSize]);
   
   const handleAddToCart = () => {
-    if (!selectedVariant || !selectedSize) return;
+    if (!selectedVariant || !selectedSize || selectedVariant.size !== selectedSize || !["active", "available"].includes(selectedVariant.availability_status)) return;
     
     const item: CartItem = {
       variantId: selectedVariant.variant_id,
@@ -773,6 +725,7 @@ function StudioDetailPanel({
                         <ColorSwatch
                           key={color.name}
                           color={color}
+                          catalogColors={catalogColors}
                           isSelected={selectedColor === color.name}
                           onClick={() => {
                             setSelectedColor(color.name);
@@ -781,6 +734,7 @@ function StudioDetailPanel({
                         />
                       ))}
                     </div>
+                    {colorsUnavailable && <p role="status" className="mt-2 text-xs text-muted-foreground">Some color swatches are unavailable; product previews are shown where available.</p>}
                   </div>
                 )}
                 
@@ -805,7 +759,7 @@ function StudioDetailPanel({
                 
                 <Button
                   onClick={handleAddToCart}
-                  disabled={!selectedVariant || !selectedSize}
+                  disabled={!selectedVariant || !selectedSize || selectedVariant.size !== selectedSize || !["active", "available"].includes(selectedVariant.availability_status)}
                   className="w-full uppercase tracking-wide text-xs h-11"
                 >
                   <ShoppingBag className="w-4 h-4 mr-2" />
@@ -840,6 +794,7 @@ function StudioMobileSheet({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id && isOpen,
   });
+  const { colors: catalogColors, unavailable: colorsUnavailable } = useCatalogColors(productDetail?.result?.sync_variants || []);
   
   useEffect(() => {
     if (isOpen) {
@@ -867,7 +822,6 @@ function StudioMobileSheet({
       if (!colorMap.has(v.color)) {
         colorMap.set(v.color, {
           name: v.color,
-          hex: getColorHex(v.color),
           variants: []
         });
       }
@@ -889,17 +843,17 @@ function StudioMobileSheet({
       return aIndex - bIndex;
     });
     
-    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes[0];
+    const currentSize = selectedSize && sortedSizes.includes(selectedSize) ? selectedSize : sortedSizes.find(size => colorVariants.some(v => v.size === size && ["active", "available"].includes(v.availability_status)));
     const variant = colorVariants.find(v => v.size === currentSize) || colorVariants[0];
     
     return {
       colors: colorOptions,
       sizes: sortedSizes.map(size => ({
         size,
-        available: colorVariants.some(v => v.size === size && v.availability_status === "active")
+        available: colorVariants.some(v => v.size === size && ["active", "available"].includes(v.availability_status))
       })),
       selectedVariant: variant,
-      variantImages: extractVariantImages(variant, product?.thumbnail_url || "")
+      variantImages: extractVariantImages(variant)
     };
   }, [productDetail, selectedColor, selectedSize, product]);
   
@@ -917,9 +871,13 @@ function StudioMobileSheet({
       }
     }
   }, [sizes, selectedSize]);
+
+  useEffect(() => {
+    setImageIndex(0);
+  }, [selectedColor, selectedSize]);
   
   const handleAddToCart = () => {
-    if (!selectedVariant || !selectedSize) return;
+    if (!selectedVariant || !selectedSize || selectedVariant.size !== selectedSize || !["active", "available"].includes(selectedVariant.availability_status)) return;
     
     const item: CartItem = {
       variantId: selectedVariant.variant_id,
@@ -1026,6 +984,7 @@ function StudioMobileSheet({
                           <ColorSwatch
                             key={color.name}
                             color={color}
+                            catalogColors={catalogColors}
                             isSelected={selectedColor === color.name}
                             onClick={() => {
                               setSelectedColor(color.name);
@@ -1035,6 +994,7 @@ function StudioMobileSheet({
                           />
                         ))}
                       </div>
+                      {colorsUnavailable && <p role="status" className="mt-2 text-xs text-muted-foreground">Some color swatches are unavailable; product previews are shown where available.</p>}
                     </div>
                   )}
                   
@@ -1059,7 +1019,7 @@ function StudioMobileSheet({
                   
                   <Button
                     onClick={handleAddToCart}
-                    disabled={!selectedVariant || !selectedSize}
+                    disabled={!selectedVariant || !selectedSize || selectedVariant.size !== selectedSize || !["active", "available"].includes(selectedVariant.availability_status)}
                     className="w-full uppercase tracking-wide text-xs h-12"
                   >
                     <ShoppingBag className="w-4 h-4 mr-2" />
@@ -1451,6 +1411,7 @@ export default function Studio() {
           </main>
 
           <StudioDetailPanel
+            key={selectedProduct?.id ?? "none"}
             product={selectedProduct}
             cart={cart}
             onAddToCart={handleAddToCart}
@@ -1459,6 +1420,7 @@ export default function Studio() {
       </div>
 
       <StudioMobileSheet
+        key={selectedProduct?.id ?? "none"}
         product={selectedProduct}
         isOpen={mobileSheetOpen}
         onClose={handleCloseMobileSheet}

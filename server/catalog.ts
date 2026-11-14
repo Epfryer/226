@@ -27,6 +27,29 @@ export function loadProduct(id: number, provider = getPrintfulClient()) {
     if (!response?.result?.sync_product || !Array.isArray(response.result.sync_variants)) {
       throw new Error("Product unavailable");
     }
+
     return response;
+  });
+}
+
+const catalogColors = new WeakMap<object, AsyncCache<number, Record<number, { colorCode: string; colorCode2: string | null }>>>();
+export function loadCatalogColors(id: number, provider = getPrintfulClient()) {
+  let colors = catalogColors.get(provider);
+  if (!colors) {
+    colors = new AsyncCache(60_000, 100);
+    catalogColors.set(provider, colors);
+  }
+  return colors.get(id, async () => {
+    const response = await provider.getCatalogProduct(id);
+    if (!Array.isArray(response?.result?.variants)) throw new Error("Catalog colors unavailable");
+    const result: Record<number, { colorCode: string; colorCode2: string | null }> = {};
+    for (const variant of response.result.variants) {
+      if (!Number.isSafeInteger(variant.id) || !/^#[0-9a-f]{6}$/i.test(variant.color_code)) continue;
+      result[variant.id] = {
+        colorCode: variant.color_code,
+        colorCode2: /^#[0-9a-f]{6}$/i.test(variant.color_code2) ? variant.color_code2 : null,
+      };
+    }
+    return result;
   });
 }
