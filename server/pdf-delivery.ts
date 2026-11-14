@@ -19,7 +19,9 @@ export function parseRange(header: string, size: number): { start: number; end: 
 
 type Entry = { path: string; size: number; touched: number; readers: number };
 
-/** The storage SDK has no range/metadata API. Spool to bounded disk, never a full RAM buffer. */
+/** Optional bounded whole-file disk cache for offline/prefetch consumers.
+ * HTTP delivery uses upstream byte ranges and never waits for this cache.
+ */
 export class PdfFileCache {
   private directory = mkdtemp(join(tmpdir(), "portfolio-pdfs-"));
   private entries = new Map<string, Entry>();

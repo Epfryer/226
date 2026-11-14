@@ -8,3 +8,4 @@
 - [Account boundaries](auth-boundaries.md) — preserve local-password scope, explicit owner provisioning, public browsing, and separate guest-order ownership.
 - [Inquiry email template](inquiry-email-template.md) — keep customer receipts separate from the studio’s full inquiry brief; the connected Resend access is send-only.
 - [Publishing readiness](publishing-readiness.md) — serve Projects at the root with HTTP 200; normalize the browser URL without a server redirect.
+- [Latency safety boundaries](latency-boundaries.md) — cached browsing data must not authorize purchases; PDF first-byte delivery must never depend on downloading the entire object.

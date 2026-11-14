@@ -7,6 +7,7 @@ import { initializeShop, shopRuntime } from "./shop-runtime";
 import { reconcileOrders } from "./shop-fulfillment";
 import { privateResponse } from "./auth";
 import { authPool } from "./auth-store";
+import { runShopBackfill } from "./shop-backfill";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -53,17 +54,33 @@ app.use((req, res, next) => {
     void authPool.query("DELETE FROM auth_rate_limits WHERE window_id < $1", [Math.floor(Date.now() / 900000) - 1]).catch(() => {});
   }, 900000);
   authCleanup.unref();
-  void initializeShop().then(() => {
-    void reconcileOrders().catch(() => console.error("[Shop] Reconciliation unavailable"));
-    let running = false;
-    const timer = setInterval(async () => {
-      if (running) return;
-      running = true;
-      try { await initializeShop(); await reconcileOrders(); } catch { console.error("[Shop] Reconciliation unavailable"); }
-      finally { running = false; }
-    }, 30000);
-    timer.unref();
-  });
+  // Initialization, payment recovery, and historical import have independent
+  // schedules. A slow initialization or import must not delay payment recovery.
+  let initializing = false, reconciling = false, backfilling = false;
+  const initialize = async () => {
+    if (initializing) return;
+    initializing = true;
+    try { await initializeShop(); } finally { initializing = false; }
+  };
+  const reconcile = async () => {
+    if (reconciling) return;
+    reconciling = true;
+    try { await reconcileOrders(); }
+    catch { console.error("[Shop] Reconciliation unavailable"); }
+    finally { reconciling = false; }
+  };
+  const backfill = async () => {
+    if (backfilling || !shopRuntime.ready) return;
+    backfilling = true;
+    try { await runShopBackfill(); }
+    catch { console.error("[Shop] Historical synchronization paused; will retry"); }
+    finally { backfilling = false; }
+  };
+  void initialize().then(backfill);
+  void reconcile();
+  for (const [work, interval] of [[initialize, 30000], [reconcile, 30000], [backfill, 300000]] as const) {
+    setInterval(() => { void work(); }, interval).unref();
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     if (_req.path.startsWith("/api/auth")) {

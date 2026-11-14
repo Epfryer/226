@@ -7,6 +7,8 @@ import { validateCart } from "./cart-validation";
 import { shopPool, withOrderLock } from "./shop-store";
 import { cents, normalizeRates, publicOrder, recipientSchema, type ShopItem, type ShippingRate } from "./shop-domain";
 import { shopRuntime } from "./shop-runtime";
+import { loadCatalog, loadProduct } from "./catalog";
+import { boundedMap } from "./bounded-map";
 
 function owner(req: Request, res: Response): string {
   const headerToken = req.get("X-Shop-Token");
@@ -42,7 +44,7 @@ const asyncRoute = (fn: (req: Request, res: Response) => Promise<unknown>) => (r
   });
 };
 
-async function stripePrice(stripe: Awaited<ReturnType<typeof getUncachableStripeClient>>, item: ShopItem) {
+export async function stripePrice(stripe: Awaited<ReturnType<typeof getUncachableStripeClient>>, item: ShopItem) {
   // Stripe is the source of truth for its product and price IDs. Printful remains the fulfillment catalog.
   const productId = `pf_variant_${item.syncVariantId}`;
   let product;
@@ -74,12 +76,15 @@ export function registerShopRoutes(app: Express, services = {
   app.use("/api/shop", (_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
   app.get("/api/shop/status", (_req, res) => res.json(services.runtime));
   app.get("/api/shop/products", asyncRoute(async (_req, res) => {
-    const response = await printful().getProducts();
+    const response = await loadCatalog(printful());
+    res.setHeader("Cache-Control", "public, max-age=30");
     res.json(response);
   }));
   app.get("/api/shop/products/:id", asyncRoute(async (req, res) => {
     const id = z.coerce.number().int().positive().parse(req.params.id);
-    res.json(await printful().getProduct(id));
+    const response = await loadProduct(id, printful());
+    res.setHeader("Cache-Control", "public, max-age=30");
+    res.json(response);
   }));
   app.post("/api/shop/cart/validate", guarded, throttle, asyncRoute(async (req, res) => {
     res.json({ items: await validateCart(req.body.items, id => printful().getSyncVariant(id)) });
@@ -139,8 +144,9 @@ export function registerShopRoutes(app: Express, services = {
         name: recipient.name, email: recipient.email, address,
         shipping: { name: recipient.name, address },
       }, { idempotencyKey: `shop-customer-${quoteId}` });
-      const lineItems = [];
-      for (const item of items) lineItems.push({ price: await stripePrice(stripe, item), quantity: item.quantity });
+      const lineItems = await boundedMap(items, async item => ({
+        price: await stripePrice(stripe, item), quantity: item.quantity,
+      }));
       const shippingAmount = cents(rate.rate);
       await client.query("UPDATE shop_orders SET shipping_id=$2,shipping_amount=$3,expected_amount=subtotal+$3 WHERE id=$1", [quoteId, shippingId, shippingAmount]);
       const origin = trustedOrigin(req);

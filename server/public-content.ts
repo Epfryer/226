@@ -1,6 +1,6 @@
 import { Client } from "@replit/object-storage";
 import { getPdfMetadata } from "./storage";
-import { getPrintfulClient } from "./printful";
+import { loadCatalog } from "./catalog";
 import { getPublicationCover } from "../client/src/data/publication-covers";
 import type { Publication } from "../client/src/data/publications";
 import type { PublicProduct } from "../client/src/lib/public-page-data";
@@ -40,11 +40,10 @@ export const loadPublications = cached(async (): Promise<Publication[]> => {
     };
   }));
 });
-export const loadProducts = cached(async (): Promise<PublicProduct[]> => {
-  const response = await getPrintfulClient().getProducts();
-  if (!Array.isArray(response.result)) throw new Error("Product catalog unavailable");
+export const loadProducts = async (): Promise<PublicProduct[]> => {
+  const response = await loadCatalog();
   return response.result.map((item: PublicProduct) => ({
     id: item.id, name: item.name, thumbnail_url: item.thumbnail_url,
     variants: item.variants, synced: item.synced,
   }));
-});
+};

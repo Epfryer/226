@@ -24,6 +24,15 @@ export const authRateLimits = pgTable("auth_rate_limits", {
   count: integer("count").notNull(),
 });
 
+// Application job checkpoints only; mirrored Stripe objects remain Stripe-owned.
+export const shopSyncProgress = pgTable("shop_sync_progress", {
+  accountKey: text("account_key").notNull(),
+  objectType: text("object_type").notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+}, table => [
+  uniqueIndex("shop_sync_progress_account_object_idx").on(table.accountKey, table.objectType),
+]);
+
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
