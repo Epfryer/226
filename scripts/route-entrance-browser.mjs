@@ -70,11 +70,13 @@ try {
     if (width >= 768) await page.locator(".projects-nav-toggle").click();
     else await page.getByRole("button", { name: "Open navigation", exact: true }).click();
     await page.getByRole("link", { name: "About", exact: true }).filter({ visible: true }).click();
-    await sampleEntrance(page);
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator(".route-entrance").count(), 0, "Normal navigation skips the entrance");
     assert(await page.locator(".portfolio-shell--about").count() === 1, "About stays dark after the white entrance");
     for (const path of ["/publications", "/studio", "/", "/login", "/register"]) {
       await page.evaluate((next) => history.pushState({}, "", next), path);
-      await sampleEntrance(page);
+      await page.waitForTimeout(250);
+      assert.equal(await page.locator(".route-entrance").count(), 0, `${path} does not replay the entrance`);
       assert(await page.locator("[data-intro-brand]").count() >= 1, `${path} has a real brand destination`);
     }
     await page.evaluate(() => history.pushState({}, "", "/register?source=motion#details"));
@@ -83,9 +85,22 @@ try {
     await page.evaluate(() => history.pushState({}, "", "/about"));
     await page.waitForTimeout(60);
     await page.evaluate(() => history.pushState({}, "", "/projects"));
-    await page.locator(".route-entrance").waitFor({ state: "attached" });
-    await sampleEntrance(page, { checkDuration: false });
+    await page.waitForTimeout(200);
     assert.equal(await page.locator(".route-entrance").count(), 0, "Rapid navigation eventually clears the entrance");
+    // The brand replays on the homepage itself, not just when the URL changes.
+    await page.locator("[data-intro-brand]").click();
+    await sampleEntrance(page, { checkDuration: false });
+    await page.evaluate(() => history.pushState({}, "", "/studio/405899273"));
+    await page.locator("[data-intro-brand]").waitFor();
+    assert.equal(await page.locator(".route-entrance").count(), 0, "Opening a Studio product skips the entrance");
+    if (width < 768) {
+      await page.getByRole("button", { name: "Close product details", exact: true }).click();
+      await page.waitForTimeout(350);
+      assert.equal(await page.locator(".route-entrance").count(), 0, "Closing mobile product details skips the entrance");
+    }
+    await page.locator("[data-intro-brand]").click();
+    await page.waitForURL("**/projects");
+    await sampleEntrance(page, { checkDuration: false });
     assert.equal(await page.locator(".home-index-intro-overlay").count(), 0, "No duplicate Home introduction");
     assert.deepEqual(errors, [], "No browser runtime errors");
     await context.close();
@@ -98,6 +113,9 @@ try {
   await page.evaluate(() => history.pushState({}, "", "/about"));
   await page.waitForTimeout(250);
   assert.equal(await page.locator(".route-entrance").count(), 0, "Reduced motion also skips route entrances");
+  await page.locator("[data-intro-brand]").click();
+  await page.waitForURL("**/projects");
+  assert.equal(await page.locator(".route-entrance").count(), 0, "Reduced motion also skips brand-triggered entrances");
   await reduced.close();
   console.log("Reduced-motion navigation passed");
 } finally {

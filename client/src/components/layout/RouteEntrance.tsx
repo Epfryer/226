@@ -1,15 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { m as motion, useReducedMotion } from "framer-motion";
-import { useLocation } from "wouter";
 
 const blackHold = 160;
 const wipeDuration = 4660;
 const fadeDuration = 180;
 const entranceEase = [0.76, 0, 0.24, 1] as const;
 
-function RouteEntranceOverlay({ pathname, onComplete }: {
-  pathname: string;
-  onComplete: (pathname: string) => void;
+function RouteEntranceOverlay({ onComplete }: {
+  onComplete: () => void;
 }) {
   const markRef = useRef<HTMLSpanElement>(null);
   const [target, setTarget] = useState<{ x: number; y: number; scale: number } | null>(null);
@@ -17,11 +15,11 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
   useEffect(() => {
     // Keep the entrance bounded even if an animation is interrupted.
     const deadline = window.setTimeout(
-      () => onComplete(pathname),
+      onComplete,
       blackHold + wipeDuration + fadeDuration + 300,
     );
     return () => window.clearTimeout(deadline);
-  }, [pathname, onComplete]);
+  }, [onComplete]);
 
   useLayoutEffect(() => {
     let frame = 0;
@@ -48,7 +46,7 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <motion.div
@@ -57,7 +55,7 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
       transition={{ duration: fadeDuration / 1000, delay: (blackHold + wipeDuration) / 1000, ease: "linear" }}
-      onAnimationComplete={() => onComplete(pathname)}
+      onAnimationComplete={onComplete}
     >
       <motion.div
         className="route-entrance-wipe"
@@ -82,37 +80,36 @@ function RouteEntranceOverlay({ pathname, onComplete }: {
 }
 
 export function RouteEntrance() {
-  const [location] = useLocation();
-  const pathname = location.split(/[?#]/, 1)[0] || "/";
   const reducedMotion = useReducedMotion();
-  const [run, setRun] = useState({ pathname, id: 0 });
-  const [completedRun, setCompletedRun] = useState<number | null>(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : null,
+  const [run, setRun] = useState<number | null>(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ? null : 0,
   );
-  const latestPath = useRef(pathname);
-  const latestRunId = useRef(run.id);
-  latestPath.current = pathname;
-  latestRunId.current = run.id;
+  const nextRun = useRef(0);
 
-  useLayoutEffect(() => {
-    if (reducedMotion) {
-      setCompletedRun(run.id);
-      return;
-    }
-    if (run.pathname !== pathname) {
-      setRun((current) => ({ pathname, id: current.id + 1 }));
-    }
-  }, [pathname, reducedMotion, run.id, run.pathname]);
+  useEffect(() => {
+    if (reducedMotion) setRun(null);
+    // Observe the shared brand link, including Studio's header and clicks while
+    // already home. Normal navigation and product selections never start a run.
+    const onBrandClick = (event: MouseEvent) => {
+      if (reducedMotion || event.defaultPrevented || event.button !== 0 ||
+          event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const brand = event.target instanceof Element
+        ? event.target.closest<HTMLAnchorElement>("a[data-intro-brand]")
+        : null;
+      if (!brand || brand.hasAttribute("download") ||
+          (brand.target && brand.target !== "_self")) return;
+      setRun(++nextRun.current);
+    };
+    document.addEventListener("click", onBrandClick, true);
+    return () => document.removeEventListener("click", onBrandClick, true);
+  }, [reducedMotion]);
 
-  if (reducedMotion || run.pathname !== pathname || completedRun === run.id) return null;
+  if (reducedMotion || run === null) return null;
 
   return (
     <RouteEntranceOverlay
-      key={run.id}
-      pathname={run.pathname}
-      onComplete={(finishedPath) => {
-        if (latestPath.current === finishedPath && latestRunId.current === run.id) setCompletedRun(run.id);
-      }}
+      key={run}
+      onComplete={() => setRun((current) => current === run ? null : current)}
     />
   );
 }

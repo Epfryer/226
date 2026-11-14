@@ -27,9 +27,9 @@ Use the same compact dropdown navigation across every page, including Studio, in
 
 **How to apply:** Preserve compact hover/click/keyboard navigation site-wide, adapt the menu to light/dark pages, and retain Studio's cart controls and category filters.
 
-The supplied reference video's compact previews expanding into wide, in-page horizontal galleries is the intended Projects-page experience. Projects is also the site landing page; do not reintroduce a separate Home screen. All pages should start with a black-to-white D.EF entrance, with the wordmark moving into the top corner.
+The supplied reference video's compact previews expanding into wide, in-page horizontal galleries is the intended Projects-page experience. Projects is also the site landing page; do not reintroduce a separate Home screen. The black-to-white D.EF entrance plays only on initial site load and when the top-corner D.EF logo is clicked to return home, including while already home. Normal navigation and project/product clicks must not replay it.
 
-**Why:** The user explicitly assigned the recorded experience to Projects, requested the same branded entrance across pages, and then asked to remove Home so the site opens on Projects.
+**Why:** The user assigned the recorded experience to Projects and removed the separate Home screen, then clarified that the entrance should only play on initial load and explicit D.EF home-logo clicks.
 
 **How to apply:** Keep the reference's open/close motion and continuous browsing on Projects without dropping publication or reader functionality. Keep page entrances bounded and respect reduced-motion preferences.
 
