@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeUSStateCode } from "../shared/shop-address";
 
 export const supportedCountries = ["US", "CA", "GB", "AU", "DE", "FR", "IT", "ES", "NL", "BE", "AT", "CH", "SE", "NO", "DK", "FI", "IE", "PT", "PL", "CZ", "JP", "KR", "SG", "HK", "NZ"] as const;
 const field = z.string().trim().min(1).max(150);
@@ -15,6 +16,9 @@ export const recipientSchema = z.object({
   if (["US", "CA", "AU"].includes(value.country_code) && !value.state_code) {
     ctx.addIssue({ code: "custom", path: ["state_code"], message: "State or province is required" });
   }
+}).transform(value => {
+  if (value.country_code !== "US") return value;
+  return { ...value, state_code: normalizeUSStateCode(value.state_code) };
 });
 export type Recipient = z.infer<typeof recipientSchema>;
 export type ShopItem = {

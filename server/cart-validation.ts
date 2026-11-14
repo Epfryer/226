@@ -12,7 +12,7 @@ export async function validateCart(items: unknown, getVariant: (id: number) => P
   }
   return boundedMap(items, async item => {
     const response = await getVariant(item.syncVariantId);
-    const variant = response?.result?.sync_variant;
+    const variant = response?.result?.sync_variant ?? response?.result;
     const price = Number(variant?.retail_price);
     if (variant?.id !== item.syncVariantId || !Number.isSafeInteger(variant?.variant_id) ||
         !variant?.synced || variant.currency !== "USD" ||

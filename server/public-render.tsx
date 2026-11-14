@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { renderToString } from "react-dom/server";
 import { PublicPage } from "../client/src/components/PublicPage";
+import { isPolicyPath } from "../client/src/components/ShopPolicy";
 import { findProject, publicRoutes, projectPath } from "../client/src/lib/public-routes";
 import { projects } from "../client/src/lib/projects";
 import { injectPageMetadata, SITE_ORIGIN } from "../client/src/lib/site-metadata";
@@ -29,7 +30,7 @@ export async function renderPublicResponse(template: string, url: string, servic
   const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
   const data: PublicPageData = { url, status: 200 };
   const privatePage = ["/login", "/register", "/account"].includes(pathname);
-  const valid = privatePage || (publicRoutes as readonly string[]).includes(pathname) || !!findProject(pathname) || /^\/studio\/[1-9]\d*$/.test(pathname) || pathname === "/diagnostics";
+  const valid = privatePage || isPolicyPath(pathname) || (publicRoutes as readonly string[]).includes(pathname) || !!findProject(pathname) || /^\/studio\/[1-9]\d*$/.test(pathname) || pathname === "/diagnostics";
   if (!valid) data.status = 404;
   try {
     if (pathname === "/publications") {

@@ -5,8 +5,25 @@ import path from "node:path";
 import express from "express";
 import { getPageMetadata, injectPageMetadata, renderPageMetadata, SITE_ORIGIN } from "../client/src/lib/site-metadata";
 import { serveStatic } from "../server/vite";
+import { renderPublicResponse } from "../server/public-render";
 
 const routes = ["/about", "/projects", "/publications", "/studio"];
+
+test("policy drafts render at their own URLs without being indexed", async () => {
+  const shell = fs.readFileSync("client/index.html", "utf8");
+  for (const [route, title] of [
+    ["/terms", "Terms of service"],
+    ["/privacy-policy", "Privacy policy"],
+    ["/return-policy", "Refund and return policy"],
+  ] as const) {
+    const response = await renderPublicResponse(shell, route, { publications: async () => [], products: async () => [] });
+    assert.equal(response.status, 200);
+    assert.ok(response.html.includes(`<h1 class="mt-4 text-4xl font-semibold">${title}</h1>`));
+    assert.ok(response.html.includes("Draft for owner review"));
+    assert.ok(response.html.includes('name="robots" content="noindex, follow"'));
+    assert.equal(getPageMetadata(route).canonical, `${SITE_ORIGIN}${route}`);
+  }
+});
 
 test("public pages have distinct, authored search metadata and complete social previews", () => {
   assert.equal(new Set(routes.map((route) => getPageMetadata(route).title)).size, routes.length);

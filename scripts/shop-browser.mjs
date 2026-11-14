@@ -21,12 +21,13 @@ try {
     await dialog.getByLabel("Email address").fill("shopper@example.test");
     await dialog.getByLabel("Address", { exact: true }).fill("123 Test Street");
     await dialog.getByLabel("City", { exact: true }).fill("Los Angeles");
-    await dialog.getByLabel("State / region").fill("CA");
+    await dialog.getByLabel("State / region").fill("California");
     await dialog.getByLabel("Postal code").fill("90001");
     let quotes = 0;
     await page.route("**/api/shop/quote", route => {
       const body = route.request().postDataJSON();
       assert.equal(body.recipient.country_code, "US");
+      assert.equal(body.recipient.state_code, "CA");
       assert.deepEqual(body.items, [{ syncVariantId: 7, quantity: 2 }]);
       quotes++;
       route.fulfill({ json: {
@@ -34,7 +35,10 @@ try {
         shippingRates: [{ id: "STANDARD", name: "Standard", rate: "5.25", currency: "USD" }, { id: "EXPRESS", name: "Express", rate: "9.50", currency: "USD" }],
       } });
     });
-    await dialog.getByRole("button", { name: /continue to shipping/i }).click();
+    await dialog.getByRole("button", { name: /review address/i }).click();
+    await dialog.getByRole("heading", { name: "Check your delivery details" }).waitFor();
+    await dialog.getByText("Los Angeles, CA 90001").waitFor();
+    await dialog.getByRole("button", { name: /confirm address & find shipping/i }).click();
     await dialog.getByRole("radio", { name: /Standard/ }).waitFor();
     await dialog.getByRole("radio", { name: /Express/ }).check();
     assert.ok(await dialog.getByText("$73.50", { exact: true }).count());

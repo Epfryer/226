@@ -11,6 +11,7 @@ import { WhiteFooter } from "@/components/layout/WhiteFooter";
 import { RouteEntrance } from "@/components/layout/RouteEntrance";
 import { ProjectProvider } from "@/context/ProjectContext";
 import { PageMetadata } from "@/components/PageMetadata";
+import { ShopPolicy } from "@/components/ShopPolicy";
 
 const About = lazy(() => import("@/pages/About"));
 const Publications = lazy(() => import("@/pages/Publications"));
@@ -32,6 +33,9 @@ function Router() {
       <Route path="/project/:id" component={Project} />
       <Route path="/publications" component={Publications} />
       <Route path="/studio/:productId?" component={Studio} />
+      <Route path="/terms">{() => <ShopPolicy path="/terms" />}</Route>
+      <Route path="/privacy-policy">{() => <ShopPolicy path="/privacy-policy" />}</Route>
+      <Route path="/return-policy">{() => <ShopPolicy path="/return-policy" />}</Route>
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/account" component={AccountPage} />

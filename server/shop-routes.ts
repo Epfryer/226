@@ -162,7 +162,7 @@ export function registerShopRoutes(app: Express, services = {
       await client.query("UPDATE shop_orders SET shipping_id=$2,shipping_amount=$3,expected_amount=subtotal+$3 WHERE id=$1", [quoteId, shippingId, shippingAmount]);
       const origin = trustedOrigin(req);
       const session = await stripe.checkout.sessions.create({
-        customer: customer.id, mode: "payment", payment_method_types: ["card", "link"],
+        customer: customer.id, mode: "payment",
         client_reference_id: quoteId,
         line_items: lineItems, automatic_tax: { enabled: true },
         shipping_options: [{ shipping_rate_data: {

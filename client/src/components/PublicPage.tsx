@@ -3,6 +3,7 @@ import { findProject, projectPath, publicRoutes } from "../lib/public-routes";
 import type { PublicPageData } from "../lib/public-page-data";
 import { getPageMetadata } from "../lib/site-metadata";
 import { responsiveImageProps } from "../lib/responsive-images";
+import { isPolicyPath, ShopPolicy } from "./ShopPolicy";
 
 function ProjectContent({ project, detail = false }: { project: Project; detail?: boolean }) {
   return <article>
@@ -29,6 +30,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
     <main>
       {data.status === 404 ? <><h1>404 — Page not found</h1><p>The requested page does not exist. <a href="/">Return home</a> or browse the navigation.</p></>
         : data.status === 503 ? <><h1>{getPageMetadata(data.url).title}</h1><p role="alert">{data.unavailable} Please try again shortly.</p></>
+        : isPolicyPath(pathname) ? <ShopPolicy path={pathname} />
         : project ? <><a href="/projects">All projects</a><ProjectContent project={project} detail /></>
         : pathname === "/publications" ? <>
           <h1>{doc ? doc.title : "Publications"}</h1>

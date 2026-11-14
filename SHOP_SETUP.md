@@ -14,13 +14,19 @@ The checkout dialog displays the current setup status.
 ## What happens after setup
 
 1. Shoppers select your Printful product variants on `/studio`.
-2. Your website collects the delivery address and requests Printful shipping rates.
+2. Your website locally standardizes address spacing and US state names, then asks
+   the shopper to confirm the displayed address before requesting Printful shipping
+   rates. This no-cost step is not authoritative postal-address verification; the
+   shopper must confirm the address is deliverable.
 3. A 15-minute quote stores authoritative product prices and shipping choices.
 4. Before payment, availability and prices are revalidated and Printful's estimated
    fulfillment cost is checked against the pre-tax customer payment.
-5. Stripe-hosted checkout collects card payment or Stripe Link (where available)
-   and calculates applicable tax. Apple Pay and Google Pay availability depends
-   on Stripe, the shopper's device and account settings.
+5. Stripe-hosted checkout dynamically offers payment methods enabled for the
+   connected Stripe account and eligible for the transaction. This can include
+   cards, Link, Cash App Pay, and wallets such as Apple Pay or Google Pay when
+   Stripe, the shopper's device/location, and domain/account settings support them.
+   Manage methods in Stripe's Dashboard; availability is not guaranteed for every
+   shopper. Zelle is not part of this automated checkout.
    The delivery address is fixed to the quote, not changed after shipping pricing.
 6. A **separate signed payment webhook** verifies the payment server-side and
    submits and confirms the Printful order, whether or not the shopper returns.
@@ -59,9 +65,9 @@ payout arrangement. Processor fees and applicable taxes affect your actual margi
 
 ## Before accepting live purchases
 
-1. Finish Stripe's Tax setup and verify an actual test-card checkout completes.
-   Verify Link and any desired wallets in Stripe's payment settings and test
-   their availability; they may vary by device, region and account.
+1. Finish Stripe's Tax setup and verify test checkout with each desired method.
+   Enable desired payment methods in Stripe's Dashboard and test their availability;
+   they may vary by device, region and account.
 2. Complete Stripe live-payment/payout activation and live Tax settings.
 3. In Printful, verify your fulfillment billing method or Wallet funding,
    print files, product sync, return policy and shipping destinations.

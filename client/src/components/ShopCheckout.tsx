@@ -3,6 +3,7 @@ import { AlertCircle, ArrowLeft, Check, Clock3, LoaderCircle, RefreshCw, ShieldC
 import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { trackEvent } from "@/lib/analytics";
 import { shopHeaders } from "@/lib/shop-session";
+import { normalizeShopRecipient } from "../../../shared/shop-address";
 
 export interface CheckoutCartItem {
   variantId: number;
@@ -227,6 +228,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
   const [status, setStatus] = useState<ShopStatus | null>(null);
   const [statusError, setStatusError] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [reviewRecipient, setReviewRecipient] = useState<Recipient | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
   const [quoteError, setQuoteError] = useState("");
   const [isQuoting, setIsQuoting] = useState(false);
@@ -261,6 +263,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
   useEffect(() => {
     if (!isOpen) {
       setQuote(null);
+      setReviewRecipient(null);
       setQuoteError("");
       setSelectedShipping("");
       setRecipient(emptyRecipient);
@@ -279,8 +282,14 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
     setRecipient(current => ({ ...current, [key]: event.target.value }));
   };
 
-  const requestQuote = async (event: FormEvent) => {
+  const reviewAddress = (event: FormEvent) => {
     event.preventDefault();
+    setQuoteError("");
+    setReviewRecipient(normalizeShopRecipient(recipient));
+  };
+
+  const requestQuote = async () => {
+    if (!reviewRecipient) return;
     setIsQuoting(true);
     setQuoteError("");
     setQuote(null);
@@ -292,12 +301,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
         credentials: "include",
         body: JSON.stringify({
           items: cart.map(item => ({ syncVariantId: item.syncVariantId, quantity: item.quantity })),
-          recipient: {
-            name: recipient.name.trim(), email: recipient.email.trim(), address1: recipient.address1.trim(),
-            ...(recipient.address2.trim() ? { address2: recipient.address2.trim() } : {}),
-            city: recipient.city.trim(), ...(recipient.state_code.trim() ? { state_code: recipient.state_code.trim() } : {}),
-            country_code: recipient.country_code, zip: recipient.zip.trim(),
-          },
+          recipient: reviewRecipient,
         }),
       });
       if (!response.ok) throw new Error(await readError(response, "We couldn’t get shipping options. Please check the address and try again."));
@@ -392,7 +396,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                         <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Shipping options</p>
                         <p className="mt-1 text-sm">Choose a delivery method for this address.</p>
                       </div>
-                      <button type="button" onClick={() => { setQuote(null); setSelectedShipping(""); }} className="inline-flex min-h-10 items-center gap-2 text-xs uppercase tracking-wider underline underline-offset-4">
+                      <button type="button" onClick={() => { setQuote(null); setReviewRecipient(null); setSelectedShipping(""); }} className="inline-flex min-h-10 items-center gap-2 text-xs uppercase tracking-wider underline underline-offset-4">
                         <ArrowLeft className="h-3.5 w-3.5" /> Edit address
                       </button>
                     </div>
@@ -424,8 +428,33 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                       {isRedirecting ? <><LoaderCircle className="h-4 w-4 animate-spin" /> Opening secure checkout</> : <>Continue to payment <span aria-hidden="true">→</span></>}
                     </button>
                   </div>
+                ) : reviewRecipient ? (
+                  <section aria-labelledby="address-confirm-title" className="space-y-5">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">02 / Confirm delivery address</p>
+                      <h2 id="address-confirm-title" className="mt-2 font-serif text-xl">Check your delivery details</h2>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">We standardized spacing and the US state format. This does not verify the address with a postal service, so please check it carefully.</p>
+                    </div>
+                    <div className="border border-border bg-muted/30 p-4 text-sm leading-6">
+                      <p>{reviewRecipient.name}</p>
+                      <p>{reviewRecipient.address1}</p>
+                      {reviewRecipient.address2 && <p>{reviewRecipient.address2}</p>}
+                      <p>{reviewRecipient.city}{reviewRecipient.state_code ? `, ${reviewRecipient.state_code}` : ""} {reviewRecipient.zip}</p>
+                      <p>{countries.find(([code]) => code === reviewRecipient.country_code)?.[1] || reviewRecipient.country_code}</p>
+                      <p className="mt-2 text-muted-foreground">{reviewRecipient.email}</p>
+                    </div>
+                    {quoteError && <p role="alert" className="text-sm text-destructive">{quoteError}</p>}
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button type="button" onClick={() => { setReviewRecipient(null); setQuoteError(""); }} className="min-h-12 flex-1 border border-foreground/30 px-5 text-xs uppercase tracking-[0.15em] hover:bg-muted">
+                        Edit address
+                      </button>
+                      <button type="button" onClick={() => void requestQuote()} disabled={isQuoting} className="flex min-h-12 flex-1 items-center justify-center gap-2 bg-foreground px-5 text-xs uppercase tracking-[0.15em] text-background transition hover:opacity-85 disabled:opacity-50">
+                        {isQuoting ? <><LoaderCircle className="h-4 w-4 animate-spin" /> Finding shipping options</> : <>Confirm address &amp; find shipping <span aria-hidden="true">→</span></>}
+                      </button>
+                    </div>
+                  </section>
                 ) : (
-                  <form onSubmit={requestQuote} className="space-y-5">
+                  <form onSubmit={reviewAddress} className="space-y-5">
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">01 / Delivery address</p>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">We’ll use these details to calculate available shipping services. Payment is completed securely with Stripe.</p>
@@ -436,7 +465,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                       <label className={`${labelClass} sm:col-span-2`}>Address<input name="address1" className={fieldClass} autoComplete="shipping address-line1" required value={recipient.address1} onChange={updateRecipient("address1")} /></label>
                       <label className={`${labelClass} sm:col-span-2`}>Apartment, suite, etc. <span className="normal-case tracking-normal">(optional)</span><input name="address2" className={fieldClass} autoComplete="shipping address-line2" value={recipient.address2} onChange={updateRecipient("address2")} /></label>
                       <label className={labelClass}>City<input name="city" className={fieldClass} autoComplete="shipping address-level2" required value={recipient.city} onChange={updateRecipient("city")} /></label>
-                      <label className={labelClass}>State / region<input name="state_code" className={fieldClass} autoComplete="shipping address-level1" required={["US", "CA", "AU"].includes(recipient.country_code)} value={recipient.state_code} onChange={updateRecipient("state_code")} /></label>
+                      <label className={labelClass}>State / region<input name="state_code" className={fieldClass} autoComplete="shipping address-level1" placeholder={recipient.country_code === "US" ? "e.g. CA or California" : undefined} required={["US", "CA", "AU"].includes(recipient.country_code)} value={recipient.state_code} onChange={updateRecipient("state_code")} /></label>
                       <label className={labelClass}>Postal code<input name="zip" className={fieldClass} autoComplete="shipping postal-code" required value={recipient.zip} onChange={updateRecipient("zip")} /></label>
                       <label className={labelClass}>Country
                         <select name="country_code" className={fieldClass} autoComplete="shipping country" required value={recipient.country_code} onChange={updateRecipient("country_code")}>
@@ -446,7 +475,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                     </div>
                     {quoteError && <div role="alert" className="flex items-start gap-2 border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{quoteError}</div>}
                     <button type="submit" disabled={isQuoting || cart.length === 0} className="flex min-h-12 w-full items-center justify-center gap-2 bg-foreground px-5 text-xs uppercase tracking-[0.15em] text-background transition hover:opacity-85 disabled:opacity-50">
-                      {isQuoting ? <><LoaderCircle className="h-4 w-4 animate-spin" /> Finding shipping options</> : <>Continue to shipping <span aria-hidden="true">→</span></>}
+                      Review address <span aria-hidden="true">→</span>
                     </button>
                   </form>
                 )}

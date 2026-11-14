@@ -8,6 +8,9 @@ const pages: Record<string, { title: string; description: string }> = {
   "/login": { title: "Sign in | D.EF", description: "Sign in to your D.EF account." },
   "/register": { title: "Create an account | D.EF", description: "Create a visitor account at D.EF." },
   "/account": { title: "Your account | D.EF", description: "Manage your D.EF session." },
+  "/terms": { title: "Terms of Service | D.EF", description: "Draft terms for the D.EF Studio shop." },
+  "/privacy-policy": { title: "Privacy Policy | D.EF", description: "Draft privacy policy for the D.EF Studio shop." },
+  "/return-policy": { title: "Refund and Return Policy | D.EF", description: "Draft refund and return policy for the D.EF Studio shop." },
   "/about": {
     title: "About Ethan Fryer | Architecture & Design | D.EF",
     description: "Meet Ethan Fryer and explore the ideas behind D.EF: architecture, speculative studies, competitions, graphics, and objects, with a timeline of selected work.",
@@ -43,7 +46,7 @@ export function getPageMetadata(url: string, override?: { title: string; descrip
     }),
     canonical: `${SITE_ORIGIN}${project ? projectPath(project) : pathname}${doc ? `?doc=${encodeURIComponent(doc)}` : ""}`,
     type: "website",
-    noindex: !page || ["/login", "/register", "/account"].includes(pathname),
+    noindex: !page || ["/login", "/register", "/account", "/terms", "/privacy-policy", "/return-policy"].includes(pathname),
   };
 }
 

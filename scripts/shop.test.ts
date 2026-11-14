@@ -46,6 +46,8 @@ function services(session: any, printful: any) {
 test("shipping/address validation rejects malformed input and preserves provider rates", () => {
   assert.throws(() => recipientSchema.parse({ ...recipient, email: "invalid" }));
   assert.throws(() => recipientSchema.parse({ ...recipient, state_code: "" }));
+  assert.equal(recipientSchema.parse({ ...recipient, state_code: "California" }).state_code, "CA");
+  assert.equal(recipientSchema.parse({ ...recipient, state_code: "ca" }).state_code, "CA");
   assert.deepEqual(normalizeRates({ result: [rate] }), [{ ...rate, minDeliveryDays: undefined, maxDeliveryDays: undefined }]);
   assert.throws(() => normalizeRates({ result: [{ ...rate, rate: "-1" }] }));
   assert.throws(() => normalizeRates({ result: [] }));
@@ -56,8 +58,12 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
   let sessionCreates = 0;
   let checkoutParams: any;
   const pf = {
-    getSyncVariant: async () => ({ result: { sync_variant: { id: 7, variant_id: 77, synced: true, availability_status: "active", currency: "USD", retail_price: "30.00", name: "Test Print" } } }),
-    calculateShipping: async (data: any) => { assert.equal(data.items[0].variant_id, 77); return { result: [rate] }; },
+    getSyncVariant: async () => ({ result: { id: 7, variant_id: 77, synced: true, availability_status: "active", currency: "USD", retail_price: "30.00", name: "Test Print" } }),
+    calculateShipping: async (data: any) => {
+      assert.equal(data.items[0].variant_id, 77);
+      assert.equal(data.recipient.state_code, "CA");
+      return { result: [rate] };
+    },
     estimateOrder: async () => ({ result: { costs: { total: "20.00" } } }),
   };
   const stripe = {
@@ -75,7 +81,7 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
   const base = `http://127.0.0.1:${(server.address() as any).port}`;
   const headers = { "Content-Type": "application/json", Origin: `https://${process.env.REPLIT_DEV_DOMAIN}` };
   try {
-    const quoteResponse = await fetch(`${base}/api/shop/quote`, { method: "POST", headers, body: JSON.stringify({ recipient, items: [{ syncVariantId: 7, quantity: 1, price: 0.01 }] }) });
+    const quoteResponse = await fetch(`${base}/api/shop/quote`, { method: "POST", headers, body: JSON.stringify({ recipient: { ...recipient, state_code: "California" }, items: [{ syncVariantId: 7, quantity: 1, price: 0.01 }] }) });
     assert.equal(quoteResponse.status, 200);
     const quote = await quoteResponse.json() as any; created.push(quote.quoteId);
     assert.equal(quote.subtotal, 30); assert.equal(quote.shippingRates[0].rate, "5.25");
@@ -84,7 +90,7 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     assert.equal((await checkout()).status, 200);
     assert.equal((await checkout()).status, 200); assert.equal(sessionCreates, 1);
     assert.equal(checkoutParams.line_items[0].price, "price_fixture");
-    assert.deepEqual(checkoutParams.payment_method_types, ["card", "link"]);
+    assert.equal(checkoutParams.payment_method_types, undefined);
     assert.equal(checkoutParams.shipping_options[0].shipping_rate_data.fixed_amount.amount, 525);
     assert.equal(checkoutParams.automatic_tax.enabled, true);
     assert.equal(checkoutParams.shipping_address_collection, undefined);
