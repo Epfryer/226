@@ -1,12 +1,12 @@
 # Shop checkout and Printful fulfillment
 
-## Current launch blocker
+## Stripe Tax setup
 
-Stripe is connected in **test mode**. Its Tax settings do not yet have an active
-business origin address. Checkout deliberately stays unavailable rather than
-silently disabling taxes. In your Stripe account/sandbox, finish **Tax → Settings**
-with your actual business origin, review the tax category and registrations
-appropriate to your business, and consult a tax professional if needed.
+Checkout deliberately stays unavailable if Stripe Tax is not active rather
+than silently disabling taxes. Configure **Tax → Settings** separately for
+each Stripe environment with your actual business origin, review the tax category
+and registrations appropriate to your business, and consult a tax professional
+if needed. The sandbox previously lacked an active business origin.
 
 Availability is rechecked about once a minute while the application runs.
 The checkout dialog displays the current setup status.
@@ -28,6 +28,8 @@ The checkout dialog displays the current setup status.
    Manage methods in Stripe's Dashboard; availability is not guaranteed for every
    shopper. Zelle is not part of this automated checkout.
    The delivery address is fixed to the quote, not changed after shipping pricing.
+   It is saved on the Stripe customer for automatic tax calculation; fulfillment
+   uses the address saved with the quote.
 6. A **separate signed payment webhook** verifies the payment server-side and
    submits and confirms the Printful order, whether or not the shopper returns.
 7. The returning shopper sees read-only payment/production/tracking status.
@@ -56,6 +58,9 @@ payout arrangement. Processor fees and applicable taxes affect your actual margi
   is required for browser-based shopping agents. This is not a dedicated
   shopping-agent protocol or a public server-to-server checkout API.
 - Delivery addresses and provider response bodies are not written to shop logs.
+- Stripe checkout errors log the checkout stage, a known top-level parameter name,
+  and Stripe request ID when available. Use that ID in Stripe's API logs to
+  investigate; do not share customer details or full provider responses.
 - Owner support actions are handled through Stripe/Printful dashboards, not an
   unprotected custom admin route. Once an order is in production, refunds or
   cancellation require coordinated action in those dashboards.

@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
+import Stripe from "stripe";
 import { getPrintfulClient } from "./printful";
 import { getUncachableStripeClient } from "./stripeClient";
 import { validateCart } from "./cart-validation";
@@ -45,6 +46,17 @@ function throttle(req: Request, res: Response, next: NextFunction) {
 const asyncRoute = (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response) => {
   fn(req, res).catch((error: any) => {
     console.error("[Shop] Request failed", req.path, error.code || error.type || "request_error");
+    if (req.path === "/api/shop/checkout" && error instanceof Stripe.errors.StripeError) {
+      const fields = ["address", "automatic_tax", "cancel_url", "client_reference_id", "customer", "email",
+        "expires_at", "line_items", "metadata", "mode", "name", "payment_intent_data", "shipping",
+        "shipping_options", "success_url", "product", "currency", "unit_amount", "tax_behavior", "lookup_key", "images"];
+      const field = error.param?.split("[", 1)[0];
+      console.error("[Shop] Stripe checkout diagnostic", {
+        stage: res.locals.shopCheckoutStage || "unknown",
+        parameter: field && fields.includes(field) ? field : "other",
+        requestId: error.requestId && /^req_[a-zA-Z0-9]{1,100}$/.test(error.requestId) ? error.requestId : undefined,
+      });
+    }
     res.status(400).json({ error: error instanceof z.ZodError ? error.issues[0]?.message : "Unable to complete this step. Please check your details and try again." });
   });
 };
@@ -119,8 +131,10 @@ export function registerShopRoutes(app: Express, services = {
     const result = await withOrderLock(quoteId, async (client, order) => {
       if (order.owner_hash !== ownerHash) { res.status(404).json({ error: "Quote not found" }); return; }
       if (new Date(order.expires_at) < new Date()) { res.status(409).json({ error: "Your shipping quote expired. Please request a new quote." }); return; }
+      res.locals.shopCheckoutStage = "stripe_client";
       const stripe = await services.getStripe();
       if (order.stripe_session_id) {
+        res.locals.shopCheckoutStage = "retrieve_session";
         const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
         if (session.status !== "open") { res.status(409).json({ error: "Checkout is already completed or expired." }); return; }
         if (order.shipping_id !== shippingId) { res.status(409).json({ error: "Shipping was already selected. Please request a new quote to change it." }); return; }
@@ -131,6 +145,7 @@ export function registerShopRoutes(app: Express, services = {
       }
       const rate = (order.shipping_rates as ShippingRate[]).find(r => r.id === shippingId);
       if (!rate) throw new Error("Invalid shipping service");
+      res.locals.shopCheckoutStage = "estimate_order";
       const estimate = await printful().estimateOrder({
         recipient: order.recipient,
         items: (order.items as ShopItem[]).map(i => ({ sync_variant_id: i.syncVariantId, quantity: i.quantity })),
@@ -140,6 +155,7 @@ export function registerShopRoutes(app: Express, services = {
         res.status(409).json({ error: "This order cannot be fulfilled at the quoted price. Please contact the store owner." }); return;
       }
       // Revalidate the exact selected variants and prices immediately before accepting payment.
+      res.locals.shopCheckoutStage = "validate_cart";
       const items = await validateCart(order.items, id => printful().getSyncVariant(id));
       if (JSON.stringify(items.map(i => [i.syncVariantId, i.price, i.quantity])) !==
         JSON.stringify((order.items as ShopItem[]).map(i => [i.syncVariantId, i.price, i.quantity]))) {
@@ -151,16 +167,19 @@ export function registerShopRoutes(app: Express, services = {
         state: recipient.state_code, country: recipient.country_code, postal_code: recipient.zip,
       };
       // Address is collected on our site and fixed to this quote. Stripe cannot change the shipping destination.
+      res.locals.shopCheckoutStage = "create_customer";
       const customer = await stripe.customers.create({
         name: recipient.name, email: recipient.email, address,
         shipping: { name: recipient.name, address },
       }, { idempotencyKey: `shop-customer-${quoteId}` });
+      res.locals.shopCheckoutStage = "resolve_prices";
       const lineItems = await boundedMap(items, async item => ({
         price: await stripePrice(stripe, item), quantity: item.quantity,
       }));
       const shippingAmount = cents(rate.rate);
       await client.query("UPDATE shop_orders SET shipping_id=$2,shipping_amount=$3,expected_amount=subtotal+$3 WHERE id=$1", [quoteId, shippingId, shippingAmount]);
       const origin = trustedOrigin(req);
+      res.locals.shopCheckoutStage = "create_session";
       const session = await stripe.checkout.sessions.create({
         customer: customer.id, mode: "payment",
         client_reference_id: quoteId,
@@ -173,7 +192,7 @@ export function registerShopRoutes(app: Express, services = {
             maximum: { unit: "business_day", value: rate.maxDeliveryDays },
           } } : {}),
         } }],
-        payment_intent_data: { shipping: { name: recipient.name, address }, metadata: { shop_order_id: quoteId } },
+        payment_intent_data: { metadata: { shop_order_id: quoteId } },
         success_url: `${origin}/studio?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/studio?canceled=true`,
         expires_at: Math.floor(new Date(order.created_at).getTime() / 1000) + 3600,

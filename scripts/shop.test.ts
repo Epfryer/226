@@ -67,11 +67,22 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     estimateOrder: async () => ({ result: { costs: { total: "20.00" } } }),
   };
   const stripe = {
-    customers: { create: async (params: any) => { assert.equal(params.shipping.address.line1, recipient.address1); return { id: "cus_fixture" }; } },
+    customers: { create: async (params: any) => {
+      assert.deepEqual(params.shipping, { name: recipient.name, address: {
+        line1: recipient.address1, line2: "", city: recipient.city, state: recipient.state_code,
+        country: recipient.country_code, postal_code: recipient.zip,
+      } });
+      return { id: "cus_fixture" };
+    } },
     products: { retrieve: async () => ({ id: "prod_fixture" }) },
     prices: { list: async () => ({ data: [{ id: "price_fixture" }] }) },
     checkout: { sessions: {
-      create: async (params: any) => { sessionCreates++; checkoutParams = params; return { id: "cs_test_fixtureCheckout", url: "https://checkout.stripe.com/test", livemode: false }; },
+      create: async (params: any) => {
+        assert.equal(params.automatic_tax.enabled, true);
+        assert.equal(params.payment_intent_data.shipping, undefined);
+        sessionCreates++; checkoutParams = params;
+        return { id: "cs_test_fixtureCheckout", url: "https://checkout.stripe.com/test", livemode: false };
+      },
       retrieve: async () => ({ id: "cs_test_fixtureCheckout", status: "open", url: "https://checkout.stripe.com/test" }),
     } },
   };
@@ -93,6 +104,7 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     assert.equal(checkoutParams.payment_method_types, undefined);
     assert.equal(checkoutParams.shipping_options[0].shipping_rate_data.fixed_amount.amount, 525);
     assert.equal(checkoutParams.automatic_tax.enabled, true);
+    assert.equal(checkoutParams.payment_intent_data.metadata.shop_order_id, quote.quoteId);
     assert.equal(checkoutParams.shipping_address_collection, undefined);
     const unauthorized = await fetch(`${base}/api/shop/checkout/cs_test_fixtureCheckout/verify`);
     assert.equal(unauthorized.status, 404);
@@ -110,6 +122,55 @@ test("quote/checkout uses authoritative prices, actual shipping, ownership and r
     assert.equal(limited.status, 429);
     assert.ok(Number(limited.headers.get("retry-after")) > 0);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+
+test("checkout logs Stripe failure stage and safe request metadata without customer details", async () => {
+  const pf = {
+    getSyncVariant: async () => ({ result: { id: 7, variant_id: 77, synced: true, availability_status: "active", currency: "USD", retail_price: "30.00", name: "Test Print" } }),
+    calculateShipping: async () => ({ result: [rate] }),
+    estimateOrder: async () => ({ result: { costs: { total: "20.00" } } }),
+  };
+  let param = "shipping_options[0][shipping_rate_data][display_name]";
+  let requestId = "req_diagnostic123";
+  const stripe = {
+    customers: { create: async () => ({ id: "cus_fixture" }) },
+    products: { retrieve: async () => ({ id: "prod_fixture" }) },
+    prices: { list: async () => ({ data: [{ id: "price_fixture" }] }) },
+    checkout: { sessions: { create: async () => {
+      throw new Stripe.errors.StripeInvalidRequestError({
+        type: "invalid_request_error", message: recipient.address1, param, requestId,
+      });
+    } } },
+  };
+  const app = express(); app.use(express.json());
+  registerShopRoutes(app, { getPrintful: () => pf as any, getStripe: async () => stripe as any, runtime: { ready: true, testMode: true, message: "Test" } });
+  const server = app.listen(0); await new Promise<void>(resolve => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${(server.address() as any).port}`;
+  const headers = { "Content-Type": "application/json", Origin: `https://${process.env.REPLIT_DEV_DOMAIN}` };
+  const originalError = console.error;
+  const logs: unknown[][] = [];
+  try {
+    const response = await fetch(`${base}/api/shop/quote`, { method: "POST", headers, body: JSON.stringify({ recipient, items: [{ syncVariantId: 7, quantity: 1 }] }) });
+    assert.equal(response.status, 200);
+    const quote = await response.json() as any; created.push(quote.quoteId);
+    const cookie = response.headers.get("set-cookie")!.split(";")[0];
+    const checkout = () => fetch(`${base}/api/shop/checkout`, { method: "POST", headers: { ...headers, Cookie: cookie }, body: JSON.stringify({ quoteId: quote.quoteId, shippingId: "STANDARD" }) });
+    console.error = (...args: unknown[]) => { logs.push(args); };
+    assert.equal((await checkout()).status, 400);
+    assert.deepEqual(logs[1], ["[Shop] Stripe checkout diagnostic", {
+      stage: "create_session", parameter: "shipping_options", requestId: "req_diagnostic123",
+    }]);
+    param = recipient.address1; requestId = recipient.email;
+    assert.equal((await checkout()).status, 400);
+    assert.deepEqual(logs[3], ["[Shop] Stripe checkout diagnostic", {
+      stage: "create_session", parameter: "other", requestId: undefined,
+    }]);
+    assert.ok(!JSON.stringify(logs).includes(recipient.address1));
+    assert.ok(!JSON.stringify(logs).includes(recipient.email));
+  } finally {
+    console.error = originalError;
+    server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+  }
 });
 
 test("test payments never call Printful, unpaid checkouts never fulfill, refunds hold orders", async () => {
