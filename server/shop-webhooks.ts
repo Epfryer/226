@@ -4,9 +4,14 @@ import { WebhookHandlers } from "./webhookHandlers";
 import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { fulfillOrder } from "./shop-fulfillment";
 import { shopPool } from "./shop-store";
+import { deliverShopReceipt } from "./shop-receipt";
 
-export function registerPaymentWebhooks(app: Express, services = {
+export function registerPaymentWebhooks(app: Express, services: {
+  getSync: typeof getStripeSync; getStripe: typeof getUncachableStripeClient;
+  fulfill: typeof fulfillOrder; deliver?: typeof deliverShopReceipt;
+} = {
   getSync: getStripeSync, getStripe: getUncachableStripeClient, fulfill: fulfillOrder,
+  deliver: deliverShopReceipt,
 }) {
   app.post("/api/stripe/webhook/:uuid", express.raw({ type: "application/json", limit: "1mb" }), async (req, res) => {
     const signature = req.get("stripe-signature");
@@ -38,6 +43,10 @@ export function registerPaymentWebhooks(app: Express, services = {
       const result = await shopPool.query("SELECT id FROM shop_orders WHERE id=$1 AND stripe_session_id=$2", [id, session.id]);
       if (!result.rows[0]) throw new Error("Checkout has not been linked to its order");
       await services.fulfill(id);
+      if (services.deliver) {
+        try { await services.deliver(id); }
+        catch { console.error("[Shop] Receipt delivery queue unavailable", id); }
+      }
       res.json({ received: true });
     } catch { res.status(503).json({ error: "Order processing deferred. Please retry this event." }); }
   });

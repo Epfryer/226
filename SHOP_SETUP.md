@@ -35,6 +35,55 @@ The checkout dialog displays the current setup status.
 7. The returning shopper sees read-only payment/production/tracking status.
    Only verified payment removes the submitted quantities from the cart.
 
+## Order receipts and email updates
+
+- After verified payment, an application-owned receipt is queued independently of
+  Printful production and sent through the connected Resend integration using
+  `INQUIRY_FROM_EMAIL`, the same sender as inquiry responses. Replies go to the
+  inquiry reply address. The receipt includes items, tax, shipping, total paid
+  and the order reference; it does not claim that the order has shipped.
+- Test-mode payments send a clearly labeled test receipt to the entered email but
+  never add subscribers or create a Printful order. Use an inbox you control.
+- Delivery is attempted on the payment webhook and retried while the application
+  is running. Provider idempotency keys reduce duplicate sends; a receipt still
+  unresolved after 23 hours is marked `needs_attention` rather than retried past
+  the provider's idempotency window. A receipt with incomplete payment totals is
+  also marked `needs_attention` rather than presenting guessed amounts. Review the Resend dashboard and server logs
+  before deciding whether to resend manually. A sleeping deployment cannot run
+  background retries by itself.
+- Checkout offers a separate, unchecked opt-in for updates, releases and offers,
+  promising fewer than two emails per week. Consent is recorded when the shopper
+  continues to Stripe, even if they do not complete payment. A declined checkbox
+  does not unsubscribe an existing subscriber. Repeat consent after unsubscribing
+  creates a new unsubscribe link.
+- Sign in as the site owner and use **Download email subscribers (CSV)** on the
+  account page. The export contains active subscribers, consent wording and
+  timestamp, and a unique unsubscribe URL. Keep it private. This feature collects
+  addresses; it does not send marketing campaigns. For each campaign, export a
+  fresh list and include each recipient's own unsubscribe URL; honor direct
+  unsubscribe requests too. The URL opens a confirmation page, then removes the
+  subscriber from future exports. For a direct request, open that subscriber's
+  URL from the current export and confirm it. Fields that start with spreadsheet formula
+  characters are prefixed with an apostrophe for safety; remove that prefix from
+  an email address when importing into a trusted email platform.
+- Stripe or Printful may also send their own emails. Review their dashboard
+  settings to avoid unexpected duplicate receipts; their emails are not controlled
+  by the custom template.
+
+To find receipts that need attention without displaying addresses, inspect
+`SELECT order_id, status, attempts, created_at FROM shop_receipts WHERE status <> 'sent';`
+in the appropriate database. Do not reset a receipt for retry until its delivery
+status has been checked in Resend.
+
+Before a real purchase, apply the schema changes through the reviewed development
+and Publish schema flows (`migrations/0003_shop_email.sql` documents the additive
+change; do not run a whole-schema baseline), configure the verified sender and
+Resend connection, and publish the code. Checkout stays unavailable if the new
+schema or sender setting is missing, but that check does not prove that Resend can
+deliver. Complete a Stripe test payment and check the actual inbox and reply address.
+Review the draft privacy policy and marketing requirements before sending campaigns.
+No live delivery or purchase has been verified by this code change.
+
 Customer payments go to your payment account; **Printful separately bills your
 saved Printful billing method**. This is automatic fulfillment, not a profit-only
 payout arrangement. Processor fees and applicable taxes affect your actual margin.

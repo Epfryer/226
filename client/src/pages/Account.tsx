@@ -208,6 +208,9 @@ export function AccountPage() {
         <dt className="text-foreground/55">Role</dt>
         <dd className="capitalize">{auth.data.user.role}</dd>
       </dl>
+      {auth.data.user.role === "owner" && (
+        <p className="mt-6 text-sm"><a className="underline underline-offset-4" href="/api/shop/subscribers.csv">Download email subscribers (CSV)</a></p>
+      )}
       {error && <p role="alert" className="mt-5 text-sm text-red-800">{error}</p>}
       <button
         type="button"

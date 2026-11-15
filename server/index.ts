@@ -8,6 +8,7 @@ import { reconcileOrders } from "./shop-fulfillment";
 import { privateResponse } from "./auth";
 import { authPool } from "./auth-store";
 import { runShopBackfill } from "./shop-backfill";
+import { deliverPendingReceipts } from "./shop-receipt";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
   authCleanup.unref();
   // Initialization, payment recovery, and historical import have independent
   // schedules. A slow initialization or import must not delay payment recovery.
-  let initializing = false, reconciling = false, backfilling = false;
+  let initializing = false, reconciling = false, backfilling = false, deliveringReceipts = false;
   const initialize = async () => {
     if (initializing) return;
     initializing = true;
@@ -76,9 +77,17 @@ app.use((req, res, next) => {
     catch { console.error("[Shop] Historical synchronization paused; will retry"); }
     finally { backfilling = false; }
   };
+  const deliverReceipts = async () => {
+    if (deliveringReceipts) return;
+    deliveringReceipts = true;
+    try { await deliverPendingReceipts(); }
+    catch { console.error("[Shop] Receipt delivery queue unavailable"); }
+    finally { deliveringReceipts = false; }
+  };
   void initialize().then(backfill);
   void reconcile();
-  for (const [work, interval] of [[initialize, 30000], [reconcile, 30000], [backfill, 300000]] as const) {
+  void deliverReceipts();
+  for (const [work, interval] of [[initialize, 30000], [reconcile, 30000], [backfill, 300000], [deliverReceipts, 30000]] as const) {
     setInterval(() => { void work(); }, interval).unref();
   }
 

@@ -70,6 +70,7 @@ export const shopOrders = pgTable("shop_orders", {
   status: text("status").notNull().default("quote"),
   paid: boolean("paid").notNull().default(false),
   testMode: boolean("test_mode").notNull().default(true),
+  marketingConsentRecorded: boolean("marketing_consent_recorded").notNull().default(false),
   attempts: integer("attempts").notNull().default(0),
   errorCode: text("error_code"),
   tracking: jsonb("tracking"),
@@ -83,3 +84,21 @@ export const shopOrders = pgTable("shop_orders", {
     .on(table.nextAttemptAt, table.createdAt, table.id)
     .where(sql`${table.stripeSessionId} IS NOT NULL AND ${table.status} IN ('awaiting_payment','paid','processing','needs_attention','fulfilled') AND ${table.attempts} < 8`),
 ]);
+
+export const shopSubscribers = pgTable("shop_subscribers", {
+  email: text("email").primaryKey(),
+  consentText: text("consent_text").notNull(),
+  consentedAt: timestamp("consented_at", { withTimezone: true }).notNull().defaultNow(),
+  unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+  unsubscribeToken: text("unsubscribe_token").notNull().unique(),
+});
+
+export const shopReceipts = pgTable("shop_receipts", {
+  orderId: text("order_id").primaryKey().references(() => shopOrders.id, { onDelete: "cascade" }),
+  data: jsonb("data").notNull(),
+  status: text("status").notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+});

@@ -30,7 +30,7 @@ const variant = (id: number) => ({ result: { sync_variant: {
   id, variant_id: id + 100, synced: true, currency: "USD", availability_status: "active",
   retail_price: "20", name: `Print ${id}`,
 } } });
-const initializerConfig = { printfulConfigured: true, databaseUrl: "fixture-only", deployment: false, domain: "example.test" };
+const initializerConfig = { printfulConfigured: true, databaseUrl: "fixture-only", deployment: false, domain: "example.test", receiptSenderConfigured: true };
 
 test("bounded cache coalesces refreshes, expires, bounds keys, and retries errors", async () => {
   let now = 0, calls = 0;
@@ -253,6 +253,19 @@ test("essential readiness still rejects inactive tax and live checkout in develo
     assert.equal(taxChecked, !live);
     assert.match(runtime.message, live ? /test connection/ : /Stripe Tax/);
   }
+});
+
+test("checkout stays closed when the receipt sender is missing", async () => {
+  const runtime = { ready: false, testMode: true, message: "" };
+  const initialize = createShopInitializer({
+    pool: { query: async () => {} } as any, migrate: async () => { throw new Error("Should not initialize"); },
+    getSync: async () => { throw new Error("Should not connect"); },
+    getStripe: async () => { throw new Error("Should not connect"); },
+    getPrintful: () => ({} as any),
+  }, runtime, { ...initializerConfig, receiptSenderConfigured: false });
+  await initialize();
+  assert.equal(runtime.ready, false);
+  assert.match(runtime.message, /receipt email sender is not configured/i);
 });
 
 test("mobile PDF variants preserve selection, fallback only on 404, and surface storage outages", async () => {

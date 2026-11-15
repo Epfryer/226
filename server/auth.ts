@@ -128,6 +128,7 @@ export function createAuth(options: { secret?: string; store?: session.Store; po
     }));
     app.use("/api/auth", (_req, res) => res.status(404).json({ error: "Account endpoint not found." }));
   }
-  return { register, ownerGuard: [privateResponse, load, account, owner, csrfProtection] };
+  return { register, ownerGuard: [privateResponse, load, account, owner, csrfProtection],
+    ownerReadGuard: [privateResponse, load, account, owner] };
 }
 export const auth = createAuth();

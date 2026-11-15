@@ -41,6 +41,8 @@ try {
     await dialog.getByRole("button", { name: /confirm address & find shipping/i }).click();
     await dialog.getByRole("radio", { name: /Standard/ }).waitFor();
     await dialog.getByRole("radio", { name: /Express/ }).check();
+    const optIn = dialog.getByRole("checkbox", { name: /email me D.EF updates/i });
+    assert.equal(await optIn.isChecked(), false);
     assert.ok(await dialog.getByText("$73.50", { exact: true }).count());
     assert.equal(quotes, 1);
     const requested = [];
@@ -50,7 +52,13 @@ try {
     });
     await dialog.getByRole("button", { name: /continue to payment/i }).click();
     await dialog.getByRole("alert").filter({ hasText: "Payment provider temporarily unavailable" }).waitFor();
-    assert.deepEqual(requested, [{ quoteId: "fixture-quote", shippingId: "EXPRESS" }]);
+    await optIn.check();
+    await dialog.getByRole("button", { name: /continue to payment/i }).click();
+    await dialog.getByRole("alert").filter({ hasText: "Payment provider temporarily unavailable" }).waitFor();
+    assert.deepEqual(requested, [
+      { quoteId: "fixture-quote", shippingId: "EXPRESS", joinEmailList: false },
+      { quoteId: "fixture-quote", shippingId: "EXPRESS", joinEmailList: true },
+    ]);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("def-studio-cart-v1"))[0].quantity), 2);
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });

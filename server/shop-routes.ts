@@ -10,6 +10,8 @@ import { cents, normalizeRates, publicOrder, recipientSchema, type ShopItem, typ
 import { shopRuntime } from "./shop-runtime";
 import { loadCatalog, loadCatalogColors, loadProduct } from "./catalog";
 import { boundedMap } from "./bounded-map";
+import { SHOP_EMAIL_CONSENT } from "../shared/shop-email";
+import { auth } from "./auth";
 
 function owner(req: Request, res: Response): string {
   const headerToken = req.get("X-Shop-Token");
@@ -82,6 +84,18 @@ export async function stripePrice(stripe: Awaited<ReturnType<typeof getUncachabl
   return price.id;
 }
 
+export async function recordShopConsent(client: import("pg").PoolClient, order: { id: string; recipient: { email: string }; marketing_consent_recorded: boolean }, optedIn: boolean, live: boolean) {
+  if (!optedIn || !live || order.marketing_consent_recorded) return;
+  await client.query(`WITH subscriber AS (
+    INSERT INTO shop_subscribers (email, consent_text, unsubscribe_token)
+    VALUES ($2,$3,$4)
+    ON CONFLICT (email) DO UPDATE SET consent_text=EXCLUDED.consent_text, consented_at=now(),
+      unsubscribed_at=NULL, unsubscribe_token=EXCLUDED.unsubscribe_token
+    WHERE shop_subscribers.unsubscribed_at IS NOT NULL
+  ) UPDATE shop_orders SET marketing_consent_recorded=true WHERE id=$1`,
+  [order.id, order.recipient.email.trim().toLowerCase(), SHOP_EMAIL_CONSENT, randomBytes(32).toString("hex")]);
+}
+
 export function registerShopRoutes(app: Express, services = {
   getStripe: getUncachableStripeClient, getPrintful: getPrintfulClient, runtime: shopRuntime,
 }) {
@@ -126,7 +140,9 @@ export function registerShopRoutes(app: Express, services = {
     res.json({ quoteId: id, expiresAt, items, subtotal: subtotal / 100, shippingRates: rates });
   }));
   app.post("/api/shop/checkout", guarded, throttle, checkoutReady, asyncRoute(async (req, res) => {
-    const { quoteId, shippingId } = z.object({ quoteId: z.string().uuid(), shippingId: z.string().min(1).max(100) }).parse(req.body);
+    const { quoteId, shippingId, joinEmailList } = z.object({
+      quoteId: z.string().uuid(), shippingId: z.string().min(1).max(100), joinEmailList: z.boolean().default(false),
+    }).parse(req.body);
     const ownerHash = owner(req, res);
     const result = await withOrderLock(quoteId, async (client, order) => {
       if (order.owner_hash !== ownerHash) { res.status(404).json({ error: "Quote not found" }); return; }
@@ -138,6 +154,7 @@ export function registerShopRoutes(app: Express, services = {
         const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
         if (session.status !== "open") { res.status(409).json({ error: "Checkout is already completed or expired." }); return; }
         if (order.shipping_id !== shippingId) { res.status(409).json({ error: "Shipping was already selected. Please request a new quote to change it." }); return; }
+        await recordShopConsent(client, order, joinEmailList, session.livemode);
         res.json({ url: session.url, sessionId: session.id }); return true;
       }
       if (order.shipping_id && order.shipping_id !== shippingId) {
@@ -201,10 +218,32 @@ export function registerShopRoutes(app: Express, services = {
       await client.query(`UPDATE shop_orders SET stripe_session_id=$2,shipping_id=$3,shipping_amount=$4,
         expected_amount=subtotal+$4,status='awaiting_payment',test_mode=$5,updated_at=now() WHERE id=$1`,
       [quoteId, session.id, shippingId, shippingAmount, !session.livemode]);
+      await recordShopConsent(client, order, joinEmailList, session.livemode);
       res.json({ url: session.url, sessionId: session.id });
       return true;
     });
     if (!res.headersSent && result === undefined) res.status(409).json({ error: "Checkout is being prepared. Please try again shortly." });
+  }));
+  app.get("/api/shop/subscribers.csv", ...auth.ownerReadGuard, asyncRoute(async (_req, res) => {
+    const result = await shopPool.query("SELECT email,consented_at,consent_text,unsubscribe_token FROM shop_subscribers WHERE unsubscribed_at IS NULL ORDER BY consented_at");
+    const csv = (value: string) => `"${(/^[=+\-@\t\r]/.test(value) ? `'${value}` : value).replaceAll('"', '""')}"`;
+    const rows = result.rows.map(row => [
+      row.email, new Date(row.consented_at).toISOString(), row.consent_text,
+      `https://ethanfryer.com/api/shop/unsubscribe?token=${row.unsubscribe_token}`,
+    ].map(csv).join(","));
+    res.set({ "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="def-subscribers.csv"' });
+    res.send(["email,consented_at,consent_text,unsubscribe_url", ...rows].join("\r\n"));
+  }));
+  app.get("/api/shop/unsubscribe", throttle, (req, res) => {
+    const token = typeof req.query.token === "string" && /^[a-f0-9]{64}$/.test(req.query.token) ? req.query.token : "";
+    res.set("Referrer-Policy", "no-referrer");
+    if (!token) { res.status(400).send("Invalid unsubscribe link."); return; }
+    res.type("html").send(`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width"><title>Unsubscribe from D.EF</title><body><main><h1>Unsubscribe from D.EF emails</h1><p>Confirm to stop receiving updates and offers.</p><form method="post" action="/api/shop/unsubscribe"><input type="hidden" name="token" value="${token}"><button type="submit">Unsubscribe</button></form></main></body></html>`);
+  });
+  app.post("/api/shop/unsubscribe", throttle, asyncRoute(async (req, res) => {
+    const token = z.string().regex(/^[a-f0-9]{64}$/).parse(req.body.token);
+    await shopPool.query("UPDATE shop_subscribers SET unsubscribed_at=COALESCE(unsubscribed_at,now()) WHERE unsubscribe_token=$1", [token]);
+    res.set("Referrer-Policy", "no-referrer").type("html").send("<!doctype html><html lang=\"en\"><title>D.EF email preferences</title><body><h1>Unsubscribed</h1><p>You will no longer receive D.EF updates or offers.</p></body></html>");
   }));
   // Read-only: a return URL never creates or confirms a physical order.
   app.get("/api/shop/checkout/:sessionId/verify", throttle, asyncRoute(async (req, res) => {

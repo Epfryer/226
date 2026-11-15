@@ -32,7 +32,10 @@ export function ShopPolicy({ path }: { path: PolicyPath }) {
           <p>When you request shipping or place an order, the shop collects your name, email, delivery address, and order details. This information is used to calculate shipping, process payment, and fulfill or support your order.</p>
         </section>
         <section><h2 className="text-xl font-semibold">Service providers</h2>
-          <p>Stripe provides payment processing, and Printful provides shipping estimates and order fulfillment. Information needed for those services is shared with the relevant provider.</p>
+          <p>Stripe provides payment processing, Printful provides shipping estimates and order fulfillment, and Resend sends order emails. Information needed for those services is shared with the relevant provider.</p>
+        </section>
+        <section><h2 className="text-xl font-semibold">Optional email updates</h2>
+          <p>If you opt in at checkout, we store your email and consent to send updates, releases and offers fewer than two times per week. You can unsubscribe using the link in a marketing email or by contacting D.EF.</p>
         </section>
         <section><h2 className="text-xl font-semibold">Browser storage</h2>
           <p>The shop uses browser storage and an ownership token to retain the cart and associate checkout status with the browser that started it.</p>

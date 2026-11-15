@@ -4,6 +4,7 @@ import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { trackEvent } from "@/lib/analytics";
 import { shopHeaders } from "@/lib/shop-session";
 import { normalizeShopRecipient } from "../../../shared/shop-address";
+import { SHOP_EMAIL_CONSENT } from "../../../shared/shop-email";
 
 export interface CheckoutCartItem {
   variantId: number;
@@ -233,6 +234,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
   const [quoteError, setQuoteError] = useState("");
   const [isQuoting, setIsQuoting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [joinEmailList, setJoinEmailList] = useState(false);
   const [now, setNow] = useState(Date.now());
   const hasSession = Boolean(sessionId);
   const expired = Boolean(quote && new Date(quote.expiresAt).getTime() <= now);
@@ -270,6 +272,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
       setStatus(null);
       setStatusError("");
       setIsRedirecting(false);
+      setJoinEmailList(false);
     }
   }, [isOpen]);
 
@@ -329,7 +332,7 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
         method: "POST",
         headers: { "Content-Type": "application/json", ...shopHeaders() },
         credentials: "include",
-        body: JSON.stringify({ quoteId: quote.quoteId, shippingId: selectedShipping }),
+        body: JSON.stringify({ quoteId: quote.quoteId, shippingId: selectedShipping, joinEmailList }),
       });
       if (!response.ok) throw new Error(await readError(response, "We couldn’t open secure checkout. Please try again."));
       const result = await response.json() as { url?: string; sessionId?: string };
@@ -423,6 +426,11 @@ export default function ShopCheckout({ isOpen, cart, sessionId, onClose, onPaid 
                         ))}
                       </fieldset>
                     )}
+                    <label className="flex items-start gap-3 border border-border p-4 text-sm">
+                      <input type="checkbox" checked={joinEmailList} onChange={event => setJoinEmailList(event.target.checked)} className="mt-1 h-4 w-4 accent-foreground" />
+                      <span>{SHOP_EMAIL_CONSENT}</span>
+                    </label>
+                    {status?.testMode && <p className="text-xs text-muted-foreground">Test checkouts do not add email subscribers.</p>}
                     {quoteError && <p role="alert" className="text-sm text-destructive">{quoteError}</p>}
                     <button type="button" onClick={() => void pay()} disabled={!status?.ready || !selectedRate || expired || isRedirecting} className="flex min-h-12 w-full items-center justify-center gap-2 bg-foreground px-5 text-xs uppercase tracking-[0.15em] text-background transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40">
                       {isRedirecting ? <><LoaderCircle className="h-4 w-4 animate-spin" /> Opening secure checkout</> : <>Continue to payment <span aria-hidden="true">→</span></>}

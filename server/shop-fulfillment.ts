@@ -38,7 +38,20 @@ export async function fulfillOrder(id: string, services = {
       await client.query("UPDATE shop_orders SET status='canceled', paid=true, updated_at=now() WHERE id=$1", [id]);
       return;
     }
-    await client.query("UPDATE shop_orders SET paid=true, test_mode=$2, updated_at=now() WHERE id=$1", [id, !session.livemode]);
+    const tax = session.total_details?.amount_tax;
+    const receiptComplete = Number.isSafeInteger(tax) && typeof tax === "number" && tax >= 0 &&
+      Number.isSafeInteger(session.amount_total) && typeof session.amount_total === "number" && session.amount_total >= 0;
+    const receipt = {
+      orderId: id, recipient: { name: order.recipient.name, email: order.recipient.email }, items: order.items,
+      subtotal: session.amount_subtotal, shipping: session.total_details?.amount_shipping ?? 0,
+      tax, total: session.amount_total,
+      testMode: !session.livemode,
+    };
+    await client.query(`WITH payment AS (
+      UPDATE shop_orders SET paid=true, test_mode=$2, updated_at=now() WHERE id=$1 RETURNING id
+    ) INSERT INTO shop_receipts (order_id,data,status) SELECT id,$3::jsonb,$4 FROM payment
+      ON CONFLICT (order_id) DO NOTHING`, [id, !session.livemode, JSON.stringify(receipt), receiptComplete ? "pending" : "needs_attention"]);
+    if (!receiptComplete) console.error("[Shop] Receipt payment details need manual attention", id);
     // Stripe test events must NEVER create, confirm, or charge a real Printful order.
     if (!session.livemode) {
       await client.query("UPDATE shop_orders SET status='test_paid' WHERE id=$1", [id]);
