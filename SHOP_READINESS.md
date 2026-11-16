@@ -73,29 +73,31 @@ subscription was performed in this verification.
   idempotency bypass was performed. Resend independently reported `delivered`;
   the provider's actual message contained the support sender/reply address,
   explicit test label, correct $36.48 total and development status link.
-  The initial deferral's cause was not established. Actual inbox appearance and
-  reply deliverability still need owner confirmation.
+  The initial deferral's cause was not established. The owner confirmed the first
+  test receipt arrived in their inbox. Inbox appearance of the corrected receipt
+  and actual reply deliverability have not been separately confirmed.
 
 ## Blockers and owner actions
 
 1. **Development Tax resolved:** Sandbox Tax is active. Do not disable automatic
    Tax or substitute live payments for further test verification.
-2. **Controlled inbox:** The owner supplied a controlled inbox. Confirm actual
-   receipt arrival and support reply behavior. The corrected receipt's normal
-   retry and provider delivery succeeded. Do not put inbox/customer details or private status
-   URLs in this record.
-3. **Printful billing:** The owner must verify the saved billing method/Wallet
-   and available funding in Printful. Store/catalog access and cost estimates
-   do not prove billing readiness. Review supported selling destinations,
-   print appearance and return policy; one US estimate does not certify all
-   destinations.
+2. **Controlled inbox:** The owner confirmed the first test receipt arrived.
+   The corrected receipt's normal retry and provider delivery succeeded;
+   corrected-message inbox appearance and a reply round trip remain unconfirmed.
+   Do not put inbox/customer details or private status URLs in this record.
+3. **Printful billing:** The owner explicitly confirmed billing is funded and
+   ready. This is owner-attested, not an independent API inspection of a billing
+   method or proof that a fulfillment charge will succeed. Review supported selling
+   destinations, print appearance and return policy; one US estimate does not
+   certify all destinations.
 4. **Published sender/connection:** Shared sender configuration and a working
    workspace process do not establish the deployed process's effective sender
    or ability to send. Check those directly after an approved publish.
 
 ## Remaining verification and approval gates
 
-- Finish owner inbox/reply confirmation. Corrected receipt provider delivery,
+- Confirm the corrected message appeared in the inbox and any desired reply
+  round trip. First-message inbox arrival is owner-confirmed. Corrected receipt provider delivery,
   genuine test checkout, signed webhook processing, paid state,
   totals, private status UI and no-fulfillment/no-subscription safeguards have
   been exercised; do not replace the remaining evidence with simulated tests.
@@ -107,6 +109,22 @@ subscription was performed in this verification.
   origin, and preserves canonical production links for live receipts. A regression
   test covers environment selection and unsafe origins. A privacy-safe business
   webhook success log records the event type without customer data.
+- Production was rechecked after the owner's receipt/billing confirmations;
+  the additions below are still absent. The platform's full publish-diff helper
+  is unavailable in this task workspace. Therefore the following is the exact
+  **intended additive application change**, not a claim that the full platform
+  diff contains nothing else:
+  - Add `shop_orders.marketing_consent_recorded boolean NOT NULL DEFAULT false`.
+  - Create `shop_subscribers` exactly as in `migrations/0003_shop_email.sql`,
+    including its email primary key, unique non-null unsubscribe token,
+    consent text and timezone-aware consent/unsubscribe timestamps.
+  - Create `shop_receipts` exactly as in that migration, including its order
+    primary/foreign key with cascade, JSON payload, status/attempt defaults,
+    timezone-aware queue/created/sent timestamps.
+  - Add nullable unique `shop_receipts.status_token_hash text`, as in
+    `migrations/0004_shop_order_status.sql`.
+  - No account/content deletion, reset, data overwrite, migration-history edit,
+    unrelated schema push, or production DDL was performed or approved.
 - This task workspace cannot publish. After the reviewed task is merged, the
   owner must explicitly approve and initiate the normal Publish code/schema
   flow, without overwriting production data. Verify the running published
