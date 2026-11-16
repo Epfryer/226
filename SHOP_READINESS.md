@@ -1,0 +1,101 @@
+# Shop launch readiness
+
+Checked 2026-11-16. **Not ready for live sales. This verification is incomplete.**
+No publish, card charge, physical order creation/confirmation, or marketing
+subscription was performed in this verification.
+
+## Verified evidence
+
+- Development was missing all additions from migrations `0003_shop_email.sql`
+  and `0004_shop_order_status.sql`. The authorized development SQL operation
+  succeeded in one transaction, applying exactly those reviewed additions.
+  Catalog inspection confirmed types, nullability, defaults, primary keys,
+  unique unsubscribe/status-token constraints, and the receipt-to-order foreign
+  key with cascading deletion. No migration-history edits or broad schema push
+  were used. Existing account, project, and order counts were zero before and
+  immediately after this transaction; no existing records were changed.
+- The workspace workflow was restarted. Its running process has
+  `SHOP_FROM_EMAIL=D.EF Studio <support@ethanfryer.com>`. The running readiness
+  endpoint subsequently reported test mode and the specific Stripe Tax blocker
+  below, rather than a missing-schema/sender error.
+- Both the development Stripe connection and the application's own Stripe
+  client returned `balance.livemode=false`. No connection replacement was
+  necessary. Development Tax returned `pending`, missing `head_office`.
+- Independent production Stripe API reads returned live mode, charges enabled,
+  payouts enabled, details submitted, and active live Tax settings. These are
+  account configuration checks, not evidence of a successful live payment or
+  payout. Enabled live business and synchronization webhook endpoints exist on
+  the deployment's replit.app domain; delivery has not been exercised here.
+- Resend's separate management connection reports `ethanfryer.com` verified,
+  with sending and receiving enabled. The application's Resend API request was
+  authenticated but domain-list access returned `401 restricted_api_key`,
+  explicitly limited to sending. This is not evidence of failed send permission,
+  nor proof of send acceptance, inbox delivery, or working support replies.
+- Printful store retrieval succeeded. Both products were inspected: all 122
+  variants were synced, had positive USD retail prices, and had a non-preview
+  print file with status `ok`. This does not certify artwork quality.
+- A representative US destination, not a customer address, returned two shipping
+  options ($8.79 standard and $8.88 with offsetting). A one-item cost estimate
+  returned $30.72 fulfillment total for the selected $27.69 retail variant.
+  Standard retail shipping plus item was $36.48 before customer tax. This is
+  an estimate only, not an approved purchase or a guarantee for other variants,
+  destinations, taxes, discounts, or processor fees. The Printful order-list
+  total remained one before and after read/estimate checks; no order was created.
+- `npm run check` passed.
+- `npm run test:shop` passed all 16 tests with simulated payment/fulfillment
+  providers and development fixtures/temporary tables.
+- `node --import tsx --test scripts/shop-status.test.ts` passed both tests.
+- `CHROMIUM_PATH=/repl/tools/bin/chromium npm run test:shop:browser` passed at
+  390px and 1440px with mocked provider responses. Default downloaded Chromium
+  could not launch because a host library was missing; the installed Chromium
+  ran successfully. This is not real-device or other-browser certification.
+- A development screenshot loaded the Studio entrance animation. Interactive
+  browser tests, rather than that entrance frame, verified the checkout UI.
+- Direct read-only production database inspection found the email/subscriber/
+  receipt schema additions absent. The public production readiness endpoint
+  returned `ready=false` and incomplete setup. No production schema was changed.
+
+## Blockers and owner actions
+
+1. **Development Tax:** In Stripe's development sandbox/test environment, open
+   **Tax → Settings** and supply the actual business origin address. Review the
+   business's tax category/registrations as appropriate. Do not change live Tax
+   settings or disable automatic Tax to bypass this blocker. Tell the agent
+   when test Tax is active; initialization rechecks about once per minute.
+2. **Controlled inbox:** Identify an inbox the owner controls for the actual
+   website test checkout. Test-payment receipt delivery, its support reply
+   address, and the private status link remain unverified. Do not put that
+   inbox, shipping details, or private status URL in this record.
+3. **Printful billing:** The owner must verify the saved billing method/Wallet
+   and available funding in Printful. Store/catalog access and cost estimates
+   do not prove billing readiness. Review supported selling destinations,
+   print appearance and return policy; one US estimate does not certify all
+   destinations.
+4. **Published sender/connection:** Shared sender configuration and a working
+   workspace process do not establish the deployed process's effective sender
+   or ability to send. Check those directly after an approved publish.
+
+## Remaining verification and approval gates
+
+- Complete one genuine Stripe **test** checkout through the website after test
+  Tax is active. Verify hosted checkout completion, signed business webhook,
+  durable test-paid order/receipt, actual inbox arrival, correct support reply
+  address, accurate totals and working private status link. Verify no Printful
+  order and no marketing subscriber were created. Synthetic signed webhook
+  tests and mocked browser returns do not meet this requirement.
+- Before any publish, present the current code/config diff and the exact
+  development-to-production schema diff for fresh owner approval. Intended
+  application additions are only migrations 0003/0004; any unrelated drift
+  needs separate review. There were no application-code edits in this pass;
+  the pre-existing shared sender configuration change was preserved.
+- This task workspace cannot publish. After the reviewed task is merged, the
+  owner must explicitly approve and initiate the normal Publish code/schema
+  flow, without overwriting production data. Verify the running published
+  schema, sender, provider environments, business webhook delivery and public
+  browsing directly afterward. Do not infer production success from development.
+- Only after that, obtain fresh approval of the exact real item/variant,
+  quantity, full customer total, shipping destination and expected separate
+  Printful charge. Customer funds settle through Stripe; Printful separately
+  bills fulfillment. Payment details must be entered securely by the owner.
+  Verify the payment, single fulfillment order/confirmation, receipt and status
+  link; later production/tracking/delivery may remain pending.

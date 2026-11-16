@@ -71,3 +71,4 @@ timeoutMs = 240000
 
 [userenv.shared]
 INQUIRY_FROM_EMAIL = "inquiry@ethanfryer.com"
+SHOP_FROM_EMAIL = "D.EF Studio <support@ethanfryer.com>"
