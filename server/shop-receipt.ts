@@ -4,6 +4,7 @@ import type { ShopItem, Recipient } from "./shop-domain";
 import { isSender, SUPPORT_EMAIL } from "./email-settings";
 import { z } from "zod";
 import { SITE_ORIGIN } from "../client/src/lib/site-metadata";
+import { validateReceiptStatusOrigin } from "./shop-status-origin";
 
 const trackingSchema = z.object({
   number: z.string().trim().min(1),
@@ -22,6 +23,7 @@ export interface ShopReceipt {
   testMode: boolean;
   templateVersion?: 2 | 3;
   statusToken?: string;
+  statusOrigin?: string;
   delivery?: { name: string; minDeliveryDays?: number; maxDeliveryDays?: number } | null;
   tracking?: z.infer<typeof trackingSchema> | null;
 }
@@ -86,7 +88,7 @@ export function renderShopReceipt(receipt: ShopReceipt) {
       ? `Tracking is not available yet. Use the private link below to check for updates after this email is sent.`
       : `Tracking is not available yet. Revisit your order status page in the same browser and tab used for checkout, or reply to this email for help.`;
   const statusLink = receipt.templateVersion === 3
-    ? `<p style="margin:22px 0 0"><a href="${SITE_ORIGIN}/order-status#${receipt.statusToken}" style="display:inline-block;border:1px solid #e8e8e4;color:#f1f1ee;text-decoration:none;padding:12px 20px;font-size:12px;font-weight:bold;letter-spacing:1px">CHECK LIVE ORDER STATUS</a></p><p style="margin:10px 0 0;font-size:12px;color:#a6a6a0">This private page refreshes tracking when you open it. Anyone with this link can view the order status.</p>`
+    ? `<p style="margin:22px 0 0"><a href="${escapeHtml(receipt.testMode && receipt.statusOrigin ? validateReceiptStatusOrigin(receipt.statusOrigin) : SITE_ORIGIN)}/order-status#${receipt.statusToken}" style="display:inline-block;border:1px solid #e8e8e4;color:#f1f1ee;text-decoration:none;padding:12px 20px;font-size:12px;font-weight:bold;letter-spacing:1px">CHECK LIVE ORDER STATUS</a></p><p style="margin:10px 0 0;font-size:12px;color:#a6a6a0">This private page refreshes tracking when you open it. Anyone with this link can view the order status.</p>`
     : "";
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="x-apple-disable-message-reformatting"><title>D.EF order receipt</title></head>

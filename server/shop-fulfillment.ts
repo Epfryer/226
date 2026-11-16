@@ -4,6 +4,7 @@ import { getPrintfulClient } from "./printful";
 import { getUncachableStripeClient } from "./stripeClient";
 import { shopPool, withOrderLock } from "./shop-store";
 import { cents, type ShopItem, type ShippingRate } from "./shop-domain";
+import { receiptStatusOrigin } from "./shop-status-origin";
 
 // Deliberately no dependency on a browser visit. Both verified webhooks and reconciliation
 // use the same durable lock and deterministic Printful external ID.
@@ -47,6 +48,7 @@ export async function fulfillOrder(id: string, services = {
     const statusTokenHash = createHash("sha256").update(statusToken).digest("hex");
     const receipt = {
       templateVersion: 3, statusToken,
+      statusOrigin: receiptStatusOrigin(!session.livemode),
       orderId: id, recipient: { name: order.recipient.name, email: order.recipient.email }, items: order.items,
       subtotal: session.amount_subtotal, shipping: session.total_details?.amount_shipping ?? 0,
       tax, total: session.amount_total,

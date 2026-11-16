@@ -47,6 +47,7 @@ export function registerPaymentWebhooks(app: Express, services: {
         try { await services.deliver(id); }
         catch { console.error("[Shop] Receipt delivery queue unavailable", id); }
       }
+      console.log("[Shop] Verified payment webhook processed:", event.type);
       res.json({ received: true });
     } catch { res.status(503).json({ error: "Order processing deferred. Please retry this event." }); }
   });

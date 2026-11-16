@@ -1,7 +1,7 @@
 # Shop launch readiness
 
 Checked 2026-11-16. **Not ready for live sales. This verification is incomplete.**
-No publish, card charge, physical order creation/confirmation, or marketing
+No publish, real card charge, physical order creation/confirmation, or marketing
 subscription was performed in this verification.
 
 ## Verified evidence
@@ -16,11 +16,11 @@ subscription was performed in this verification.
   immediately after this transaction; no existing records were changed.
 - The workspace workflow was restarted. Its running process has
   `SHOP_FROM_EMAIL=D.EF Studio <support@ethanfryer.com>`. The running readiness
-  endpoint subsequently reported test mode and the specific Stripe Tax blocker
-  below, rather than a missing-schema/sender error.
+  endpoint now reports ready in test mode, rather than a missing-schema/sender error.
 - Both the development Stripe connection and the application's own Stripe
   client returned `balance.livemode=false`. No connection replacement was
-  necessary. Development Tax returned `pending`, missing `head_office`.
+  necessary. Development Tax initially returned `pending`, missing `head_office`;
+  after the owner completed sandbox Tax setup, direct API reads returned `active`.
 - Independent production Stripe API reads returned live mode, charges enabled,
   payouts enabled, details submitted, and active live Tax settings. These are
   account configuration checks, not evidence of a successful live payment or
@@ -29,8 +29,10 @@ subscription was performed in this verification.
 - Resend's separate management connection reports `ethanfryer.com` verified,
   with sending and receiving enabled. The application's Resend API request was
   authenticated but domain-list access returned `401 restricted_api_key`,
-  explicitly limited to sending. This is not evidence of failed send permission,
-  nor proof of send acceptance, inbox delivery, or working support replies.
+  explicitly limited to sending. An actual test receipt subsequently succeeded;
+  management inspection confirmed provider status `delivered`, the intended
+  support sender/reply address, test labeling and correct totals. Actual inbox
+  appearance and reply deliverability still need owner confirmation.
 - Printful store retrieval succeeded. Both products were inspected: all 122
   variants were synced, had positive USD retail prices, and had a non-preview
   print file with status `ok`. This does not certify artwork quality.
@@ -42,7 +44,7 @@ subscription was performed in this verification.
   destinations, taxes, discounts, or processor fees. The Printful order-list
   total remained one before and after read/estimate checks; no order was created.
 - `npm run check` passed.
-- `npm run test:shop` passed all 16 tests with simulated payment/fulfillment
+- `npm run test:shop` passed all 17 tests with simulated payment/fulfillment
   providers and development fixtures/temporary tables.
 - `node --import tsx --test scripts/shop-status.test.ts` passed both tests.
 - `CHROMIUM_PATH=/repl/tools/bin/chromium npm run test:shop:browser` passed at
@@ -54,18 +56,34 @@ subscription was performed in this verification.
 - Direct read-only production database inspection found the email/subscriber/
   receipt schema additions absent. The public production readiness endpoint
   returned `ready=false` and incomplete setup. No production schema was changed.
+- Two genuine website-created sandbox checkouts completed with Stripe's
+  documented test card, each for one item: $27.69 subtotal, $8.79 shipping,
+  $0.00 calculated tax, $36.48 total. These were test payments, not real charges.
+  The first run exposed a production-only receipt-link bug. The second exercised
+  the correction and verified the paid return UI, durable `test_paid` state and
+  a working private status page from the exact origin/token stored in its receipt.
+  An unused earlier hosted session was left unpaid; no payment was retried.
+- The second run logged successful processing by the signature-verified business
+  webhook. Old test webhook endpoints still have pending deliveries, so account-wide
+  pending-webhook counts do not establish delivery to the current endpoint.
+- No physical Printful order was created: its list total stayed one. The
+  subscriber count stayed zero, and paid test orders recorded no marketing consent.
+- The corrected receipt initially deferred one attempt, then succeeded on its
+  normal five-minute retry (`sent`, two attempts). No manual retry/reset or
+  idempotency bypass was performed. Resend independently reported `delivered`;
+  the provider's actual message contained the support sender/reply address,
+  explicit test label, correct $36.48 total and development status link.
+  The initial deferral's cause was not established. Actual inbox appearance and
+  reply deliverability still need owner confirmation.
 
 ## Blockers and owner actions
 
-1. **Development Tax:** In Stripe's development sandbox/test environment, open
-   **Tax → Settings** and supply the actual business origin address. Review the
-   business's tax category/registrations as appropriate. Do not change live Tax
-   settings or disable automatic Tax to bypass this blocker. Tell the agent
-   when test Tax is active; initialization rechecks about once per minute.
-2. **Controlled inbox:** Identify an inbox the owner controls for the actual
-   website test checkout. Test-payment receipt delivery, its support reply
-   address, and the private status link remain unverified. Do not put that
-   inbox, shipping details, or private status URL in this record.
+1. **Development Tax resolved:** Sandbox Tax is active. Do not disable automatic
+   Tax or substitute live payments for further test verification.
+2. **Controlled inbox:** The owner supplied a controlled inbox. Confirm actual
+   receipt arrival and support reply behavior. The corrected receipt's normal
+   retry and provider delivery succeeded. Do not put inbox/customer details or private status
+   URLs in this record.
 3. **Printful billing:** The owner must verify the saved billing method/Wallet
    and available funding in Printful. Store/catalog access and cost estimates
    do not prove billing readiness. Review supported selling destinations,
@@ -77,17 +95,18 @@ subscription was performed in this verification.
 
 ## Remaining verification and approval gates
 
-- Complete one genuine Stripe **test** checkout through the website after test
-  Tax is active. Verify hosted checkout completion, signed business webhook,
-  durable test-paid order/receipt, actual inbox arrival, correct support reply
-  address, accurate totals and working private status link. Verify no Printful
-  order and no marketing subscriber were created. Synthetic signed webhook
-  tests and mocked browser returns do not meet this requirement.
+- Finish owner inbox/reply confirmation. Corrected receipt provider delivery,
+  genuine test checkout, signed webhook processing, paid state,
+  totals, private status UI and no-fulfillment/no-subscription safeguards have
+  been exercised; do not replace the remaining evidence with simulated tests.
 - Before any publish, present the current code/config diff and the exact
   development-to-production schema diff for fresh owner approval. Intended
   application additions are only migrations 0003/0004; any unrelated drift
-  needs separate review. There were no application-code edits in this pass;
-  the pre-existing shared sender configuration change was preserved.
+  needs separate review. The narrow application-code correction snapshots the
+  development origin for test receipt status links, validates the allowed HTTPS
+  origin, and preserves canonical production links for live receipts. A regression
+  test covers environment selection and unsafe origins. A privacy-safe business
+  webhook success log records the event type without customer data.
 - This task workspace cannot publish. After the reviewed task is merged, the
   owner must explicitly approve and initiate the normal Publish code/schema
   flow, without overwriting production data. Verify the running published

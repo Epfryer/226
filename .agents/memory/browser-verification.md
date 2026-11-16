@@ -14,3 +14,14 @@ Browser-specific Nix library paths can unblock Firefox without changing applicat
 **Why:** Targeted library resolution allowed Firefox's desktop and touch-viewport checks to pass after its initial missing-library failure. An older C++ runtime broke Node when selected first.
 
 **How to apply:** Select compatible host libraries deliberately. The downloaded Linux WebKit launcher replaces inherited library paths; invoking its bundled binary with the bundle environment and a working GIO TLS module enabled HTTPS tests. Installing libraries alone does not establish a usable session. Keep any development-certificate exception explicit and confined to test contexts.
+
+Stripe-hosted checkout can place its entire payment-method form inside a
+cross-origin frame, including a prefilled, disabled email input.
+
+**Why:** A working hosted test checkout initially appeared to have no inputs
+when only the top document was inspected; attempting to fill its already-fixed
+email then stalled the test.
+
+**How to apply:** Inspect the hosted page's frame tree and use the frame containing
+the payment-method selector. Preserve prefilled read-only customer information.
+Never substitute a direct payment API call for required website checkout evidence.

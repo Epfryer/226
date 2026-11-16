@@ -52,6 +52,10 @@ The checkout dialog displays the current setup status.
   The receipt is not updated or resent automatically when tracking arrives later.
 - Test-mode payments send a clearly labeled test receipt to the entered email but
   never add subscribers or create a Printful order. Use an inbox you control.
+  New workspace test receipts link to the workspace holding that order; those
+  links require the workspace to remain running and accessible. Live receipt
+  status links continue to use the public website. A development order and its
+  private status token are not copied into production when publishing.
 - Delivery is attempted on the payment webhook and retried while the application
   is running. Provider idempotency keys reduce duplicate sends; a receipt still
   unresolved after 23 hours is marked `needs_attention` rather than retried past

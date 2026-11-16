@@ -7,6 +7,7 @@ import { deliverShopReceipt, renderShopReceipt, sendShopReceipt, type ShopReceip
 import { SHOP_EMAIL_CONSENT } from "../shared/shop-email";
 import { fulfillOrder } from "../server/shop-fulfillment";
 import { createHash } from "node:crypto";
+import { receiptStatusOrigin } from "../server/shop-status-origin";
 
 after(async () => { await shopPool.end(); });
 
@@ -17,6 +18,22 @@ const receipt: ShopReceipt = {
   subtotal: 6000, shipping: 525, tax: 321, total: 6846, testMode: false,
   delivery: { name: "Standard <delivery>", minDeliveryDays: 3, maxDeliveryDays: 7 },
 };
+
+test("test receipt links stay with their database environment without changing live links", () => {
+  const config = { deployment: false, devDomain: "shop-check.replit.dev" };
+  assert.equal(receiptStatusOrigin(true, config), "https://shop-check.replit.dev");
+  assert.equal(receiptStatusOrigin(false, config), "https://ethanfryer.com");
+  assert.equal(receiptStatusOrigin(true, { ...config, deployment: true }), "https://ethanfryer.com");
+  assert.throws(() => receiptStatusOrigin(true, { deployment: false, devDomain: undefined }), /domain is unavailable/);
+  const testReceipt = { ...receipt, testMode: true, templateVersion: 3 as const,
+    statusToken: "a".repeat(64), statusOrigin: receiptStatusOrigin(true, config) };
+  assert.match(renderShopReceipt(testReceipt), /https:\/\/shop-check\.replit\.dev\/order-status#/);
+  assert.match(renderShopReceipt({ ...testReceipt, testMode: false }), /https:\/\/ethanfryer\.com\/order-status#/);
+  for (const statusOrigin of ["javascript:alert(1)", "https://example.com", "https://shop.replit.dev/other",
+    "https://user:password@shop.replit.dev", "https://shop.replit.dev?redirect=elsewhere"]) {
+    assert.throws(() => renderShopReceipt({ ...testReceipt, statusOrigin }));
+  }
+});
 
 test("receipt uses the support sender, escapes order data, and includes the actual payment breakdown", async () => {
   const html = renderShopReceipt(receipt);
