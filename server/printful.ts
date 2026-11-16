@@ -29,9 +29,9 @@ class PrintfulClient {
     return response.data;
   }
 
-  // Get all products
-  async getProducts() {
-    const response = await this.client.get('/store/products');
+  // Get one page of store products
+  async getProducts(params?: { offset?: number; limit?: number }) {
+    const response = await this.client.get('/store/products', { params });
     return response.data;
   }
 

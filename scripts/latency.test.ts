@@ -94,6 +94,26 @@ test("document catalog and public API share full envelopes and detail requests c
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });
 
+test("catalog loads every Printful page and retries incomplete results", async () => {
+  const calls: Array<{ offset?: number; limit?: number } | undefined> = [];
+  let incomplete = true;
+  const provider = {
+    getProducts: async (params?: { offset?: number; limit?: number }) => {
+      calls.push(params);
+      if (!params) return { code: 200, paging: { total: 3, offset: 0, limit: 2 }, result: [{ id: 1 }, { id: 2 }] };
+      return { code: 200, paging: { total: 3, offset: 2, limit: 100 }, result: incomplete ? [] : [{ id: 3 }] };
+    },
+    getProduct: async () => ({}),
+  };
+  await assert.rejects(loadCatalog(provider), /pagination incomplete/);
+  incomplete = false;
+  const result = await loadCatalog(provider);
+  assert.deepEqual(result.result.map((product: { id: number }) => product.id), [1, 2, 3]);
+  assert.deepEqual(calls, [undefined, { offset: 2, limit: 100 }, undefined, { offset: 2, limit: 100 }]);
+  await loadCatalog(provider);
+  assert.equal(calls.length, 4);
+});
+
 test("cart validates all shapes and duplicates before I/O, then uses four ordered workers", async () => {
   const lookup = tracked(async id => { await delay(id % 4); return variant(id); });
   await assert.rejects(validateCart([{ syncVariantId: 1, quantity: 1 }, { syncVariantId: 1, quantity: 2 }], lookup.run), /Duplicate/);

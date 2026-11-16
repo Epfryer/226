@@ -165,6 +165,14 @@ cannot hide fulfillment failures.
 
 ## Product colors and images
 
+Products synced to the connected Printful store appear in the shop without
+republishing the website after this catalog update is deployed. The catalog
+and selected product details refresh while the shop is open and when the shopper
+returns to the tab; server and browser caches can delay updates. Products must
+be synced in that store with valid variants, prices, and mockups; verify these in
+Printful before offering them for sale. Categories are inferred from product
+names, with unrecognized names placed in Studies.
+
 Swatches use the Printful catalog's color codes for each selected variant.
 If those codes are unavailable, the shop shows that variant's preview instead.
 Product images come from the selected variant's preview/mockup; print-file

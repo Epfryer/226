@@ -522,6 +522,9 @@ function StudioDetailPanel({
   const { data: productDetail, isLoading: isLoadingDetail, error: detailError } = useQuery<ProductDetailResponse>({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
   const { colors: catalogColors, unavailable: colorsUnavailable } = useCatalogColors(productDetail?.result?.sync_variants || []);
   
@@ -793,6 +796,9 @@ function StudioMobileSheet({
   const { data: productDetail, isLoading: isLoadingDetail, error: detailError } = useQuery<ProductDetailResponse>({
     queryKey: ["/api/shop/products", product?.id],
     enabled: !!product?.id && isOpen,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
   const { colors: catalogColors, unavailable: colorsUnavailable } = useCatalogColors(productDetail?.result?.sync_variants || []);
   
@@ -1215,6 +1221,9 @@ export default function Studio() {
 
   const { data: apiResponse, isLoading, error } = useQuery<PrintfulApiResponse>({
     queryKey: ["/api/shop/products"],
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 
   const products: StudioProduct[] = useMemo(() => {

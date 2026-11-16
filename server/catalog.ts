@@ -18,7 +18,20 @@ export function loadCatalog(provider = getPrintfulClient()) {
   return cache(provider).list.get("products", async () => {
     const response = await provider.getProducts();
     if (!Array.isArray(response?.result)) throw new Error("Product catalog unavailable");
-    return response;
+    const total = response.paging?.total;
+    if (!Number.isSafeInteger(total) || total < 0) throw new Error("Product catalog pagination unavailable");
+    const products = [...response.result];
+    while (products.length < total) {
+      const page = await provider.getProducts({ offset: products.length, limit: 100 });
+      if (!Array.isArray(page?.result) || !page.result.length ||
+        page.paging?.offset !== products.length || page.paging?.total !== total ||
+        products.length + page.result.length > total) {
+        throw new Error("Product catalog pagination incomplete");
+      }
+      products.push(...page.result);
+    }
+    if (products.length !== total) throw new Error("Product catalog pagination incomplete");
+    return { ...response, result: products };
   });
 }
 export function loadProduct(id: number, provider = getPrintfulClient()) {
