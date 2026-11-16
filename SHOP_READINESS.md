@@ -96,6 +96,11 @@ subscription was performed in this verification.
 
 ## Remaining verification and approval gates
 
+- The owner is ready to make a real purchase and asked for preparation to continue.
+  A fresh direct live-site/database recheck still found checkout unavailable and
+  the receipt/subscriber/consent additions absent. General willingness is not
+  approval of a specified item, total, destination or separate fulfillment charge.
+  No real payment or physical production was initiated.
 - Confirm the corrected message appeared in the inbox and any desired reply
   round trip. First-message inbox arrival is owner-confirmed. Corrected receipt provider delivery,
   genuine test checkout, signed webhook processing, paid state,
