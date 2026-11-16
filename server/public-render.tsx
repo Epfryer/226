@@ -10,7 +10,7 @@ import { loadProducts, loadPublications } from "./public-content";
 
 export function registerCrawlerRoutes(app: Express) {
   app.get("/robots.txt", (_req, res) => res.type("text/plain").send(
-    `User-agent: *\nAllow: /\nDisallow: /diagnostics\nDisallow: /login\nDisallow: /register\nDisallow: /account\nDisallow: /api/auth/\nDisallow: /api/shop/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
+    `User-agent: *\nAllow: /\nDisallow: /diagnostics\nDisallow: /login\nDisallow: /register\nDisallow: /account\nDisallow: /order-status\nDisallow: /api/auth/\nDisallow: /api/shop/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
   ));
   app.get("/sitemap.xml", (_req, res) => {
     const urls = [...publicRoutes, ...projects.map(projectPath)];
@@ -29,7 +29,7 @@ export async function renderPublicResponse(template: string, url: string, servic
   }
   const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
   const data: PublicPageData = { url, status: 200 };
-  const privatePage = ["/login", "/register", "/account"].includes(pathname);
+  const privatePage = ["/login", "/register", "/account", "/order-status"].includes(pathname);
   const valid = privatePage || isPolicyPath(pathname) || (publicRoutes as readonly string[]).includes(pathname) || !!findProject(pathname) || /^\/studio\/[1-9]\d*$/.test(pathname) || pathname === "/diagnostics";
   if (!valid) data.status = 404;
   try {

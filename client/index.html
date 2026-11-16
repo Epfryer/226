@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      if (location.pathname.replace(/\/+$/, "") === "/order-status" && /^#[a-f0-9]{64}$/.test(location.hash)) {
+        try {
+          sessionStorage.setItem("shop-order-status-token", location.hash.slice(1));
+          history.replaceState(null, "", location.pathname + location.search);
+        } catch {
+          console.warn("Order status link could not be saved for this tab.");
+        }
+      }
+    </script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
     <!-- site-metadata:start -->

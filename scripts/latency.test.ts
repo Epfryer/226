@@ -265,7 +265,7 @@ test("checkout stays closed when the receipt sender is missing", async () => {
   }, runtime, { ...initializerConfig, receiptSenderConfigured: false });
   await initialize();
   assert.equal(runtime.ready, false);
-  assert.match(runtime.message, /receipt email sender is not configured/i);
+  assert.match(runtime.message, /receipt sender must be configured as support@ethanfryer.com/i);
 });
 
 test("mobile PDF variants preserve selection, fallback only on 404, and surface storage outages", async () => {

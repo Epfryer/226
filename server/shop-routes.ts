@@ -245,6 +245,56 @@ export function registerShopRoutes(app: Express, services = {
     await shopPool.query("UPDATE shop_subscribers SET unsubscribed_at=COALESCE(unsubscribed_at,now()) WHERE unsubscribe_token=$1", [token]);
     res.set("Referrer-Policy", "no-referrer").type("html").send("<!doctype html><html lang=\"en\"><title>D.EF email preferences</title><body><h1>Unsubscribed</h1><p>You will no longer receive D.EF updates or offers.</p></body></html>");
   }));
+  app.post("/api/shop/order-status", throttle, asyncRoute(async (req, res) => {
+    const token = typeof req.body?.token === "string" ? req.body.token : "";
+    if (!/^[a-f0-9]{64}$/.test(token)) { res.status(404).json({ error: "Order status link is invalid." }); return; }
+    const hash = createHash("sha256").update(token).digest("hex");
+    const result = await shopPool.query(`SELECT o.id,o.status,o.paid,o.test_mode,o.tracking,o.printful_order_id
+      FROM shop_receipts r JOIN shop_orders o ON o.id=r.order_id
+      WHERE r.status_token_hash=$1 AND o.paid=true`, [hash]);
+    const order = result.rows[0];
+    if (!order) { res.status(404).json({ error: "Order status link is invalid." }); return; }
+    const trackingSchema = z.object({
+      number: z.string().trim().min(1), carrier: z.string().nullish(), url: z.string().nullish(),
+    });
+    const sanitizeTracking = (value: unknown) => {
+      const parsed = trackingSchema.safeParse(value);
+      if (!parsed.success) return undefined;
+      const { number, carrier, url } = parsed.data;
+      let safeUrl: string | undefined;
+      if (url) {
+        try {
+          const parsedUrl = new URL(url);
+          if (parsedUrl.protocol === "https:" && !parsedUrl.username && !parsedUrl.password) safeUrl = parsedUrl.href;
+          else console.error("[Shop] Invalid tracking URL", order.id);
+        } catch { console.error("[Shop] Invalid tracking URL", order.id); }
+      }
+      return { number, ...(carrier ? { carrier } : {}), ...(safeUrl ? { url: safeUrl } : {}) };
+    };
+    let tracking = sanitizeTracking(order.tracking);
+    let status = order.status;
+    let refreshUnavailable = false;
+    if (!order.test_mode && order.printful_order_id && !["canceled", "test_paid"].includes(status)) {
+      try {
+        const remote = await printful().getOrderByExternalId(`web-${order.id}`);
+        const parsed = z.object({ result: z.object({
+          status: z.enum(["draft", "pending", "failed", "canceled", "inprocess", "onhold", "partial", "fulfilled"]),
+          shipments: z.array(z.object({ tracking_number: z.string().nullish(), tracking_url: z.string().nullish(), carrier: z.string().nullish() })).nullish(),
+        }) }).parse(remote);
+        const shipment = parsed.result.shipments?.find(item => item.tracking_number?.trim());
+        if (shipment) {
+          tracking = sanitizeTracking({ number: shipment.tracking_number, carrier: shipment.carrier, url: shipment.tracking_url });
+        }
+        if (["failed", "canceled", "onhold"].includes(parsed.result.status)) status = "needs_attention";
+        if (parsed.result.status === "fulfilled" && ["fulfilled", "shipped"].includes(status)) status = "shipped";
+      } catch {
+        refreshUnavailable = true;
+        console.error("[Shop] Tracking refresh unavailable", order.id);
+      }
+    }
+    res.set({ "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow" });
+    res.json({ ...publicOrder({ ...order, status, tracking }), tracking, refreshUnavailable });
+  }));
   // Read-only: a return URL never creates or confirms a physical order.
   app.get("/api/shop/checkout/:sessionId/verify", throttle, asyncRoute(async (req, res) => {
     if (!/^cs_(test_|live_)?[a-zA-Z0-9]+$/.test(req.params.sessionId)) { res.status(404).json({ error: "Order not found" }); return; }

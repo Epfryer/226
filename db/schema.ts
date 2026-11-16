@@ -96,6 +96,7 @@ export const shopSubscribers = pgTable("shop_subscribers", {
 export const shopReceipts = pgTable("shop_receipts", {
   orderId: text("order_id").primaryKey().references(() => shopOrders.id, { onDelete: "cascade" }),
   data: jsonb("data").notNull(),
+  statusTokenHash: text("status_token_hash").unique(),
   status: text("status").notNull().default("pending"),
   attempts: integer("attempts").notNull().default(0),
   nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),

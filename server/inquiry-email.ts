@@ -1,6 +1,7 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { randomUUID } from "node:crypto";
 import { renderInquiryReceipt } from "./inquiry-email-template";
+import { INQUIRY_EMAIL, isSender } from "./email-settings";
 
 export interface InquiryEmail {
   type: string;
@@ -24,7 +25,7 @@ export async function sendInquiryEmail(
   from = process.env.INQUIRY_FROM_EMAIL,
   proxy: ProxyRequest = resendProxy,
 ) {
-  if (!from) throw new Error("Inquiry email sender is not configured");
+  if (!isSender(from, INQUIRY_EMAIL)) throw new Error("Inquiry email sender must be configured as inquiry@ethanfryer.com");
 
   const questions: Record<string, string> = {
     Commissions: "Where is the project located?",
@@ -41,7 +42,7 @@ export async function sendInquiryEmail(
     body: [
       {
         from,
-        to: ["Epfryer@me.com"],
+        to: [INQUIRY_EMAIL],
         reply_to: inquiry.email,
         subject: `New ${inquiry.type} inquiry from ${inquiry.name}`,
         text: [
@@ -58,7 +59,7 @@ export async function sendInquiryEmail(
       {
         from,
         to: [inquiry.email],
-        reply_to: "Epfryer@me.com",
+        reply_to: INQUIRY_EMAIL,
         subject: "We received your D.EF inquiry",
         html: renderInquiryReceipt({
           firstName: inquiry.name.trim().split(/\s+/)[0],

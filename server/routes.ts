@@ -10,6 +10,7 @@ import { z } from "zod";
 import { auth } from "./auth";
 import { apiCors } from "./request-origin";
 import { sendInquiryEmail } from "./inquiry-email";
+import { INQUIRY_EMAIL, isSender } from "./email-settings";
 
 const inquirySchema = z.object({
   type: z.enum(["Commissions", "Collaborations", "Studio inquiries", "Press / features"]),
@@ -65,8 +66,8 @@ export function registerRoutes(app: Express, publicationStorage = { uploadPdf, d
     if (isInquiryRateLimited(req.ip || req.socket.remoteAddress || "unknown")) {
       return res.status(429).json({ error: "Too many inquiries have been sent. Please try again later." });
     }
-    if (!process.env.INQUIRY_FROM_EMAIL) {
-      return res.status(503).json({ error: "Inquiry email is not available right now. Please email Epfryer@me.com directly." });
+    if (!isSender(process.env.INQUIRY_FROM_EMAIL, INQUIRY_EMAIL)) {
+      return res.status(503).json({ error: `Inquiry email is not available right now. Please email ${INQUIRY_EMAIL} directly.` });
     }
 
     try {

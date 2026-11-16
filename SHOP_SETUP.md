@@ -39,9 +39,17 @@ The checkout dialog displays the current setup status.
 
 - After verified payment, an application-owned receipt is queued independently of
   Printful production and sent through the connected Resend integration using
-  `INQUIRY_FROM_EMAIL`, the same sender as inquiry responses. Replies go to the
-  inquiry reply address. The receipt includes items, tax, shipping, total paid
-  and the order reference; it does not claim that the order has shipped.
+  `SHOP_FROM_EMAIL`. Set it to `D.EF Studio <support@ethanfryer.com>`.
+  Inquiry emails use the separate `INQUIRY_FROM_EMAIL`, set to
+  `D.EF Studio <inquiry@ethanfryer.com>`. Receipt replies go to
+  `support@ethanfryer.com`; inquiry acknowledgments and new inquiry notifications
+  use `inquiry@ethanfryer.com`. Replies to notifications go to the inquirer.
+  The receipt includes items, tax, shipping, total paid, the order reference,
+  selected shipping method and the provider's estimate when available. It
+  includes tracking if known before the first send; otherwise it says tracking
+  is not yet available and directs the customer to their order status or support.
+  The estimate is not a guarantee, and the receipt does not claim shipment.
+  The receipt is not updated or resent automatically when tracking arrives later.
 - Test-mode payments send a clearly labeled test receipt to the entered email but
   never add subscribers or create a Printful order. Use an inbox you control.
 - Delivery is attempted on the payment webhook and retried while the application
@@ -74,12 +82,16 @@ To find receipts that need attention without displaying addresses, inspect
 `SELECT order_id, status, attempts, created_at FROM shop_receipts WHERE status <> 'sent';`
 in the appropriate database. Do not reset a receipt for retry until its delivery
 status has been checked in Resend.
+Changing the sender while a receipt is pending can make Resend reject a retry
+under the same idempotency key; check its delivery status before resolving it
+manually rather than creating a duplicate receipt.
 
 Before a real purchase, apply the schema changes through the reviewed development
-and Publish schema flows (`migrations/0003_shop_email.sql` documents the additive
-change; do not run a whole-schema baseline), configure the verified sender and
+and Publish schema flows (`migrations/0003_shop_email.sql` and
+`migrations/0004_shop_order_status.sql` document the additive changes; do not run
+a whole-schema baseline), configure the verified sender and
 Resend connection, and publish the code. Checkout stays unavailable if the new
-schema or sender setting is missing, but that check does not prove that Resend can
+schema or support sender setting is missing or incorrect, but that check does not prove that Resend can
 deliver. Complete a Stripe test payment and check the actual inbox and reply address.
 Review the draft privacy policy and marketing requirements before sending campaigns.
 No live delivery or purchase has been verified by this code change.

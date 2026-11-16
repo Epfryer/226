@@ -12,7 +12,8 @@ import { deliverPendingReceipts } from "./shop-receipt";
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(["/login", "/register", "/account", "/api/auth"], privateResponse);
+app.use(["/login", "/register", "/account", "/order-status", "/api/auth"], privateResponse);
+app.use("/order-status", (_req, res, next) => { res.set("Referrer-Policy", "no-referrer"); next(); });
 registerPaymentWebhooks(app);
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: false }));
