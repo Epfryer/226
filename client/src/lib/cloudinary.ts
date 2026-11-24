@@ -1,9 +1,14 @@
 import { v2 as cloudinary } from 'cloudinary';
 
+// Cloudinary configuration loaded from environment variables
+// The following values were previously hard-coded (exposed in source — see git history).
+// Before deploying, set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+// in your .env and rotate the previously exposed credentials:
+//   cloud_name: dtxqagii0, api_key: 977281483896381, api_secret: KyfC5V8wgpXabfQEpDi8mVhPsyg
 cloudinary.config({
-  cloud_name: 'dtxqagii0',
-  api_key: '977281483896381',
-  api_secret: 'KyfC5V8wgpXabfQEpDi8mVhPsyg',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
+  api_key: process.env.CLOUDINARY_API_KEY || 'your_api_key',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'your_api_secret',
 });
 
 export const uploadImage = async (filePath: string, options = {}) => {
