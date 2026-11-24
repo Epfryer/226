@@ -15,7 +15,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 z-50 p-6">
+    <header className="fixed top-0 left-0 z-50 p-6 w-full bg-background/80 backdrop-blur-md border-b border-border">
       <div>
         <div className="flex items-start">
           <motion.div 
@@ -49,7 +49,9 @@ export function Header() {
                     delay: 0.4
                   }}
                 >
-                  D.EF
+                  <span className="font-bold tracking-wider text-foreground">
+                    D.EF<span className="text-primary">.</span>
+                  </span>
                 </motion.span>
               )}
             </Link>
@@ -61,13 +63,13 @@ export function Header() {
           style={headerStyle}
         >
           <nav className="flex flex-col space-y-4 text-sm">
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+            <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/">
               Projects
             </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+            <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/about">
               About
             </Link>
-            <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+            <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/contact">
               Contact
             </Link>
           </nav>
@@ -83,16 +85,16 @@ export function Header() {
 
         {isOpen && !isProjectExpanded && (
           <div
-            className="absolute top-16 left-0 bg-white py-4 px-6 md:hidden"
+            className="absolute top-16 left-0 bg-background border border-border py-4 px-6 shadow-2xl md:hidden"
           >
             <nav className="flex flex-col space-y-4">
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/">
+              <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/">
                 Projects
               </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/about">
+              <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/about">
                 About
               </Link>
-              <Link className="hover:opacity-70 transition-opacity uppercase tracking-wide" href="/contact">
+              <Link className="hover:text-primary transition-colors uppercase tracking-wide" href="/contact">
                 Contact
               </Link>
             </nav>
