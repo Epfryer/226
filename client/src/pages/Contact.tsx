@@ -2,19 +2,19 @@ import { motion } from "framer-motion";
 
 export default function Contact() {
   return (
-    <div className="pt-24">
+    <div className="min-h-screen bg-background pt-24 text-foreground">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="max-w-7xl mx-auto px-6"
       >
         <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold mb-8">Contact</h1>
+          <h1 className="mb-8 text-4xl font-bold text-foreground">Contact</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div>
               <h2 className="text-xl font-medium mb-4">Who is D.EF</h2>
-              <address className="text-gray-600 not-italic">
+              <address className="not-italic text-muted-foreground">
                 D.EF - Designs by Ethan Fryer<br />
                 B.Arch Virginia Tech AAD<br />
                 Architectural Designer<br />
@@ -22,7 +22,7 @@ export default function Contact() {
               </address>
               
               <div className="mt-4">
-                <a href="tel:+18135050290" className="text-gray-600 hover:text-black">
+                <a href="tel:+18135050290" className="text-primary transition-colors hover:text-accent-foreground">
                   +1 813 505 0290
                 </a>
               </div>
@@ -30,7 +30,7 @@ export default function Contact() {
 
             <div>
               <h2 className="text-xl font-medium mb-4">What is D.EF</h2>
-              <address className="text-gray-600 not-italic">
+              <address className="not-italic text-muted-foreground">
                 D.EF - Dangerously Euphoric Functions<br />
                 45 Main Street<br />
                 New York, NY 11201<br />
@@ -38,7 +38,7 @@ export default function Contact() {
               </address>
               
               <div className="mt-4">
-                <a href="tel:+12123346853" className="text-gray-600 hover:text-black">
+                <a href="tel:+12123346853" className="text-primary transition-colors hover:text-accent-foreground">
                   
                 </a>
               </div>
@@ -47,7 +47,7 @@ export default function Contact() {
 
           <div className="mt-12">
             <h2 className="text-xl font-medium mb-4">General Inquiries</h2>
-            <a href="mailto:Epfryer@vt.edu" className="text-gray-600 hover:text-black">
+            <a href="mailto:Epfryer@vt.edu" className="text-primary transition-colors hover:text-accent-foreground">
               Epfryer@vt.edu
             </a>
           </div>

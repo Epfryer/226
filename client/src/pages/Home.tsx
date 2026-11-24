@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { ProjectFilter } from "@/components/projects/ProjectFilter";
 import { projects } from "@/lib/projects";
+import { ShowcaseSection } from "@/components/showcase/ShowcaseSection";
 
 export default function Home() {
   const [location] = useLocation();
@@ -47,6 +48,7 @@ export default function Home() {
             <ProjectGrid projects={filteredProjects} />
           </motion.div>
         </AnimatePresence>
+        <ShowcaseSection />
       </motion.div>
     </div>
   );
