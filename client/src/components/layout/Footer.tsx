@@ -39,7 +39,7 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
         <div
           key={index}
           className={cn(
-            "relative cursor-pointer px-5 py-2 transition-opacity duration-200",
+            "relative cursor-pointer px-5 py-2 text-foreground transition-[opacity,color,filter] duration-200 hover:text-primary hover:drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)]",
             hoveredSocial && hoveredSocial !== social.name ? "opacity-50" : "opacity-100"
           )}
           onMouseEnter={() => {
@@ -85,7 +85,7 @@ export function SocialLinks({ socials, className, ...props }: SocialLinksProps) 
 
 export function Footer() {
   return (
-    <footer className="bg-white py-6 text-center">
+    <footer className="border-t border-border bg-background py-6 text-center text-foreground">
       <SocialLinks
       socials={[
         { name: "Issu", image: "https://res.cloudinary.com/dtxqagii0/image/upload/v1740437728/issuu-logo-symbol-colour_coyexg.png", href: "https://issuu.com/epfryer/docs/epf_-2025_worksample" },
@@ -93,7 +93,7 @@ export function Footer() {
       ]}
       className="justify-center gap-8 mb-4"
       />
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         © {new Date().getFullYear()} D.EF. All rights reserved.
       </p>
     </footer>
