@@ -2,58 +2,58 @@ import { type ThemeConfig } from "@/types/theme"
 
 export const theme: ThemeConfig = {
   // General
-  "--background": "0 0% 100%",
-  "--foreground": "0 0% 3.9%",
+  "--background": "0 0% 6%",
+  "--foreground": "0 0% 96%",
 
   // Card
-  "--card": "0 0% 100%",
-  "--card-foreground": "0 0% 3.9%",
+  "--card": "0 0% 10%",
+  "--card-foreground": "0 0% 96%",
 
   // Popover
-  "--popover": "0 0% 100%",
-  "--popover-foreground": "0 0% 3.9%",
+  "--popover": "0 0% 10%",
+  "--popover-foreground": "0 0% 96%",
 
   // Primary
-  "--primary": "0 0% 0%",
-  "--primary-foreground": "0 0% 98%",
+  "--primary": "350 25% 55%",
+  "--primary-foreground": "0 0% 100%",
 
   // Secondary 
-  "--secondary": "0 0% 96.1%",
-  "--secondary-foreground": "0 0% 9%",
+  "--secondary": "0 0% 15%",
+  "--secondary-foreground": "0 0% 85%",
 
   // Muted
-  "--muted": "0 0% 96.1%",
-  "--muted-foreground": "0 0% 45.1%",
+  "--muted": "0 0% 15%",
+  "--muted-foreground": "0 0% 55%",
 
   // Accent
-  "--accent": "0 0% 96.1%",
-  "--accent-foreground": "0 0% 9%",
+  "--accent": "170 40% 55%",
+  "--accent-foreground": "0 0% 100%",
 
   // Destructive
-  "--destructive": "0 84.2% 60.2%",
-  "--destructive-foreground": "0 0% 98%",
+  "--destructive": "0 62% 50%",
+  "--destructive-foreground": "0 0% 100%",
 
   // Border, input and ring colors
-  "--border": "0 0% 89.8%",
-  "--input": "0 0% 89.8%",
-  "--ring": "0 0% 3.9%",
+  "--border": "0 0% 20%",
+  "--input": "0 0% 20%",
+  "--ring": "350 25% 55%",
 
-  // Chart colors (monochromatic)
-  "--chart-1": "0 0% 0%",
-  "--chart-2": "0 0% 20%",
-  "--chart-3": "0 0% 40%",
-  "--chart-4": "0 0% 60%",
-  "--chart-5": "0 0% 80%",
+  // Chart colors (Dusty Rose / Pale Teal / Mustard / Timber / Warm gray)
+  "--chart-1": "350 25% 55%",
+  "--chart-2": "170 40% 55%",
+  "--chart-3": "45 80% 50%",
+  "--chart-4": "30 50% 40%",
+  "--chart-5": "0 0% 70%",
 
   // Sidebar theme (matching main theme)
-  "--sidebar-background": "0 0% 100%",
-  "--sidebar-foreground": "0 0% 3.9%",
-  "--sidebar-primary": "0 0% 0%",
-  "--sidebar-primary-foreground": "0 0% 98%",
-  "--sidebar-accent": "0 0% 96.1%",
-  "--sidebar-accent-foreground": "0 0% 9%",
-  "--sidebar-border": "0 0% 89.8%",
-  "--sidebar-ring": "0 0% 3.9%",
+  "--sidebar-background": "0 0% 6%",
+  "--sidebar-foreground": "0 0% 96%",
+  "--sidebar-primary": "350 25% 55%",
+  "--sidebar-primary-foreground": "0 0% 100%",
+  "--sidebar-accent": "170 40% 55%",
+  "--sidebar-accent-foreground": "0 0% 100%",
+  "--sidebar-border": "0 0% 20%",
+  "--sidebar-ring": "350 25% 55%",
 
   // Additional custom properties for BIG.dk styling
   "--big-transition": "all 0.3s ease-in-out",
