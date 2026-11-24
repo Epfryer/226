@@ -54,7 +54,7 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
       >
         {!isExpanded ? (
           <motion.div 
-            className="container mx-auto max-w-3xl px-4 cursor-pointer" 
+            className="group container mx-auto max-w-3xl px-4 cursor-pointer bg-card border border-border rounded-none hover:border-primary transition-colors duration-300" 
             onClick={handleExpand}
             whileHover={{ scale: 0.99 }}
             transition={{ duration: 0.3 }}
@@ -66,10 +66,10 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h3 className="text-[calc(0.875rem+0.1vw)] font-medium truncate transition-all duration-300 ease-in-out">
+                <h3 className="text-[calc(0.875rem+0.1vw)] text-foreground font-medium truncate transition-all duration-300 ease-in-out">
                   {project.title}
                 </h3>
-                <p className="text-[calc(0.75rem+0.1vw)] text-gray-600 mt-1 truncate transition-all duration-300 ease-in-out">
+                <p className="text-[calc(0.75rem+0.1vw)] text-muted-foreground mt-1 truncate transition-all duration-300 ease-in-out">
                   {project.location}
                 </p>
               </motion.div>
@@ -81,13 +81,13 @@ export function ProjectCard({ project, isExpanded, onExpand }: ProjectCardProps)
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-auto object-contain rounded-sm transition-transform duration-300 ease-in-out"
+                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </motion.div>
             </div>
           </motion.div>
         ) : (
-          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2">
+          <div ref={carouselRef} className="relative w-screen -ml-[50vw] left-1/2 bg-background border border-border">
             <motion.div 
               className="h-[80vh] max-h-[800px]"
               initial={{ opacity: 0 }}
