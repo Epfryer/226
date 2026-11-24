@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { ProjectCard } from "./ProjectCard";
 import type { Project } from "@/lib/projects";
 import { useState } from "react";
@@ -11,19 +12,23 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-0"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.1 }}
       layout
     >
       <AnimatePresence>
         {projects.map((project) => (
           <motion.div
             key={project.id}
+            variants={fadeInUp}
             layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, y: 20 }}
           >
             <ProjectCard 
               project={project}
