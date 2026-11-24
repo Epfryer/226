@@ -14,13 +14,13 @@
 | # | Task | Est. |
 |---|------|------|
 | 1 | ~~Update Theme System & CSS Variables~~ ✓ Done | 20 min |
-| 2 | Add Global Motion Utilities | 10 min |
-| 3 | Theme the Header | 20 min |
-| 4 | Theme the Footer | 15 min |
-| 5 | Overhaul ProjectCard with Motion & Dark Theme | 30 min |
-| 6 | Add Scroll-Triggered Reveal to ProjectGrid | 20 min |
-| 7 | Enhance ProjectCarousel with Dark Theme & Nav Dots | 25 min |
-| 8 | Add 3D/App Showcase Section (Structural) | 30 min |
+| 2 | ~~Add Global Motion Utilities~~ ✓ Done | 10 min |
+| 3 | ~~Theme the Header~~ ✓ Done | 20 min |
+| 4 | ~~Theme the Footer~~ ✓ Done | 15 min |
+| 5 | ~~Overhaul ProjectCard with Motion & Dark Theme~~ ✓ Done | 30 min |
+| 6 | ~~Add Scroll-Triggered Reveal to ProjectGrid~~ ✓ Done | 20 min |
+| 7 | ~~Enhance ProjectCarousel with Dark Theme & Nav Dots~~ ✓ Done | 25 min |
+| 8 | ~~Add 3D/App Showcase Section (Structural)~~ ✓ Done | 30 min |
 | 9 | Theme About & Contact Pages with Dark Styling | 20 min |
 
 ## Review
