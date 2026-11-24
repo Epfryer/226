@@ -22,12 +22,14 @@ interface ProjectCarouselProps {
 export function ProjectCarousel({ images, onSlideChange, initialSlide }: ProjectCarouselProps) {
   const swiperRef = useRef<SwiperType>();
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLImageElement>(null);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
+    setCurrentSlide(swiper.activeIndex);
     onSlideChange?.(swiper.activeIndex);
   }, [onSlideChange]);
 
@@ -152,8 +154,25 @@ export function ProjectCarousel({ images, onSlideChange, initialSlide }: Project
         </Swiper>
       </div>
 
+      <div className="flex items-center justify-center gap-2 py-3" aria-label="Project slides">
+        {images.map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            aria-label={`Go to slide ${index + 1}`}
+            aria-current={currentSlide === index ? "true" : undefined}
+            onClick={() => swiperRef.current?.slideTo(index)}
+            className={`h-2 rounded-full transition-all duration-200 ${
+              currentSlide === index
+                ? "w-6 bg-[#B76E79]"
+                : "w-2 bg-[#B76E79]/40 hover:bg-[#B76E79]/70"
+            }`}
+          />
+        ))}
+      </div>
+
       <Dialog open={!!zoomImage} onOpenChange={resetZoom}>
-        <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] p-0">
+        <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] p-0 bg-background/95 border border-border">
           <div className="w-full h-full flex items-center justify-center bg-black/90">
             <img
               ref={imageRef}
