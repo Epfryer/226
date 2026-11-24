@@ -3,14 +3,14 @@
 ## Backlog
 | # | Task | Notes |
 |---|------|-------|
-| 10 | Final build & type check | After all tasks complete |
+| - | (empty) | All tasks complete |
 
 ## In Progress
 | # | Task | Notes |
 |---|------|-------|
 | - | - | - |
 
-## Done (To Do)
+## Done
 | # | Task | Est. |
 |---|------|------|
 | 1 | ~~Update Theme System & CSS Variables~~ ✓ Done | 20 min |
@@ -21,7 +21,8 @@
 | 6 | ~~Add Scroll-Triggered Reveal to ProjectGrid~~ ✓ Done | 20 min |
 | 7 | ~~Enhance ProjectCarousel with Dark Theme & Nav Dots~~ ✓ Done | 25 min |
 | 8 | ~~Add 3D/App Showcase Section (Structural)~~ ✓ Done | 30 min |
-| 9 | Theme About & Contact Pages with Dark Styling | 20 min |
+| 9 | ~~Theme About & Contact Pages with Dark Styling~~ ✓ Done | 20 min |
+| 10 | ~~Final Build & Type Check~~ ✓ Done | 30 min |
 
 ## Review
 | # | Task | Notes |
