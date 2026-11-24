@@ -1,4 +1,6 @@
-import { type ThemeConfig } from "@/types/theme"
+export interface ThemeConfig {
+  [key: string]: string;
+}
 
 export const theme: ThemeConfig = {
   // General
